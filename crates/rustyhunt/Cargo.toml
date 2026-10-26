@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 description = "怪物猎人的局内信息 overlay 和桌面程序"
 
+[build-dependencies]
+winresource = "0.1"
+
 [dependencies]
 address-map = { path = "../address-map" }
 game-world = { path = "../game-world" }

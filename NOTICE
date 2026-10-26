@@ -33,6 +33,38 @@ locales/game/*.toml are derived from HunterPie Localization
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
+The save file decryption in crates/game-world (save.rs, save_tables.rs) is
+ported from Cirilla (https://github.com/Fusion86/Cirilla), licensed under
+the MIT License:
+
+    Copyright (c) 2018 Wouter Visser
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+The Montserrat fonts in assets/fonts/ are embedded in the program and are
+licensed under the SIL Open Font License 1.1 (assets/fonts/OFL.txt):
+Copyright 2024 The Montserrat.Git Project Authors
+(https://github.com/JulietaUla/Montserrat.git).
+
+Third-party Rust crates linked into the program are listed with their
+licenses in licenses/THIRD-PARTY.txt in the release package.
+
 locales/terms/world.toml lists in-game names collected from Kiranico
 (https://mhworld.kiranico.com). Monster Hunter names and terms are
 trademarks or copyrighted material of CAPCOM Co., Ltd.

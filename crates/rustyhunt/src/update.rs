@@ -19,8 +19,6 @@ use crate::state::Shared;
 pub struct Release {
     pub tag_name: String,
     #[serde(default)]
-    pub name: Option<String>,
-    #[serde(default)]
     pub body: Option<String>,
     #[serde(default)]
     pub published_at: Option<String>,
@@ -359,6 +357,9 @@ fn copy_tree(src: &Path, dst: &Path) -> std::io::Result<()> {
         let to = dst.join(e.file_name());
         if p.is_dir() {
             copy_tree(&p, &to)?;
+        } else if e.file_name() == "portable" {
+            // 更新包是便携版的包：不能把安装版改成便携版
+            continue;
         } else {
             std::fs::copy(&p, &to)?;
         }
@@ -399,9 +400,8 @@ pub fn apply_pending() -> bool {
                 std::fs::create_dir_all(&backup)?;
                 std::fs::copy(&old, backup.join("rustyhunt.exe"))
             });
-            for name in ["rustyhunt-native.dll"] {
-                let _ = std::fs::copy(install.join(name), backup.join(name));
-            }
+            let dll = rh_core::native::DLL_NAME;
+            let _ = std::fs::copy(install.join(dll), backup.join(dll));
             if let Err(e) = copy_tree(&root, &install) {
                 log::error!("复制新版本失败，回退：{e}");
                 let _ = std::fs::rename(&old, &exe);
@@ -486,7 +486,6 @@ mod tests {
     fn release_notes() {
         let r = Release {
             tag_name: "v1.1.0".into(),
-            name: None,
             body: Some("## 1.1.0\n- 新增 伤害拆分\n- 修复 部位名错位\n\n".into()),
             published_at: Some("2026-11-02T10:00:00Z".into()),
             prerelease: false,
