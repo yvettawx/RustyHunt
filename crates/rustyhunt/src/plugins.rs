@@ -62,6 +62,7 @@ impl Plugin {
     }
 }
 
+/// 锁的顺序：先 REG，后设置锁。拿着设置锁的时候不能调用这里的函数。
 struct Registry {
     plugins: Vec<Plugin>,
     out: Option<Sender<(String, Out)>>,

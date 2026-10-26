@@ -122,15 +122,12 @@ pub fn interact(
         }
     }
 
-    let names: BTreeMap<String, String> = {
-        let settings = shared.settings();
-        settings
-            .profile(game)
-            .modules
-            .keys()
-            .map(|id| (id.clone(), crate::plugins::module_name(id)))
-            .collect()
-    };
+    // 先放开设置锁再查插件模块的名字：插件那边持有自己的锁时会写设置
+    let ids: Vec<String> = shared.settings().profile(game).modules.keys().cloned().collect();
+    let names: BTreeMap<String, String> = ids.into_iter().map(|id| {
+        let n = crate::plugins::module_name(&id);
+        (id, n)
+    }).collect();
 
     let mut changed: Option<(String, ModuleConfig)> = None;
     for (id, r) in rects {
