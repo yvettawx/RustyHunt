@@ -1,0 +1,844 @@
+# 《怪物猎人 世界：冰原》术语表：简体中文、繁体中文、日文、英文
+#
+# 来源：Kiranico（mhworld.kiranico.com）的 zh、zh-Hant、ja、en 四个语言版本，取自游戏内文本。
+# 怪物按 Kiranico 的条目 ID 对齐，四种语言的条目数量和大型、小型的分组都校验过一致。
+# 取数日期：2026-10-27。
+#
+# 规则：界面上显示的游戏术语一律以这里为准；某种语言缺字段时显示英文。
+
+[monster.acidic_glavenus]
+size = "large"
+"zh-Hans" = "硫斩龙"
+"zh-Hant" = "硫斬龍"
+"ja" = "ディノバルド亜種"
+"en" = "Acidic Glavenus"
+kiranico = ["KpViL"]
+
+[monster.alatreon]
+size = "large"
+"zh-Hans" = "煌黑龙"
+"zh-Hant" = "煌黑龍"
+"ja" = "アルバトリオン"
+"en" = "Alatreon"
+kiranico = ["ErdcV"]
+
+[monster.ancient_leshen]
+size = "large"
+"zh-Hans" = "古代鹿首精"
+"zh-Hant" = "古代鹿首精"
+"ja" = "エンシェント・レーシェン"
+"en" = "Ancient Leshen"
+kiranico = ["N3vuk"]
+
+[monster.anjanath]
+size = "large"
+"zh-Hans" = "蛮颚龙"
+"zh-Hant" = "蠻顎龍"
+"ja" = "アンジャナフ"
+"en" = "Anjanath"
+kiranico = ["ZqptN"]
+
+[monster.azure_rathalos]
+size = "large"
+"zh-Hans" = "苍火龙"
+"zh-Hant" = "蒼火龍"
+"ja" = "リオレウス亜種"
+"en" = "Azure Rathalos"
+kiranico = ["BaYte"]
+
+[monster.banbaro]
+size = "large"
+"zh-Hans" = "猛牛龙"
+"zh-Hant" = "猛牛龍"
+"ja" = "バフバロ"
+"en" = "Banbaro"
+kiranico = ["6dJI8"]
+
+[monster.barioth]
+size = "large"
+"zh-Hans" = "冰牙龙"
+"zh-Hant" = "冰牙龍"
+"ja" = "ベリオロス"
+"en" = "Barioth"
+kiranico = ["4k2UP"]
+
+[monster.barroth]
+size = "large"
+"zh-Hans" = "土砂龙"
+"zh-Hant" = "土砂龍"
+"ja" = "ボルボロス"
+"en" = "Barroth"
+kiranico = ["Z9btN"]
+
+[monster.bazelgeuse]
+size = "large"
+"zh-Hans" = "爆鳞龙"
+"zh-Hant" = "爆鱗龍"
+"ja" = "バゼルギウス"
+"en" = "Bazelgeuse"
+kiranico = ["Xe7fm"]
+
+[monster.behemoth]
+size = "large"
+"zh-Hans" = "贝希摩斯"
+"zh-Hant" = "貝希摩斯"
+"ja" = "ベヒーモス"
+"en" = "Behemoth"
+kiranico = ["yA8Ub"]
+
+[monster.beotodus]
+size = "large"
+"zh-Hans" = "冰鱼龙"
+"zh-Hant" = "冰魚龍"
+"ja" = "ブラントドス"
+"en" = "Beotodus"
+kiranico = ["OqOIX"]
+
+[monster.black_diablos]
+size = "large"
+"zh-Hans" = "黑角龙"
+"zh-Hant" = "黑角龍"
+"ja" = "ディアブロス亜種"
+"en" = "Black Diablos"
+kiranico = ["RoXHw"]
+
+[monster.blackveil_vaal_hazak]
+size = "large"
+"zh-Hans" = "雾瘴尸套龙"
+"zh-Hant" = "霧瘴屍套龍"
+"ja" = "死を纏うヴァルハザク"
+"en" = "Blackveil Vaal Hazak"
+kiranico = ["WQzsl"]
+
+[monster.brachydios]
+size = "large"
+"zh-Hans" = "碎龙"
+"zh-Hant" = "碎龍"
+"ja" = "ブラキディオス"
+"en" = "Brachydios"
+kiranico = ["qpVH8"]
+
+[monster.brute_tigrex]
+size = "large"
+"zh-Hans" = "黑轰龙"
+"zh-Hant" = "黑轟龍"
+"ja" = "ティガレックス亜種"
+"en" = "Brute Tigrex"
+kiranico = ["j1ohM"]
+
+[monster.coral_pukei_pukei]
+size = "large"
+"zh-Hans" = "水妖鸟"
+"zh-Hant" = "水妖鳥"
+"ja" = "プケプケ亜種"
+"en" = "Coral Pukei-Pukei"
+kiranico = ["aY2Se"]
+
+[monster.deviljho]
+size = "large"
+"zh-Hans" = "恐暴龙"
+"zh-Hant" = "恐暴龍"
+"ja" = "イビルジョー"
+"en" = "Deviljho"
+kiranico = ["4rATd"]
+
+[monster.diablos]
+size = "large"
+"zh-Hans" = "角龙"
+"zh-Hant" = "角龍"
+"ja" = "ディアブロス"
+"en" = "Diablos"
+kiranico = ["BYXHE"]
+
+[monster.dodogama]
+size = "large"
+"zh-Hans" = "岩贼龙"
+"zh-Hant" = "岩賊龍"
+"ja" = "ドドガマル"
+"en" = "Dodogama"
+kiranico = ["DmeH0"]
+
+[monster.ebony_odogaron]
+size = "large"
+"zh-Hans" = "凶爪龙"
+"zh-Hant" = "兇爪龍"
+"ja" = "オドガロン亜種"
+"en" = "Ebony Odogaron"
+kiranico = ["v2gSW"]
+
+[monster.fatalis]
+size = "large"
+"zh-Hans" = "黑龙"
+"zh-Hant" = "黑龍"
+"ja" = "ミラボレアス"
+"en" = "Fatalis"
+kiranico = ["jA8SZ"]
+
+[monster.frostfang_barioth]
+size = "large"
+"zh-Hans" = "霜刃冰牙龙"
+"zh-Hant" = "霜刃冰牙龍"
+"ja" = "氷刃佩くベリオロス"
+"en" = "Frostfang Barioth"
+kiranico = ["BaZUz"]
+
+[monster.fulgur_anjanath]
+size = "large"
+"zh-Hans" = "雷颚龙"
+"zh-Hant" = "雷顎龍"
+"ja" = "アンジャナフ亜種"
+"en" = "Fulgur Anjanath"
+kiranico = ["zJaFg"]
+
+[monster.furious_rajang]
+size = "large"
+"zh-Hans" = "激昂金狮子"
+"zh-Hant" = "激昂金獅子"
+"ja" = "激昂したラージャン"
+"en" = "Furious Rajang"
+kiranico = ["jN0I7"]
+
+[monster.glavenus]
+size = "large"
+"zh-Hans" = "斩龙"
+"zh-Hant" = "斬龍"
+"ja" = "ディノバルド"
+"en" = "Glavenus"
+kiranico = ["Lk1ia"]
+
+[monster.gold_rathian]
+size = "large"
+"zh-Hans" = "金火龙"
+"zh-Hant" = "金火龍"
+"ja" = "リオレイア希少種"
+"en" = "Gold Rathian"
+kiranico = ["BaPT0"]
+
+[monster.great_girros]
+size = "large"
+"zh-Hans" = "大痹贼龙"
+"zh-Hant" = "大凶顎龍"
+"ja" = "ドスギルオス"
+"en" = "Great Girros"
+kiranico = ["eMAHO"]
+
+[monster.great_jagras]
+size = "large"
+"zh-Hans" = "大贼龙"
+"zh-Hant" = "大凶豺龍"
+"ja" = "ドスジャグラス"
+"en" = "Great Jagras"
+kiranico = ["zJ1Sb"]
+
+[monster.jyuratodus]
+size = "large"
+"zh-Hans" = "泥鱼龙"
+"zh-Hant" = "泥魚龍"
+"ja" = "ジュラトドス"
+"en" = "Jyuratodus"
+kiranico = ["oAyTx"]
+
+[monster.kirin]
+size = "large"
+"zh-Hans" = "麒麟"
+"zh-Hant" = "麒麟"
+"ja" = "キリン"
+"en" = "Kirin"
+kiranico = ["BQruK"]
+
+[monster.kulu_ya_ku]
+size = "large"
+"zh-Hans" = "搔鸟"
+"zh-Hant" = "搔鳥"
+"ja" = "クルルヤック"
+"en" = "Kulu-Ya-Ku"
+kiranico = ["YQ1FE"]
+
+[monster.kulve_taroth]
+size = "large"
+"zh-Hans" = "绚辉龙"
+"zh-Hant" = "絢輝龍"
+"ja" = "マム・タロト"
+"en" = "Kulve Taroth"
+kiranico = ["5xbCn"]
+
+[monster.kushala_daora]
+size = "large"
+"zh-Hans" = "钢龙"
+"zh-Hant" = "鋼龍"
+"ja" = "クシャルダオラ"
+"en" = "Kushala Daora"
+kiranico = ["jJxin"]
+
+[monster.lavasioth]
+size = "large"
+"zh-Hans" = "熔岩龙"
+"zh-Hant" = "熔岩龍"
+"ja" = "ヴォルガノス"
+"en" = "Lavasioth"
+kiranico = ["BL1ca"]
+
+[monster.legiana]
+size = "large"
+"zh-Hans" = "风漂龙"
+"zh-Hant" = "風漂龍"
+"ja" = "レイギエナ"
+"en" = "Legiana"
+kiranico = ["QNYCK"]
+
+[monster.leshen]
+size = "large"
+"zh-Hans" = "鹿首精"
+"zh-Hant" = "鹿首精"
+"ja" = "レーシェン"
+"en" = "Leshen"
+kiranico = ["GmYh0"]
+
+[monster.lunastra]
+size = "large"
+"zh-Hans" = "炎妃龙"
+"zh-Hant" = "炎妃龍"
+"ja" = "ナナ・テスカトリ"
+"en" = "Lunastra"
+kiranico = ["j8gFA"]
+
+[monster.namielle]
+size = "large"
+"zh-Hans" = "溟波龙"
+"zh-Hant" = "溟波龍"
+"ja" = "ネロミェール"
+"en" = "Namielle"
+kiranico = ["Mzdfo"]
+
+[monster.nargacuga]
+size = "large"
+"zh-Hans" = "迅龙"
+"zh-Hant" = "迅龍"
+"ja" = "ナルガクルガ"
+"en" = "Nargacuga"
+kiranico = ["BKNIm"]
+
+[monster.nergigante]
+size = "large"
+"zh-Hans" = "灭尽龙"
+"zh-Hant" = "滅盡龍"
+"ja" = "ネルギガンテ"
+"en" = "Nergigante"
+kiranico = ["aYaUV"]
+
+[monster.nightshade_paolumu]
+size = "large"
+"zh-Hans" = "浮眠龙"
+"zh-Hant" = "浮眠龍"
+"ja" = "パオウルムー亜種"
+"en" = "Nightshade Paolumu"
+kiranico = ["QNkhw"]
+
+[monster.odogaron]
+size = "large"
+"zh-Hans" = "惨爪龙"
+"zh-Hant" = "慘爪龍"
+"ja" = "オドガロン"
+"en" = "Odogaron"
+kiranico = ["ADAfZ"]
+
+[monster.paolumu]
+size = "large"
+"zh-Hans" = "浮空龙"
+"zh-Hant" = "浮空龍"
+"ja" = "パオウルムー"
+"en" = "Paolumu"
+kiranico = ["2mnT3"]
+
+[monster.pink_rathian]
+size = "large"
+"zh-Hans" = "樱火龙"
+"zh-Hant" = "櫻火龍"
+"ja" = "リオレイア亜種"
+"en" = "Pink Rathian"
+kiranico = ["BnNTd"]
+
+[monster.pukei_pukei]
+size = "large"
+"zh-Hans" = "毒妖鸟"
+"zh-Hant" = "毒妖鳥"
+"ja" = "プケプケ"
+"en" = "Pukei-Pukei"
+kiranico = ["nebTX"]
+
+[monster.radobaan]
+size = "large"
+"zh-Hans" = "骨锤龙"
+"zh-Hant" = "骨鎚龍"
+"ja" = "ラドバルキン"
+"en" = "Radobaan"
+kiranico = ["v2OUJ"]
+
+[monster.raging_brachydios]
+size = "large"
+"zh-Hans" = "猛爆碎龙"
+"zh-Hant" = "猛爆碎龍"
+"ja" = "猛り爆ぜるブラキディオス"
+"en" = "Raging Brachydios"
+kiranico = ["JoYHZ"]
+
+[monster.rajang]
+size = "large"
+"zh-Hans" = "金狮子"
+"zh-Hant" = "金獅子"
+"ja" = "ラージャン"
+"en" = "Rajang"
+kiranico = ["jJZIO"]
+
+[monster.rathalos]
+size = "large"
+"zh-Hans" = "火龙"
+"zh-Hant" = "火龍"
+"ja" = "リオレウス"
+"en" = "Rathalos"
+kiranico = ["BnetX"]
+
+[monster.rathian]
+size = "large"
+"zh-Hans" = "雌火龙"
+"zh-Hant" = "雌火龍"
+"ja" = "リオレイア"
+"en" = "Rathian"
+kiranico = ["Rz9Tb"]
+
+[monster.ruiner_nergigante]
+size = "large"
+"zh-Hans" = "歼世灭尽龙"
+"zh-Hant" = "殲世滅盡龍"
+"ja" = "悉くを殲ぼすネルギガンテ"
+"en" = "Ruiner Nergigante"
+kiranico = ["oAnim"]
+
+[monster.safijiiva]
+size = "large"
+"zh-Hans" = "冥赤龙"
+"zh-Hant" = "冥赤龍"
+"ja" = "ムフェト・ジーヴァ"
+"en" = "Safi'jiiva"
+kiranico = ["0kVsV"]
+
+[monster.savage_deviljho]
+size = "large"
+"zh-Hans" = "惶怒恐暴龙"
+"zh-Hant" = "惶怒恐暴龍"
+"ja" = "怒り喰らうイビルジョー"
+"en" = "Savage Deviljho"
+kiranico = ["B02Tk"]
+
+[monster.scarred_yian_garuga]
+size = "large"
+"zh-Hans" = "战痕黑狼鸟"
+"zh-Hant" = "戰痕黑狼鳥"
+"ja" = "傷ついたイャンガルルガ"
+"en" = "Scarred Yian Garuga"
+kiranico = ["46DhX"]
+
+[monster.seething_bazelgeuse]
+size = "large"
+"zh-Hans" = "红莲爆鳞龙"
+"zh-Hant" = "紅蓮爆鱗龍"
+"ja" = "紅蓮滾るバゼルギウス"
+"en" = "Seething Bazelgeuse"
+kiranico = ["6dkhX"]
+
+[monster.shara_ishvalda]
+size = "large"
+"zh-Hans" = "天地煌啼龙"
+"zh-Hant" = "天地煌啼龍"
+"ja" = "アン・イシュワルダ"
+"en" = "Shara Ishvalda"
+kiranico = ["8mvfA"]
+
+[monster.shrieking_legiana]
+size = "large"
+"zh-Hans" = "霜翼风漂龙"
+"zh-Hant" = "霜翼風漂龍"
+"ja" = "凍て刺すレイギエナ"
+"en" = "Shrieking Legiana"
+kiranico = ["Dm5tZ"]
+
+[monster.silver_rathalos]
+size = "large"
+"zh-Hans" = "银火龙"
+"zh-Hant" = "銀火龍"
+"ja" = "リオレウス希少種"
+"en" = "Silver Rathalos"
+kiranico = ["B0ktO"]
+
+[monster.stygian_zinogre]
+size = "large"
+"zh-Hans" = "狱狼龙"
+"zh-Hant" = "獄狼龍"
+"ja" = "ジンオウガ亜種"
+"en" = "Stygian Zinogre"
+kiranico = ["vmKTW"]
+
+[monster.teostra]
+size = "large"
+"zh-Hans" = "炎王龙"
+"zh-Hant" = "炎王龍"
+"ja" = "テオ・テスカトル"
+"en" = "Teostra"
+kiranico = ["jGeS0"]
+
+[monster.tigrex]
+size = "large"
+"zh-Hans" = "轰龙"
+"zh-Hant" = "轟龍"
+"ja" = "ティガレックス"
+"en" = "Tigrex"
+kiranico = ["jVAhP"]
+
+[monster.tobi_kadachi]
+size = "large"
+"zh-Hans" = "飞雷龙"
+"zh-Hant" = "飛雷龍"
+"ja" = "トビカガチ"
+"en" = "Tobi-Kadachi"
+kiranico = ["blDTZ"]
+
+[monster.tzitzi_ya_ku]
+size = "large"
+"zh-Hans" = "眩鸟"
+"zh-Hant" = "眩鳥"
+"ja" = "ツィツィヤック"
+"en" = "Tzitzi-Ya-Ku"
+kiranico = ["WQvu8"]
+
+[monster.uragaan]
+size = "large"
+"zh-Hans" = "爆锤龙"
+"zh-Hant" = "爆鎚龍"
+"ja" = "ウラガンキン"
+"en" = "Uragaan"
+kiranico = ["z99fb"]
+
+[monster.vaal_hazak]
+size = "large"
+"zh-Hans" = "尸套龙"
+"zh-Hant" = "屍套龍"
+"ja" = "ヴァルハザク"
+"en" = "Vaal Hazak"
+kiranico = ["9mMsb"]
+
+[monster.velkhana]
+size = "large"
+"zh-Hans" = "冰呪龙"
+"zh-Hant" = "冰呪龍"
+"ja" = "イヴェルカーナ"
+"en" = "Velkhana"
+kiranico = ["J1pFn"]
+
+[monster.viper_tobi_kadachi]
+size = "large"
+"zh-Hans" = "痹毒龙"
+"zh-Hant" = "痺毒龍"
+"ja" = "トビカガチ亜種"
+"en" = "Viper Tobi-Kadachi"
+kiranico = ["2mJUK"]
+
+[monster.xenojiiva]
+size = "large"
+"zh-Hans" = "冥灯龙"
+"zh-Hant" = "冥燈龍"
+"ja" = "ゼノ・ジーヴァ"
+"en" = "Xeno'jiiva"
+kiranico = ["wA8F8"]
+
+[monster.yian_garuga]
+size = "large"
+"zh-Hans" = "黑狼鸟"
+"zh-Hant" = "黑狼鳥"
+"ja" = "イャンガルルガ"
+"en" = "Yian Garuga"
+kiranico = ["jXmhm"]
+
+[monster.zinogre]
+size = "large"
+"zh-Hans" = "雷狼龙"
+"zh-Hant" = "雷狼龍"
+"ja" = "ジンオウガ"
+"en" = "Zinogre"
+kiranico = ["Ak8TZ"]
+
+[monster.zorah_magdaros]
+size = "large"
+"zh-Hans" = "熔山龙"
+"zh-Hant" = "熔山龍"
+"ja" = "ゾラ・マグダラオス"
+"en" = "Zorah Magdaros"
+kiranico = ["EmVcV"]
+
+[monster.anteka]
+size = "small"
+"zh-Hans" = "雪鹿"
+"zh-Hant" = "雪鹿"
+"ja" = "ガウシカ"
+"en" = "Anteka"
+kiranico = ["BDPt0"]
+
+[monster.apceros]
+size = "small"
+"zh-Hans" = "甲壳草食龙"
+"zh-Hant" = "背甲龍"
+"ja" = "アプケロス"
+"en" = "Apceros"
+kiranico = ["BnetY"]
+
+[monster.aptonoth]
+size = "small"
+"zh-Hans" = "草食龙"
+"zh-Hant" = "草食龍"
+"ja" = "アプトノス"
+"en" = "Aptonoth"
+kiranico = ["Rz9Tc"]
+
+[monster.barnos]
+size = "small"
+"zh-Hans" = "酸翼龙"
+"zh-Hant" = "酸翼龍"
+"ja" = "バルノス"
+"en" = "Barnos"
+kiranico = ["QZrSK"]
+
+[monster.boaboa]
+size = "small"
+"zh-Hans" = "兽缠族"
+"zh-Hant" = "獸纏族"
+"ja" = "ボワボワ"
+"en" = "Boaboa"
+kiranico = ["XYdC6"]
+
+[monster.cortos]
+size = "small"
+"zh-Hans" = "冬翼龙"
+"zh-Hant" = "冬翼龍"
+"ja" = "コルトス"
+"en" = "Cortos"
+kiranico = ["Wb0c8"]
+
+[monster.gajalaka]
+size = "small"
+"zh-Hans" = "奇面族"
+"zh-Hant" = "奇面族"
+"ja" = "ガジャブー"
+"en" = "Gajalaka"
+kiranico = ["55Ycn"]
+
+[monster.gajau]
+size = "small"
+"zh-Hans" = "咬鱼"
+"zh-Hant" = "咬魚"
+"ja" = "ガライーバ"
+"en" = "Gajau"
+kiranico = ["BgzT2"]
+
+[monster.gastodon]
+size = "small"
+"zh-Hans" = "突击龙"
+"zh-Hant" = "突擊龍"
+"ja" = "ガストドン"
+"en" = "Gastodon"
+kiranico = ["vmLtJ"]
+
+[monster.girros]
+size = "small"
+"zh-Hans" = "痹贼龙"
+"zh-Hant" = "凶顎龍"
+"ja" = "ギルオス"
+"en" = "Girros"
+kiranico = ["eQ1UO"]
+
+[monster.hornetaur]
+size = "small"
+"zh-Hans" = "巨甲虫"
+"zh-Hant" = "巨甲蟲"
+"ja" = "カンタロス"
+"en" = "Hornetaur"
+kiranico = ["Bw3C8"]
+
+[monster.jagras]
+size = "small"
+"zh-Hans" = "贼龙"
+"zh-Hant" = "凶豺龍"
+"ja" = "ジャグラス"
+"en" = "Jagras"
+kiranico = ["wa3H8"]
+
+[monster.kelbi]
+size = "small"
+"zh-Hans" = "精灵鹿"
+"zh-Hant" = "精靈鹿"
+"ja" = "ケルビ"
+"en" = "Kelbi"
+kiranico = ["Ro3fm", "BaqfV"]
+
+[monster.kestodon_female]
+size = "small"
+"zh-Hans" = "冠突龙♀"
+"zh-Hant" = "冠突龍♀"
+"ja" = "ケストドン♀"
+"en" = "Kestodon (Female)"
+kiranico = ["eQoIZ"]
+
+[monster.kestodon_male]
+size = "small"
+"zh-Hans" = "冠突龙♂"
+"zh-Hant" = "冠突龍♂"
+"ja" = "ケストドン♂"
+"en" = "Kestodon (Male)"
+kiranico = ["Y7XIE"]
+
+[monster.mernos]
+size = "small"
+"zh-Hans" = "行翼龙"
+"zh-Hant" = "行翼龍"
+"ja" = "メルノス"
+"en" = "Mernos"
+kiranico = ["ErdcU"]
+
+[monster.mosswine]
+size = "small"
+"zh-Hans" = "香菇猪"
+"zh-Hant" = "菌豬"
+"ja" = "モス"
+"en" = "Mosswine"
+kiranico = ["B05hV"]
+
+[monster.noios]
+size = "small"
+"zh-Hans" = "响翼龙"
+"zh-Hant" = "響翼龍"
+"ja" = "ノイオス"
+"en" = "Noios"
+kiranico = ["9xofb"]
+
+[monster.popo]
+size = "small"
+"zh-Hans" = "波波"
+"zh-Hant" = "波波"
+"ja" = "ポポ"
+"en" = "Popo"
+kiranico = ["BvLUJ"]
+
+[monster.raphinos]
+size = "small"
+"zh-Hans" = "芳翼龙"
+"zh-Hant" = "芳翼龍"
+"ja" = "ラフィノス"
+"en" = "Raphinos"
+kiranico = ["bx8uZ"]
+
+[monster.shamos]
+size = "small"
+"zh-Hans" = "猫蜥龙"
+"zh-Hant" = "貓蜥龍"
+"ja" = "シャムオス"
+"en" = "Shamos"
+kiranico = ["2r9F3"]
+
+[monster.vespoid]
+size = "small"
+"zh-Hans" = "巨蜂"
+"zh-Hant" = "巨蜂"
+"ja" = "ランゴスタ"
+"en" = "Vespoid"
+kiranico = ["REdsV"]
+
+[monster.wulg]
+size = "small"
+"zh-Hans" = "冰豺狼"
+"zh-Hant" = "冰豺狼"
+"ja" = "ウルグ"
+"en" = "Wulg"
+kiranico = ["qpVH9"]
+
+[map.ancient_forest]
+"zh-Hans" = "古代树森林"
+"zh-Hant" = "古代樹森林"
+"ja" = "古代樹の森"
+"en" = "Ancient Forest"
+
+[map.wildspire_waste]
+"zh-Hans" = "大蚁冢荒地"
+"zh-Hant" = "大蟻塚荒地"
+"ja" = "大蟻塚の荒地"
+"en" = "Wildspire Waste"
+
+[map.coral_highlands]
+"zh-Hans" = "陆珊瑚台地"
+"zh-Hant" = "陸珊瑚台地"
+"ja" = "陸珊瑚の台地"
+"en" = "Coral Highlands"
+
+[map.rotten_vale]
+"zh-Hans" = "瘴气之谷"
+"zh-Hant" = "瘴氣之谷"
+"ja" = "瘴気の谷"
+"en" = "Rotten Vale"
+
+[map.elders_recess]
+"zh-Hans" = "龙结晶之地"
+"zh-Hant" = "龍結晶之地"
+"ja" = "龍結晶の地"
+"en" = "Elder's Recess"
+
+[map.hoarfrost_reach]
+"zh-Hans" = "永霜冻土"
+"zh-Hant" = "永霜凍土"
+"ja" = "渡りの凍て地"
+"en" = "Hoarfrost Reach"
+
+[map.guiding_lands]
+"zh-Hans" = "聚魔之地"
+"zh-Hant" = "聚魔之地"
+"ja" = "導きの地"
+"en" = "The Guiding Lands"
+
+[map.origin_isle]
+"zh-Hans" = "起源的孤岛"
+"zh-Hant" = "起源的孤島"
+"ja" = "淵源の孤島"
+"en" = "Origin Isle"
+
+[map.great_ravine]
+"zh-Hans" = "大峡谷"
+"zh-Hant" = "大峽谷"
+"ja" = "大峡谷"
+"en" = "Great Ravine"
+
+[map.seliana_supply_cache]
+"zh-Hans" = "兵器置放处"
+"zh-Hant" = "兵器置放處"
+"ja" = "兵器置き場"
+"en" = "Seliana Supply Cache"
+
+[map.special_arena]
+"zh-Hans" = "特殊斗技场"
+"zh-Hant" = "特殊鬥技場"
+"ja" = "特殊闘技場"
+"en" = "Special Arena"
+
+[facility.tailraider_safari]
+"zh-Hans" = "随从探险队"
+"zh-Hant" = "隨從探險隊"
+"ja" = "オトモダチ探検隊"
+"en" = "Tailraider Safari"
+
+[facility.steamworks]
+"zh-Hans" = "蒸汽机关管理所"  # 来源：机核 gcores.com/articles/113315
+"en" = "Steamworks"
+
+[facility.botanical_research]
+"zh-Hans" = "植生研究所"  # 来源：电玩巴士 tgbus.com/news/152401（引用《世界》的设施名）
+"ja" = "植生研究所"  # 来源：Famitsu、Game*Spark 报道
+"en" = "Botanical Research Center"
+
+[facility.argosy]
+"zh-Hans" = "交易船"  # 来源：用户在游戏内确认（2026-10-27）
+"en" = "Argosy"

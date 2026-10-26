@@ -1,10 +1,41 @@
+RustyHunt
+Copyright 2026 RustyHunt contributors
+
 This project is a Rust port of HunterPie (https://github.com/HunterPie/HunterPie),
 originally written in C# by Matheus Rangel (Haato3o) and contributors,
 and licensed under the Apache License, Version 2.0.
 
 Portions of this project are translated from, or derived from, HunterPie's
-source code and data files (such as the address map files). These portions
-have been modified from the original.
+source code and data files (address maps in maps/, game data in data/,
+the memory layouts used by crates/game-world and the injected module in
+crates/native). These portions have been modified from the original.
+
+locales/game/*.toml are derived from HunterPie Localization
+(https://github.com/HunterPie/Localization), licensed under the MIT License:
+
+    Copyright (c) 2022 HunterPie
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+locales/terms/world.toml lists in-game names collected from Kiranico
+(https://mhworld.kiranico.com). Monster Hunter names and terms are
+trademarks or copyrighted material of CAPCOM Co., Ltd.
 
 This project is not affiliated with, endorsed by, or associated with the
-HunterPie project or Capcom Co., Ltd.
+HunterPie project or CAPCOM Co., Ltd.
