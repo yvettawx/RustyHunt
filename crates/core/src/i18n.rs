@@ -192,8 +192,17 @@ impl I18n {
         self.ui.entry(lang).or_default().merge(table);
     }
 
+    /// 游戏字符串按 `[part]`、`[ailment]` 等分节存放，查的时候不带节名，
+    /// 所以载入时同时按原键存一份。
     pub fn load_game(&mut self, lang: Lang, table: Table) {
-        self.game.entry(lang).or_default().merge(table);
+        let bare: HashMap<String, String> = table
+            .0
+            .iter()
+            .filter_map(|(k, v)| k.split_once('.').map(|(_, rest)| (rest.to_string(), v.clone())))
+            .collect();
+        let t = self.game.entry(lang).or_default();
+        t.0.extend(bare);
+        t.merge(table);
     }
 
     pub fn set_terms(&mut self, terms: Terms) {

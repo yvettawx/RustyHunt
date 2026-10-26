@@ -1,0 +1,481 @@
+//! 局内 overlay：透明、置顶、鼠标穿透的窗口，盖在游戏客户区上。
+//! 画面按 1080 高的参考坐标设计，按游戏窗口的高度缩放，宽屏时按锚点左右对齐。
+//! 画面静止时不重绘，只有数据变化或动画进行中才画下一帧。
+
+mod backing;
+mod hunter;
+pub mod layout;
+mod misc;
+mod monster;
+
+use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::sync::Arc;
+
+use egui::emath::TSTransform;
+use egui::{Id, LayerId, Order, Pos2, Rect, Vec2, pos2, vec2};
+use rh_core::Event;
+use rh_core::i18n::{self, I18n};
+use rh_core::model::{Game, Monster, Snapshot};
+use rh_core::modules;
+use rh_core::settings::{Density, ModuleConfig, Profile, Settings};
+use ui_kit::fields::Activity;
+use ui_kit::render::Images;
+use ui_kit::{Canvas, Theme};
+
+use crate::state::{Connection, Live, Shared};
+
+pub use layout::LayoutState;
+
+/// 画模块时用到的这一帧的数据。
+pub struct Frame<'a> {
+    pub snap: &'a Snapshot,
+    pub live: &'a Live,
+    pub settings: &'a Settings,
+    pub profile: &'a Profile,
+    pub i18n: &'a I18n,
+    pub density: Density,
+    pub now: f64,
+    pub game: Game,
+    pub target: Option<&'a Monster>,
+    pub frame_us: u32,
+    /// 布局模式或预览：不受显示条件限制
+    pub preview: bool,
+}
+
+impl Frame<'_> {
+    pub fn t(&self, key: &str) -> String {
+        self.i18n.t(key)
+    }
+
+    pub fn idle_secs(&self) -> f64 {
+        self.profile.monster.idle_fade_secs.max(1.0) as f64
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToastStyle {
+    Plain,
+    Accent,
+}
+
+#[derive(Debug, Clone)]
+pub struct Toast {
+    pub t: f64,
+    pub tag: String,
+    pub text: String,
+    pub style: ToastStyle,
+}
+
+/// overlay 在帧与帧之间保留的状态。
+#[derive(Default)]
+pub struct State {
+    pub activity: Activity,
+    prev: Option<Arc<Snapshot>>,
+    /// 怪物血量残影
+    pub ghost: HashMap<u64, f32>,
+    pub player_ghost: f32,
+    pub player_hit_at: f64,
+    pub toasts: VecDeque<Toast>,
+    pub flash: HashMap<String, f64>,
+    last_event: f64,
+    last_frame: f64,
+    pub dt: f32,
+    /// 本帧有动画，需要继续重绘
+    pub animating: bool,
+    /// 每个模块在画面上的矩形（参考坐标）
+    pub rects: BTreeMap<String, Rect>,
+    pub images: Images,
+    /// 模板模块的数据：每帧生成一次
+    pub context: Option<serde_json::Value>,
+}
+
+impl State {
+    fn track(&mut self, snap: &Arc<Snapshot>, now: f64) {
+        let Some(prev) = self.prev.replace(snap.clone()) else { return };
+        if Arc::ptr_eq(&prev, snap) {
+            return;
+        }
+        for m in &snap.monsters {
+            let Some(p) = prev.monster(m.uid) else {
+                self.ghost.insert(m.uid, m.hp);
+                continue;
+            };
+            for (i, part) in m.parts.iter().enumerate() {
+                let Some(old) = p.parts.get(i) else { continue };
+                if (part.flinch - old.flinch).abs() > 0.01
+                    || (part.durability - old.durability).abs() > 0.01
+                    || part.breaks != old.breaks
+                {
+                    self.activity.touch(format!("{}:p{i}", m.uid), now);
+                }
+                if part.breaks > old.breaks {
+                    self.flash.insert(format!("{}:p{i}", m.uid), now);
+                }
+            }
+            for a in &m.ailments {
+                let Some(old) = p.ailments.iter().find(|x| x.key == a.key) else { continue };
+                if (a.buildup - old.buildup).abs() > 0.01 || a.count != old.count || a.active() != old.active() {
+                    self.activity.touch(format!("{}:a{}", m.uid, a.key), now);
+                }
+            }
+        }
+        if snap.player.hp < prev.player.hp - 0.5 {
+            self.player_ghost = self.player_ghost.max(prev.player.hp);
+            self.player_hit_at = now;
+        }
+        self.ghost.retain(|uid, _| snap.monster(*uid).is_some());
+    }
+
+    fn take_events(&mut self, shared: &Shared, f: &Frame) {
+        let events: Vec<(f64, Event)> = shared
+            .events
+            .lock()
+            .unwrap()
+            .items
+            .iter()
+            .filter(|(t, _)| *t > self.last_event)
+            .cloned()
+            .collect();
+        for (t, e) in events {
+            self.last_event = self.last_event.max(t);
+            if f.now - t > 3.0 {
+                continue;
+            }
+            let target = f.target.map(|m| m.uid);
+            let toast = match &e {
+                Event::PartBreak { uid, part, .. } if Some(*uid) == target => {
+                    Some((f.t("toast.break"), f.i18n.game(part), ToastStyle::Accent))
+                }
+                Event::PartSever { uid, part } if Some(*uid) == target => {
+                    Some((f.t("toast.sever"), f.i18n.game(part), ToastStyle::Accent))
+                }
+                Event::AilmentTrigger { uid, ailment, .. } if Some(*uid) == target => {
+                    Some((f.i18n.game(ailment), String::new(), ToastStyle::Plain))
+                }
+                Event::Enrage { uid } if Some(*uid) == target => Some((f.t("toast.enrage"), String::new(), ToastStyle::Accent)),
+                Event::Tired { uid } if Some(*uid) == target => Some((f.t("toast.tired"), String::new(), ToastStyle::Plain)),
+                Event::Capturable { uid } if Some(*uid) == target => {
+                    Some((f.t("toast.capturable"), String::new(), ToastStyle::Accent))
+                }
+                Event::MonsterDeath { uid, .. } if Some(*uid) == target => Some((f.t("toast.slain"), String::new(), ToastStyle::Accent)),
+                Event::MonsterCapture { uid, .. } if Some(*uid) == target => {
+                    Some((f.t("toast.captured"), String::new(), ToastStyle::Accent))
+                }
+                _ => None,
+            };
+            if let Some((tag, text, style)) = toast {
+                self.toasts.push_back(Toast { t, tag, text, style });
+                if self.toasts.len() > 4 {
+                    self.toasts.pop_front();
+                }
+            }
+        }
+    }
+}
+
+pub const LAYER_ROOT: &str = "rustyhunt-overlay";
+
+fn module_layer(id: &str) -> LayerId {
+    LayerId::new(Order::Foreground, Id::unique((LAYER_ROOT, id)))
+}
+
+/// 模块是否该显示。
+fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
+    if !cfg.enabled {
+        return false;
+    }
+    if f.preview {
+        return true;
+    }
+    if cfg.quest_only && !(f.snap.in_quest() || f.snap.in_hunt_zone) {
+        return false;
+    }
+    if cfg.hide_in_menu && f.snap.hud_open {
+        return false;
+    }
+    true
+}
+
+pub struct Overlay {
+    pub shared: Arc<Shared>,
+    pub state: State,
+    pub layout: LayoutState,
+    geometry: Option<(i32, i32, i32, i32)>,
+    passthrough: Option<bool>,
+    hwnd: Option<isize>,
+    backing: backing::Backing,
+    preview_snap: Option<Arc<Snapshot>>,
+}
+
+impl Overlay {
+    pub fn new(shared: Arc<Shared>) -> Overlay {
+        Overlay {
+            shared,
+            state: State::default(),
+            layout: LayoutState::default(),
+            geometry: None,
+            passthrough: None,
+            hwnd: None,
+            backing: backing::Backing::default(),
+            preview_snap: None,
+        }
+    }
+
+    pub fn set_hwnd(&mut self, hwnd: isize) {
+        if self.hwnd != Some(hwnd) {
+            self.hwnd = Some(hwnd);
+            crate::win::style_overlay(hwnd);
+        }
+    }
+
+    /// overlay 应该盖住哪一块屏幕（物理像素）。没有可显示的内容时返回 None。
+    fn target_geometry(&self, live: &Live, layout: bool) -> Option<(i32, i32, i32, i32)> {
+        if let Some(r) = live.game_rect
+            && live.connected()
+            && !live.game_minimized
+            && r.w > 0
+            && r.h > 0
+        {
+            return Some((r.x, r.y, r.w, r.h));
+        }
+        if matches!(live.connection, Connection::Demo) || layout {
+            let (w, h) = crate::win::primary_screen();
+            return Some((0, 0, w, h));
+        }
+        None
+    }
+
+    pub fn ui(&mut self, ui: &mut egui::Ui) {
+        let t0 = std::time::Instant::now();
+        let ctx = ui.ctx().clone();
+        let shared = self.shared.clone();
+        let layout_on = shared.layout_mode();
+        let live = shared.live().clone();
+        let settings = shared.settings().clone();
+        let theme = shared.theme();
+        let i18n = i18n::current();
+        let now = shared.now();
+
+        // 窗口位置和穿透
+        let geometry = self.target_geometry(&live, layout_on);
+        let want = geometry.unwrap_or((-32000, -32000, 1, 1));
+        if self.geometry != Some(want)
+            && let Some(h) = self.hwnd
+        {
+            crate::win::place_overlay(h, want);
+            self.geometry = Some(want);
+        }
+        if self.passthrough != Some(!layout_on) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::MousePassthrough(!layout_on));
+            if layout_on {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+            }
+            self.passthrough = Some(!layout_on);
+        }
+        if geometry.is_none() || (!settings.overlay_visible && !layout_on) {
+            self.backing.hide();
+            return;
+        }
+
+        let snap = if live.has_data() {
+            self.preview_snap = None;
+            live.snapshot.clone()
+        } else {
+            // 没连游戏时进布局模式，用一帧演示数据摆位置
+            self.preview_snap
+                .get_or_insert_with(|| Arc::new(game_world::demo::Demo::new().step(0.1)))
+                .clone()
+        };
+        self.state.dt = ((now - self.state.last_frame) as f32).clamp(0.0, 0.1);
+        self.state.last_frame = now;
+        self.state.track(&snap, now);
+        self.state.animating = false;
+
+        let game = Game::World;
+        let profile = settings.profile(game).clone();
+        let mut density = settings.density;
+        if shared.show_all.load(std::sync::atomic::Ordering::Relaxed) {
+            density = Density::Full;
+        }
+        let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
+        let f = Frame {
+            snap: &snap,
+            live: &live,
+            settings: &settings,
+            profile: &profile,
+            i18n: &i18n,
+            density,
+            now,
+            game,
+            target,
+            frame_us: shared.frame_us.load(std::sync::atomic::Ordering::Relaxed),
+            preview: layout_on,
+        };
+        self.state.take_events(&shared, &f);
+        self.state.images.set_dir(theme.dir.clone());
+
+        let screen = ctx.content_rect();
+        let s = screen.height() / 1080.0;
+        let frame_w = screen.width() / s;
+
+        if layout_on {
+            layout::backdrop(&ctx, screen, s, &self.layout, game);
+        }
+
+        // 自身模块的底板（盖住原生血条）
+        let player_cfg = profile.module(modules::PLAYER).cloned().unwrap_or_default();
+        if visible(&f, &player_cfg) {
+            self.backing.draw(&ctx, &f, &theme, screen, s, self.hwnd);
+        } else {
+            self.backing.hide();
+        }
+
+        let mut ids: Vec<String> = profile.modules.keys().cloned().collect();
+        // 怪物模块画在最上面
+        ids.sort_by_key(|id| id == modules::MONSTER);
+        let mut rects = BTreeMap::new();
+        for id in ids {
+            let cfg = &profile.modules[&id];
+            if !visible(&f, cfg) {
+                continue;
+            }
+            let layer = module_layer(&id);
+            let painter = ctx
+                .layer_painter(layer)
+                .with_clip_rect(Rect::from_min_max(pos2(-8000.0, -8000.0), pos2(16000.0, 16000.0)));
+            let scale = s * cfg.scale.clamp(0.5, 2.0);
+            let cv = Canvas {
+                painter,
+                origin: Pos2::ZERO,
+                scale,
+                opacity: cfg.opacity.clamp(0.1, 1.0),
+                theme: &theme,
+            };
+            let size = self.draw_module(&id, &cv, &f, cfg, &theme, &ctx);
+            if size == Vec2::ZERO {
+                continue;
+            }
+            let size_design = size * cfg.scale.clamp(0.5, 2.0);
+            let (x, y) = cfg.placement.to_top_left(frame_w, (size_design.x, size_design.y));
+            let offset = screen.min + vec2(x, y) * s;
+            ctx.set_transform_layer(layer, TSTransform::from_translation(offset.to_vec2()));
+            rects.insert(id.clone(), Rect::from_min_size(pos2(x, y), size_design));
+        }
+        self.state.rects = rects;
+
+        if layout_on {
+            layout::interact(ui, &shared, &mut self.layout, &self.state.rects, screen, s, frame_w, game);
+        }
+
+        let us = t0.elapsed().as_micros() as u32;
+        let prev = shared.frame_us.load(std::sync::atomic::Ordering::Relaxed);
+        shared
+            .frame_us
+            .store(if prev == 0 { us } else { (prev * 7 + us) / 8 }, std::sync::atomic::Ordering::Relaxed);
+
+        // 有动画时按帧率上限继续画；静止时不再请求重绘
+        if self.state.animating || layout_on || !self.state.toasts.is_empty() {
+            let fps = settings.perf.fps_cap.clamp(30, 144) as f32;
+            ctx.request_repaint_after(std::time::Duration::from_secs_f32(1.0 / fps));
+        }
+        while self.state.toasts.front().is_some_and(|t| now - t.t > theme.tokens.duration("toast") as f64) {
+            self.state.toasts.pop_front();
+        }
+    }
+
+    fn draw_module(&mut self, id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Theme, ctx: &egui::Context) -> Vec2 {
+        // 主题给这个模块写了模板，就按模板画
+        if let Some(t) = theme.modules.get(id) {
+            let data = self.state.context.get_or_insert_with(|| template_context(f, &self.state.activity));
+            let (size, anim) = ui_kit::render::render(t, cv, &mut self.state.images, ctx, data, f.now);
+            self.state.animating |= anim;
+            return size;
+        }
+        let st = &mut self.state;
+        match id {
+            modules::MONSTER => monster::draw(cv, f, cfg, st),
+            modules::PLAYER => hunter::player(cv, f, cfg, st),
+            modules::BUFFS => hunter::buffs(cv, f, cfg, st),
+            modules::WEAPON => hunter::weapon(cv, f, cfg, st),
+            modules::DAMAGE => misc::damage(cv, f, cfg, st),
+            modules::AREA => misc::area(cv, f, cfg, st),
+            modules::CLOCK => misc::clock(cv, f, cfg, st),
+            modules::BASE => misc::base(cv, f, cfg, st),
+            modules::PERF => misc::perf(cv, f, cfg, st),
+            other => crate::plugins::draw_module(other, cv, f, st, ctx),
+        }
+    }
+
+    pub fn end_frame(&mut self) {
+        self.state.context = None;
+    }
+}
+
+pub fn template_context(f: &Frame, activity: &Activity) -> serde_json::Value {
+    let o = ui_kit::fields::ContextOptions {
+        i18n: f.i18n,
+        density: match f.density {
+            Density::Full => "full",
+            Density::Standard => "standard",
+            Density::Minimal => "minimal",
+        },
+        time: f.now,
+        hot_secs: f.idle_secs(),
+        activity: Some(activity),
+        target: f.target.map(|m| m.uid),
+        low_hp: f.profile.player.low_hp / 100.0,
+        damage_recent: if f.now - f.live.combo_at < 1.6 { f.live.combo_damage } else { 0.0 },
+    };
+    ui_kit::fields::context(f.snap, &o)
+}
+
+/// 时间显示：一小时以内 m:ss，超过 h:mm:ss。
+pub fn mmss(secs: f32) -> String {
+    let s = secs.max(0.0) as i64;
+    if s >= 3600 {
+        format!("{}:{:02}:{:02}", s / 3600, s / 60 % 60, s % 60)
+    } else {
+        format!("{}:{:02}", s / 60, s % 60)
+    }
+}
+
+/// 千分位。
+pub fn thousands(v: f32) -> String {
+    let n = v.round() as i64;
+    let s = n.abs().to_string();
+    let mut out = String::new();
+    for (i, c) in s.chars().enumerate() {
+        if i > 0 && (s.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    if n < 0 { format!("-{out}") } else { out }
+}
+
+/// 增益的剩余时间：一分钟以上 m:ss，以下 N s。
+pub fn buff_time(t: f32, infinite: bool) -> String {
+    if infinite {
+        "∞".into()
+    } else if t >= 60.0 {
+        mmss(t)
+    } else {
+        format!("{}s", t.ceil() as i64)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn formats() {
+        assert_eq!(mmss(754.0), "12:34");
+        assert_eq!(mmss(3725.0), "1:02:05");
+        assert_eq!(thousands(1234567.0), "1,234,567");
+        assert_eq!(thousands(-1200.0), "-1,200");
+        assert_eq!(buff_time(46.2, false), "47s");
+        assert_eq!(buff_time(94.0, false), "1:34");
+        assert_eq!(buff_time(1.0, true), "∞");
+    }
+}

@@ -114,6 +114,21 @@ impl<'a> Canvas<'a> {
         self.galley(text, font, size, Color32::WHITE, spacing).size() / self.scale
     }
 
+    /// 放不下时从后面截断，加省略号。
+    pub fn fit(&self, text: &str, font: Font, size: f32, max_w: f32) -> String {
+        if self.measure(text, font, size, 0.0).x <= max_w {
+            return text.to_string();
+        }
+        let chars: Vec<char> = text.chars().collect();
+        for n in (1..chars.len()).rev() {
+            let s: String = chars[..n].iter().collect::<String>() + "…";
+            if self.measure(&s, font, size, 0.0).x <= max_w {
+                return s;
+            }
+        }
+        "…".into()
+    }
+
     /// 带阴影的字。返回设计单位的大小。
     pub fn text(&self, x: f32, y: f32, text: &str, font: Font, size: f32, color: Color32, align: Align2) -> Vec2 {
         self.text_ex(x, y, text, font, size, color, align, 0.0, true)
@@ -316,9 +331,16 @@ impl<'a> Canvas<'a> {
     }
 
     /// 按主题样式画一根条。`kind` 选 `<bar for="...">` 的覆盖样式；
-    /// `hatch` 表示这根条的空槽默认就画斜线。
+    /// `hatch`、`caps` 是这根条的默认样子（空槽画斜线、两端加竖线），
+    /// 主题单独写了这种条的样式时以主题为准。
     pub fn bar(&self, kind: &str, x: f32, y: f32, w: f32, h: f32, layers: &[Layer], hatch: bool) {
-        let style = self.theme.styles.bar(kind);
+        self.bar_ex(kind, x, y, w, h, layers, hatch, false);
+    }
+
+    pub fn bar_ex(&self, kind: &str, x: f32, y: f32, w: f32, h: f32, layers: &[Layer], hatch: bool, caps: bool) {
+        let explicit = self.theme.styles.bars.get(kind);
+        let style = explicit.unwrap_or(&self.theme.styles.bar);
+        let (hatch, caps) = if explicit.is_some() { (false, false) } else { (hatch, caps) };
         let h = h * style.height;
         let segs: Vec<(f32, f32)> = if style.segments > 1 {
             let n = style.segments as f32;
@@ -372,7 +394,7 @@ impl<'a> Canvas<'a> {
             }
         }
 
-        if style.caps {
+        if style.caps || caps {
             self.caps(x, y, w, h);
         }
     }

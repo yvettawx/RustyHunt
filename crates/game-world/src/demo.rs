@@ -204,6 +204,12 @@ impl Demo {
                 palico: false,
             })
             .collect();
+        // 已经打了一阵子：伤害按各自的输出速度预先累计
+        let elapsed = 50.0 * 60.0 - self.quest_left;
+        let mut party: Vec<PartyMember> = party;
+        for (p, rate) in party.iter_mut().zip([72.0f32, 62.0, 48.0, 42.0]) {
+            p.damage = rate * elapsed * self.rng.range(0.9, 1.1);
+        }
         self.snap = Snapshot {
             game: Game::World,
             stage_id: 108,

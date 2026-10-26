@@ -1,0 +1,43 @@
+[package]
+name = "rustyhunt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "怪物猎人的局内信息 overlay 和桌面程序"
+
+[dependencies]
+address-map = { path = "../address-map" }
+game-world = { path = "../game-world" }
+platform = { path = "../platform" }
+rustyhunt-core = { path = "../core" }
+ui-kit = { path = "../ui-kit" }
+chrono = "0.4"
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "clipboard", "accesskit"] }
+egui = "0.37"
+image = { version = "0.25", default-features = false, features = ["png"] }
+log = "0.4"
+raw-window-handle = "0.6"
+rfd = "0.15"
+rusqlite = { version = "0.41", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
+toml = "1"
+tray-icon = "0.26"
+ureq = { version = "3", features = ["json"] }
+winit = "0.30"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[dependencies.windows-sys]
+version = "0.61"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+]
