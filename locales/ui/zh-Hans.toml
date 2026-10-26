@@ -364,6 +364,7 @@ ask_risk = "游戏可能崩溃；联机时可能被判定为异常。"
 dll_none = "未加载"
 ipc_none = "未连接"
 ipc_ok = "已连接"
+bytes_mismatch = "游戏代码和地址表对不上"
 
 [notify]
 title = "通知"

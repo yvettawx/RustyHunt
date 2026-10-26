@@ -319,6 +319,13 @@ impl Scanner {
         let mode = self.shared.settings().profile(Game::World).monster.target_mode;
 
         if let Some(split) = crate::injection::damage_split() {
+            // 单人时自己的伤害本来是按怪物掉血估的，有 hook 就用准确值
+            if !snap.online
+                && split.total > 0.0
+                && let Some(me) = snap.party.iter_mut().find(|p| p.is_self)
+            {
+                me.damage = split.total;
+            }
             snap.damage_split = Some(split);
         }
 
