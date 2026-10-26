@@ -1,0 +1,10 @@
+This project is a Rust port of HunterPie (https://github.com/HunterPie/HunterPie),
+originally written in C# by Matheus Rangel (Haato3o) and contributors,
+and licensed under the Apache License, Version 2.0.
+
+Portions of this project are translated from, or derived from, HunterPie's
+source code and data files (such as the address map files). These portions
+have been modified from the original.
+
+This project is not affiliated with, endorsed by, or associated with the
+HunterPie project or Capcom Co., Ltd.
