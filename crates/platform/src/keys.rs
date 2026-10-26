@@ -104,7 +104,7 @@ impl Hotkey {
 
     /// 解析 "Ctrl Shift H"、"Left Alt"、"Ctrl Tab"、"F9"。用空格或加号分隔。
     pub fn parse(s: &str) -> Option<Hotkey> {
-        let words: Vec<&str> = s.split(|c: char| c == ' ' || c == '+').filter(|w| !w.is_empty()).collect();
+        let words: Vec<&str> = s.split([' ', '+']).filter(|w| !w.is_empty()).collect();
         let mut hk = Hotkey::default();
         let mut i = 0;
         while i < words.len() {

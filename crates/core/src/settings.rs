@@ -556,8 +556,10 @@ mod tests {
     fn save_and_load() {
         let dir = std::env::temp_dir().join(format!("rh-settings-{}", std::process::id()));
         let path = dir.join("settings.toml");
-        let mut s = Settings::default();
-        s.demo = true;
+        let mut s = Settings {
+            demo: true,
+            ..Default::default()
+        };
         s.profile_mut(Game::World).module_mut("clock").toggle("c-game");
         s.save(&path).unwrap();
         let back = Settings::load(&path);

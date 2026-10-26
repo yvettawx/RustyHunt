@@ -1,0 +1,15 @@
+[package]
+name = "game-world"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+address-map = { path = "../address-map" }
+platform = { path = "../platform" }
+rustyhunt-core = { path = "../core" }
+aes = "0.9"
+blowfish = "0.10"
+log = "0.4"
+roxmltree = "0.21"
+toml = "1"
