@@ -148,7 +148,7 @@ fn hotkeys(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 w.settings.capturing = None;
             }
         }
-        ui.ctx().request_repaint();
+        ui.ctx().request_repaint_after(std::time::Duration::from_millis(16));
     }
     for (id, key, value) in rows {
         let capturing = w.settings.capturing.as_deref() == Some(id);

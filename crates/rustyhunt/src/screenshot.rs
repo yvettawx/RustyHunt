@@ -53,7 +53,9 @@ impl eframe::App for Shot {
             && let Some(rest) = self.what.strip_prefix("main:")
         {
             let mut it = rest.split(':');
-            if let Some(page) = it.next().and_then(crate::window::Page::from_key) {
+            if rest.starts_with("onboarding") {
+                self.app.open_onboarding(it.nth(1).and_then(|t| t.parse().ok()).unwrap_or(0));
+            } else if let Some(page) = it.next().and_then(crate::window::Page::from_key) {
                 self.app.set_page(page, it.next().and_then(|t| t.parse().ok()).unwrap_or(0));
             }
         }

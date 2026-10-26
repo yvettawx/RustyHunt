@@ -24,6 +24,12 @@ pub struct App {
 
 impl App {
     /// 截图用：主窗口切到某一页
+    pub fn open_onboarding(&self, step: usize) {
+        let mut m = self.main.lock().unwrap();
+        m.open_onboarding();
+        m.onboarding_step(step);
+    }
+
     pub fn set_page(&self, page: crate::window::Page, tab: usize) {
         let mut m = self.main.lock().unwrap();
         m.page = page;

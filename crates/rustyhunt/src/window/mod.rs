@@ -166,6 +166,13 @@ impl MainWindow {
         self.page = p;
     }
 
+    pub fn onboarding_step(&mut self, step: usize) {
+        let shared = self.shared.clone();
+        if let Some(o) = self.onboarding.as_mut() {
+            o.set_step(&shared, step);
+        }
+    }
+
     pub fn open_onboarding(&mut self) {
         self.onboarding = Some(onboarding::State::new(&self.shared));
     }
