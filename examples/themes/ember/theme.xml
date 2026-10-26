@@ -46,7 +46,7 @@
   <module id="clock">
     <row gap="12" align="center">
       <arc value="{quest.time_left / quest.time_max | clamp01}" radius="18" thickness="4" from="0" to="360" stroke="accent" track="track">
-        <state when="quest.time_left &lt; 300" stroke="danger" animate="pulse"/>
+        <state when="quest.time_left lt 300" stroke="danger" animate="pulse"/>
       </arc>
       <column gap="0">
         <text text="{quest.time_left | time}" font="number" size="26"/>

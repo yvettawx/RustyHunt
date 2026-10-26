@@ -416,59 +416,65 @@ impl Renderer<'_, '_> {
                 }
                 layers.push(Layer::fill(e.num("value", 0.0), self.color(&e, "fill", "text")));
                 let kind = e.text("kind");
-                let mut theme = cv.theme.clone();
-                {
-                    let st = theme.styles.bars.entry(kind.clone()).or_insert_with(|| cv.theme.styles.bar(&kind).clone());
-                    if let Some(sh) = e.vals.get("shape").map(to_text) {
-                        st.shape = match sh.as_str() {
-                            "round" => BarShape::Round,
-                            "parallelogram" => BarShape::Parallelogram,
-                            _ => BarShape::Rect,
-                        };
+                // 没有覆盖样式时直接用当前主题画；复制主题要连模板一起复制，很贵
+                let custom = ["shape", "segments", "gap", "skew", "radius", "caps", "edge", "glow", "empty", "track"].iter().any(|k| e.has(k));
+                if !custom {
+                    cv.bar(&kind, 0.0, 0.0, w, h, &layers, false);
+                } else {
+                    let mut theme = cv.theme.clone();
+                    {
+                        let st = theme.styles.bars.entry(kind.clone()).or_insert_with(|| cv.theme.styles.bar(&kind).clone());
+                        if let Some(sh) = e.vals.get("shape").map(to_text) {
+                            st.shape = match sh.as_str() {
+                                "round" => BarShape::Round,
+                                "parallelogram" => BarShape::Parallelogram,
+                                _ => BarShape::Rect,
+                            };
+                        }
+                        if e.has("segments") {
+                            st.segments = e.num("segments", 0.0) as u32;
+                        }
+                        if e.has("gap") {
+                            st.gap = e.num("gap", 2.0);
+                        }
+                        if e.has("skew") {
+                            st.skew = e.num("skew", 0.0);
+                        }
+                        if e.has("radius") {
+                            st.radius = e.num("radius", 0.0);
+                        }
+                        if e.has("caps") {
+                            st.caps = e.flag("caps", false);
+                        }
+                        if e.has("edge") {
+                            st.edge = e.flag("edge", true);
+                        }
+                        if e.has("glow") {
+                            st.glow = e.num("glow", 0.0);
+                        }
+                        if let Some(p) = e.vals.get("empty").map(to_text) {
+                            st.empty = match p.as_str() {
+                                "hatch" => Pattern::Hatch,
+                                "dots" => Pattern::Dots,
+                                "grid" => Pattern::Grid,
+                                _ => Pattern::None,
+                            };
+                        }
                     }
-                    if e.has("segments") {
-                        st.segments = e.num("segments", 0.0) as u32;
+                    if e.has("track")
+                        && let Some(c) = resolve_color(&e.text("track"), &cv.theme.tokens)
+                    {
+                        theme.tokens.colors.insert("track".into(), c);
                     }
-                    if e.has("gap") {
-                        st.gap = e.num("gap", 2.0);
-                    }
-                    if e.has("skew") {
-                        st.skew = e.num("skew", 0.0);
-                    }
-                    if e.has("radius") {
-                        st.radius = e.num("radius", 0.0);
-                    }
-                    if e.has("caps") {
-                        st.caps = e.flag("caps", false);
-                    }
-                    if e.has("edge") {
-                        st.edge = e.flag("edge", true);
-                    }
-                    if e.has("glow") {
-                        st.glow = e.num("glow", 0.0);
-                    }
-                    if let Some(p) = e.vals.get("empty").map(to_text) {
-                        st.empty = match p.as_str() {
-                            "hatch" => Pattern::Hatch,
-                            "dots" => Pattern::Dots,
-                            "grid" => Pattern::Grid,
-                            _ => Pattern::None,
-                        };
-                    }
+                    let tc = Canvas {
+                        theme: &theme,
+                        ..cv.clone()
+                    };
+                    tc.bar(&kind, 0.0, 0.0, w, h, &layers, false);
                 }
-                if e.has("track")
-                    && let Some(c) = resolve_color(&e.text("track"), &cv.theme.tokens)
-                {
-                    theme.tokens.colors.insert("track".into(), c);
-                }
-                let tc = Canvas {
-                    theme: &theme,
-                    ..cv.clone()
-                };
-                tc.bar(&kind, 0.0, 0.0, w, h, &layers, false);
                 if e.has("marker") {
                     let mx = w * e.num("marker", 0.0).clamp(0.0, 1.0);
-                    tc.line((mx, -4.0), (mx, h + 4.0), 2.0, self.color(&e, "marker-color", "accent"));
+                    cv.line((mx, -4.0), (mx, h + 4.0), 2.0, self.color(&e, "marker-color", "accent"));
                 }
             }
             Kind::Arc => {

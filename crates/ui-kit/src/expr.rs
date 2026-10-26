@@ -91,7 +91,23 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
             while i < cs.len() && (cs[i].is_alphanumeric() || cs[i] == '_' || cs[i] == '-') {
                 i += 1;
             }
-            out.push(Tok::Ident(cs[start..i].iter().collect()));
+            let word: String = cs[start..i].iter().collect();
+            // XML 属性里写 && 和 < 要转义，所以给逻辑和比较各配一个单词写法
+            let alias = match word.as_str() {
+                _ if after_dot(&out) => None,
+                "and" => Some("&&"),
+                "or" => Some("||"),
+                "not" => Some("!"),
+                "lt" => Some("<"),
+                "le" => Some("<="),
+                "gt" => Some(">"),
+                "ge" => Some(">="),
+                _ => None,
+            };
+            out.push(match alias {
+                Some(sym) => Tok::Sym(sym),
+                None => Tok::Ident(word),
+            });
         } else if c == '.' {
             out.push(Tok::Sym("."));
             i += 1;
@@ -597,6 +613,15 @@ mod tests {
         assert_eq!(ev("m.enraged && m.hp_ratio < 0.2", &v), json!(true));
         assert_eq!(ev("!m.enraged || m.name == '火龙'", &v), json!(true));
         assert_eq!(ev("m.hp_ratio >= 0.5", &v), json!(false));
+    }
+
+    #[test]
+    fn word_operators() {
+        let v = json!({"a": 3, "b": true, "c": false, "m": {"and": 1}});
+        assert_eq!(ev("a gt 2 and b", &v), json!(true));
+        assert_eq!(ev("not b or c", &v), json!(false));
+        assert_eq!(ev("a le 3", &v), json!(true));
+        assert_eq!(ev("m.and", &v), json!(1));
     }
 
     #[test]

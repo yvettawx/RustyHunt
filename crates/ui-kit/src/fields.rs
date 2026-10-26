@@ -392,9 +392,53 @@ pub fn path_exists(sample: &Value, path: &[String]) -> bool {
     true
 }
 
+/// 生成 `docs/fields.md`：字段表就是文档，测试保证两边一致。
+pub fn markdown() -> String {
+    let mut out = String::from(
+        "# 数据字段
+
+主题模板和插件拿到的数据快照用的是同一张字段表。字段表版本 ",
+    );
+    out += rh_core::FIELDS_VERSION;
+    out += "，小版本只加不删。
+
+`[]` 表示列表里的每一项，模板里用 `<for each=\"p in monster.parts\">` 遍历，插件拿到的是 JSON 数组。
+本文件由 `cargo test -p ui-kit fields_doc` 检查，改了字段表后用 `RH_WRITE_DOCS=1` 重新生成。
+";
+    let mut group = "";
+    for (path, kind, desc) in FIELDS {
+        let g = path.split(['.', '[']).next().unwrap_or("");
+        if g != group {
+            group = g;
+            out += &format!("
+## {g}
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+");
+        }
+        out += &format!("| `{path}` | {kind} | {desc} |
+");
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fields_doc_is_current() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/fields.md");
+        let text = markdown();
+        if std::env::var_os("RH_WRITE_DOCS").is_some() {
+            std::fs::write(&path, &text).unwrap();
+        }
+        let on_disk = std::fs::read_to_string(&path).unwrap_or_default().replace("
+", "
+");
+        assert!(on_disk == text, "docs/fields.md 和字段表不一致，用 RH_WRITE_DOCS=1 重新生成");
+    }
 
     #[test]
     fn documented_fields_exist() {

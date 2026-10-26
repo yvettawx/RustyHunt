@@ -81,7 +81,7 @@ STYLES = {
 }
 TOKENS_DOC = (
     "令牌：颜色、字体、时长、尺寸。overlay 的颜色：text、text-mute、text-faint、ink、accent、danger、cool、ok、"
-    "ghost、heal、track、edge、shadow、hatch、crown-gold、crown-silver、qurio、hp；主界面的颜色以 window. 开头："
+    "ghost、heal、track、edge、shadow、hatch、crown-gold、crown-silver、qurio；主界面的颜色以 window. 开头："
     "paper、ink、mute、faint、line、block、onblock、accent、desk"
 )
 MODULE_DOC = (
