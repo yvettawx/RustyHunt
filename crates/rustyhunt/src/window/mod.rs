@@ -84,6 +84,10 @@ pub enum Page {
 }
 
 impl Page {
+    pub fn from_key(k: &str) -> Option<Page> {
+        Page::ALL.into_iter().find(|p| p.key().ends_with(k))
+    }
+
     const ALL: [Page; 7] = [Page::Home, Page::Modules, Page::Records, Page::Themes, Page::Plugins, Page::Settings, Page::Logs];
 
     fn key(self) -> &'static str {
@@ -127,6 +131,15 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
+    /// 截图用：切到页面里的某个页签
+    pub fn set_tab(&mut self, tab: usize) {
+        match self.page {
+            Page::Records => self.records.tab = tab,
+            Page::Settings => self.settings.tab = tab,
+            _ => {}
+        }
+    }
+
     pub fn new(shared: Arc<Shared>) -> MainWindow {
         let first = !shared.settings().first_run_done;
         MainWindow {

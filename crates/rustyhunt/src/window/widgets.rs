@@ -181,6 +181,8 @@ pub fn tabs(ui: &mut Ui, pal: &Pal, items: &[(String, bool)], selected: usize, b
 pub fn range(ui: &mut Ui, pal: &Pal, id: &str, value: &mut f32, min: f32, max: f32, step: f32, unit: &str, width: f32) -> bool {
     let mut changed = false;
     ui.horizontal(|ui| {
+        // 总宽 = 轨道 + 66
+        ui.spacing_mut().item_spacing.x = 0.0;
         let (rect, resp) = ui.allocate_exact_size(vec2(width, 14.0), Sense::click_and_drag());
         let _ = id;
         if (resp.dragged() || resp.clicked())

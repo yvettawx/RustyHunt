@@ -1,4 +1,4 @@
-//! 开发用：`--screenshot main|overlay|layout <文件>` 用演示数据跑几十帧，
+//! 开发用：`--screenshot main[:页面]|overlay|layout <文件>` 用演示数据跑几十帧，
 //! 把画面存成 PNG，用来检查界面。
 
 use std::path::PathBuf;
@@ -48,7 +48,16 @@ impl eframe::App for Shot {
         self.app.ui(ui, frame);
         let ctx = ui.ctx().clone();
         self.frames += 1;
-        let target = if self.what == "main" { crate::window::main_viewport() } else { egui::ViewportId::ROOT };
+        // main:页面[:页签]
+        if self.frames == 1
+            && let Some(rest) = self.what.strip_prefix("main:")
+        {
+            let mut it = rest.split(':');
+            if let Some(page) = it.next().and_then(crate::window::Page::from_key) {
+                self.app.set_page(page, it.next().and_then(|t| t.parse().ok()).unwrap_or(0));
+            }
+        }
+        let target = if self.what.starts_with("main") { crate::window::main_viewport() } else { egui::ViewportId::ROOT };
         if self.what == "layout" && self.frames == 5 {
             self.shared.act(crate::state::Action::SetLayout(true));
         }

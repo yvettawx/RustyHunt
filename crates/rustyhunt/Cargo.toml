@@ -9,6 +9,7 @@ description = "怪物猎人的局内信息 overlay 和桌面程序"
 address-map = { path = "../address-map" }
 game-world = { path = "../game-world" }
 platform = { path = "../platform" }
+plugin-host = { path = "../plugin-host" }
 rustyhunt-core = { path = "../core" }
 ui-kit = { path = "../ui-kit" }
 chrono = "0.4"

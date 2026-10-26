@@ -362,9 +362,9 @@ pub fn sample() -> Value {
 }
 
 /// 检查路径在样例数据里存在。`[]` 表示列表的任意一项。
-/// `data` 下面是插件自己的数据，不检查。
+/// `data` 下面是插件自己的数据，`module` 下面是模块自己的开关，不检查。
 pub fn path_exists(sample: &Value, path: &[String]) -> bool {
-    if path.first().map(String::as_str) == Some("data") {
+    if matches!(path.first().map(String::as_str), Some("data" | "module")) {
         return true;
     }
     let mut cur = sample;

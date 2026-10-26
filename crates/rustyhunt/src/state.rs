@@ -219,6 +219,8 @@ impl Shared {
     }
 
     pub fn notify(&self, n: crate::notify::Notification) {
+        let channels = self.settings().notify.channels.clone();
+        crate::plugins::forward(&n, &channels);
         self.notifications.lock().unwrap().push(n);
         self.repaint();
     }

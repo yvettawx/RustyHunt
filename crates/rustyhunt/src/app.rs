@@ -23,6 +23,13 @@ pub struct App {
 }
 
 impl App {
+    /// 截图用：主窗口切到某一页
+    pub fn set_page(&self, page: crate::window::Page, tab: usize) {
+        let mut m = self.main.lock().unwrap();
+        m.page = page;
+        m.set_tab(tab);
+    }
+
     pub fn new(cc: &eframe::CreationContext, shared: Arc<Shared>, start_in_tray: bool) -> App {
         let ctx = cc.egui_ctx.clone();
         let _ = shared.ctx.set(ctx.clone());

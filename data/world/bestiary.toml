@@ -1,0 +1,299 @@
+# 图鉴用的怪物资料（世界：冰原）。
+# species：种类，键对应 locales/game/*.toml 的 [type]，按游戏内猎人笔记的分类。
+# maps：探索里能遇到的地图（来自 Kiranico 各怪物页的"探索"一栏，2026-10-26 取数），
+#       A 古代树森林、W 大蚁冢荒地、C 陆珊瑚台地、R 瘴气之谷、E 龙结晶之地、H 永霜冻土，G 表示聚魔之地。
+# fixed：体型固定，不能登记金冠。
+
+[acidic_glavenus]
+species = "TYPE_BRUTE_WYVERN"
+maps = "RG"
+
+[alatreon]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[ancient_leshen]
+species = "TYPE_RELICT"
+maps = ""
+fixed = true
+
+[anjanath]
+species = "TYPE_BRUTE_WYVERN"
+maps = "AG"
+
+[azure_rathalos]
+species = "TYPE_FLYING_WYVERN"
+maps = "AEG"
+
+[banbaro]
+species = "TYPE_BRUTE_WYVERN"
+maps = "AWCREHG"
+
+[barioth]
+species = "TYPE_FLYING_WYVERN"
+maps = "HG"
+
+[barroth]
+species = "TYPE_BRUTE_WYVERN"
+maps = "WG"
+
+[bazelgeuse]
+species = "TYPE_FLYING_WYVERN"
+maps = "AWCRE"
+
+[behemoth]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[beotodus]
+species = "TYPE_PISCINE_WYVERN"
+maps = "H"
+
+[black_diablos]
+species = "TYPE_FLYING_WYVERN"
+maps = "WG"
+
+[blackveil_vaal_hazak]
+species = "TYPE_ELDER_DRAGON"
+maps = "AR"
+
+[brachydios]
+species = "TYPE_BRUTE_WYVERN"
+maps = "EG"
+
+[brute_tigrex]
+species = "TYPE_FLYING_WYVERN"
+maps = ""
+
+[coral_pukei_pukei]
+species = "TYPE_BIRD_WYVERN"
+maps = "CG"
+
+[deviljho]
+species = "TYPE_BRUTE_WYVERN"
+maps = "AWCRE"
+
+[diablos]
+species = "TYPE_FLYING_WYVERN"
+maps = "WG"
+
+[dodogama]
+species = "TYPE_FANGED_WYVERN"
+maps = "EG"
+
+[ebony_odogaron]
+species = "TYPE_FANGED_WYVERN"
+maps = "AWCREHG"
+
+[fatalis]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[frostfang_barioth]
+species = "TYPE_FLYING_WYVERN"
+maps = ""
+
+[fulgur_anjanath]
+species = "TYPE_BRUTE_WYVERN"
+maps = "AWCREHG"
+
+[furious_rajang]
+species = "TYPE_FANGED_BEAST"
+maps = ""
+
+[glavenus]
+species = "TYPE_BRUTE_WYVERN"
+maps = "AWEG"
+
+[gold_rathian]
+species = "TYPE_FLYING_WYVERN"
+maps = ""
+
+[great_girros]
+species = "TYPE_FANGED_WYVERN"
+maps = "RG"
+
+[great_jagras]
+species = "TYPE_FANGED_WYVERN"
+maps = "AG"
+
+[jyuratodus]
+species = "TYPE_PISCINE_WYVERN"
+maps = "W"
+
+[kirin]
+species = "TYPE_ELDER_DRAGON"
+maps = "C"
+
+[kulu_ya_ku]
+species = "TYPE_BIRD_WYVERN"
+maps = "AWG"
+
+[kulve_taroth]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[kushala_daora]
+species = "TYPE_ELDER_DRAGON"
+maps = "AE"
+
+[lavasioth]
+species = "TYPE_PISCINE_WYVERN"
+maps = "EG"
+
+[legiana]
+species = "TYPE_FLYING_WYVERN"
+maps = "CHG"
+
+[leshen]
+species = "TYPE_RELICT"
+maps = ""
+fixed = true
+
+[lunastra]
+species = "TYPE_ELDER_DRAGON"
+maps = "WE"
+
+[namielle]
+species = "TYPE_ELDER_DRAGON"
+maps = "C"
+
+[nargacuga]
+species = "TYPE_FLYING_WYVERN"
+maps = "ACG"
+
+[nergigante]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+
+[nightshade_paolumu]
+species = "TYPE_FLYING_WYVERN"
+maps = "AWG"
+
+[odogaron]
+species = "TYPE_FANGED_WYVERN"
+maps = "CRG"
+
+[paolumu]
+species = "TYPE_FLYING_WYVERN"
+maps = "CG"
+
+[pink_rathian]
+species = "TYPE_FLYING_WYVERN"
+maps = "WCG"
+
+[pukei_pukei]
+species = "TYPE_BIRD_WYVERN"
+maps = "AWG"
+
+[radobaan]
+species = "TYPE_BRUTE_WYVERN"
+maps = "RG"
+
+[raging_brachydios]
+species = "TYPE_BRUTE_WYVERN"
+maps = ""
+
+[rajang]
+species = "TYPE_FANGED_BEAST"
+maps = ""
+
+[rathalos]
+species = "TYPE_FLYING_WYVERN"
+maps = "AG"
+
+[rathian]
+species = "TYPE_FLYING_WYVERN"
+maps = "AWG"
+
+[ruiner_nergigante]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+
+[safijiiva]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[savage_deviljho]
+species = "TYPE_BRUTE_WYVERN"
+maps = "AWCREH"
+
+[scarred_yian_garuga]
+species = "TYPE_BIRD_WYVERN"
+maps = ""
+
+[seething_bazelgeuse]
+species = "TYPE_FLYING_WYVERN"
+maps = "E"
+
+[shara_ishvalda]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[shrieking_legiana]
+species = "TYPE_FLYING_WYVERN"
+maps = "HG"
+
+[silver_rathalos]
+species = "TYPE_FLYING_WYVERN"
+maps = ""
+
+[stygian_zinogre]
+species = "TYPE_FANGED_WYVERN"
+maps = ""
+
+[teostra]
+species = "TYPE_ELDER_DRAGON"
+maps = "WE"
+
+[tigrex]
+species = "TYPE_FLYING_WYVERN"
+maps = "AWREHG"
+
+[tobi_kadachi]
+species = "TYPE_FANGED_WYVERN"
+maps = "AG"
+
+[tzitzi_ya_ku]
+species = "TYPE_BIRD_WYVERN"
+maps = "CG"
+
+[uragaan]
+species = "TYPE_BRUTE_WYVERN"
+maps = "EG"
+
+[vaal_hazak]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+
+[velkhana]
+species = "TYPE_ELDER_DRAGON"
+maps = "H"
+
+[viper_tobi_kadachi]
+species = "TYPE_FANGED_WYVERN"
+maps = "HG"
+
+[xenojiiva]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true
+
+[yian_garuga]
+species = "TYPE_BIRD_WYVERN"
+maps = ""
+
+[zinogre]
+species = "TYPE_FANGED_WYVERN"
+maps = "G"
+
+[zorah_magdaros]
+species = "TYPE_ELDER_DRAGON"
+maps = ""
+fixed = true

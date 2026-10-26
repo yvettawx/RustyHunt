@@ -12,7 +12,7 @@ use crate::state::Shared;
 
 #[derive(Default)]
 pub struct State {
-    tab: usize,
+    pub tab: usize,
     /// 正在录制哪个热键
     capturing: Option<String>,
     capture_armed: bool,

@@ -512,3 +512,13 @@ FERTILIZER_PLANT_S_STRING = "草・実収穫量ＵＰ【小】"
 505 = "五匹の竜の間"
 506 = "セリエナマイハウス"
 
+[type]
+TYPE_FLYING_WYVERN = "飛竜種"
+TYPE_BIRD_WYVERN = "鳥竜種"
+TYPE_BRUTE_WYVERN = "獣竜種"
+TYPE_PISCINE_WYVERN = "魚竜種"
+TYPE_FANGED_WYVERN = "牙竜種"
+TYPE_FANGED_BEAST = "牙獣種"
+TYPE_ELDER_DRAGON = "古龍種"
+TYPE_RELICT = "???"
+

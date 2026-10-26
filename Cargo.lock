@@ -3826,6 +3826,7 @@ dependencies = [
  "image",
  "log",
  "platform",
+ "plugin-host",
  "raw-window-handle",
  "rfd",
  "rusqlite",

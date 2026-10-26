@@ -25,6 +25,7 @@ use ui_kit::{Canvas, Theme};
 use crate::state::{Connection, Live, Shared};
 
 pub use layout::LayoutState;
+pub use misc::SLOT_COLORS;
 
 /// 画模块时用到的这一帧的数据。
 pub struct Frame<'a> {
@@ -384,14 +385,30 @@ impl Overlay {
     }
 
     fn draw_module(&mut self, id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Theme, ctx: &egui::Context) -> Vec2 {
+        draw_any(id, cv, f, cfg, theme, ctx, &mut self.state)
+    }
+
+    pub fn end_frame(&mut self) {
+        self.state.context = None;
+    }
+}
+
+/// 画一个模块；overlay 和主界面"模块"页的预览共用。
+pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Theme, ctx: &egui::Context, st: &mut State) -> Vec2 {
+    {
         // 主题给这个模块写了模板，就按模板画
         if let Some(t) = theme.modules.get(id) {
-            let data = self.state.context.get_or_insert_with(|| template_context(f, &self.state.activity));
-            let (size, anim) = ui_kit::render::render(t, cv, &mut self.state.images, ctx, data, f.now);
-            self.state.animating |= anim;
+            let mut data = st.context.get_or_insert_with(|| template_context(f, &st.activity)).clone();
+            // 主题也可以给插件模块写模板，插件的数据照样放在 data 里
+            if id.contains('.') {
+                data["data"] = crate::plugins::module_data(id).unwrap_or_default();
+            }
+            let info = crate::plugins::all_modules().into_iter().find(|m| m.id == id);
+            data["module"] = module_context(info.as_ref().map(|m| m.elements.as_slice()).unwrap_or_default(), cfg);
+            let (size, anim) = ui_kit::render::render(t, cv, &mut st.images, ctx, &data, f.now);
+            st.animating |= anim;
             return size;
         }
-        let st = &mut self.state;
         match id {
             modules::MONSTER => monster::draw(cv, f, cfg, st),
             modules::PLAYER => hunter::player(cv, f, cfg, st),
@@ -402,11 +419,86 @@ impl Overlay {
             modules::CLOCK => misc::clock(cv, f, cfg, st),
             modules::BASE => misc::base(cv, f, cfg, st),
             modules::PERF => misc::perf(cv, f, cfg, st),
-            other => crate::plugins::draw_module(other, cv, f, st, ctx),
+            other => crate::plugins::draw_module(other, cv, f, cfg, st, ctx),
         }
     }
+}
 
-    pub fn end_frame(&mut self) {
+/// 模板里的 `module.show.<元素>`：模块页里这个元素开着没有。
+pub fn module_context(elements: &[rh_core::modules::ElementInfo], cfg: &ModuleConfig) -> serde_json::Value {
+    let show: serde_json::Map<String, serde_json::Value> = elements.iter().map(|e| (e.key.clone(), serde_json::Value::Bool(cfg.shows(&e.key)))).collect();
+    serde_json::json!({ "show": show })
+}
+
+/// 主界面里的预览：在 `rect` 里按比例画一个模块，用实时数据，没有就用演示数据。
+pub struct Preview {
+    pub state: State,
+    demo: Option<game_world::demo::Demo>,
+    snap: Option<Arc<Snapshot>>,
+    last: f64,
+}
+
+impl Default for Preview {
+    fn default() -> Self {
+        Preview {
+            state: State::default(),
+            demo: None,
+            snap: None,
+            last: -1.0,
+        }
+    }
+}
+
+impl Preview {
+    pub fn draw(&mut self, ui: &egui::Ui, rect: Rect, shared: &Shared, id: &str) {
+        let live = shared.live().clone();
+        let now = shared.now();
+        let snap = if live.has_data() {
+            live.snapshot.clone()
+        } else {
+            if now - self.last > 0.1 || self.snap.is_none() {
+                let d = self.demo.get_or_insert_with(game_world::demo::Demo::new);
+                self.snap = Some(Arc::new(d.step(((now - self.last) as f32).clamp(0.05, 0.5))));
+                self.last = now;
+            }
+            self.snap.clone().unwrap()
+        };
+        let settings = shared.settings().clone();
+        let theme = shared.theme();
+        let i18n = i18n::current();
+        let game = Game::World;
+        let profile = settings.profile(game).clone();
+        let Some(cfg) = profile.module(id).cloned() else { return };
+        let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
+        self.state.dt = 0.05;
+        self.state.track(&snap, now);
+        let f = Frame {
+            snap: &snap,
+            live: &live,
+            settings: &settings,
+            profile: &profile,
+            i18n: &i18n,
+            density: settings.density,
+            now,
+            game,
+            target,
+            frame_us: 0,
+            preview: true,
+        };
+        let cfg = ModuleConfig { opacity: 1.0, scale: 1.0, ..cfg };
+        // 先量尺寸（画到看不见的区域），再按比例画到预览框里
+        let hidden = ui.painter().with_clip_rect(Rect::NOTHING);
+        let probe = Canvas::new(hidden, Pos2::ZERO, 1.0, &theme);
+        let size = draw_any(id, &probe, &f, &cfg, &theme, ui.ctx(), &mut self.state);
+        self.state.context = None;
+        if size.x <= 0.0 || size.y <= 0.0 {
+            return;
+        }
+        let s = (rect.width() * 0.86 / size.x).min(rect.height() * 0.8 / size.y).min(1.4);
+        let origin = rect.center() - size * s / 2.0;
+        let painter = ui.painter().with_clip_rect(rect);
+        let cv = Canvas::new(painter, origin, s, &theme);
+        draw_any(id, &cv, &f, &cfg, &theme, ui.ctx(), &mut self.state);
         self.state.context = None;
     }
 }

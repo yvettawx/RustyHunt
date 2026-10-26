@@ -47,7 +47,10 @@ pub fn spawn(shared: Arc<Shared>) {
                 fire(&hk.layout_mode, Action::ToggleLayout, &mut edges);
                 fire(&hk.density, Action::CycleDensity, &mut edges);
                 fire(&hk.cycle_target, Action::CycleTarget, &mut edges);
-                for (id, key) in &hk.plugin {
+                // 插件动作：用户改过的键优先，没改过用插件给的默认键
+                let mut plugin_keys: std::collections::BTreeMap<String, String> = crate::plugins::default_keys().into_iter().collect();
+                plugin_keys.extend(hk.plugin.clone());
+                for (id, key) in &plugin_keys {
                     if let Some((plugin, action)) = id.split_once('.') {
                         fire(
                             key,

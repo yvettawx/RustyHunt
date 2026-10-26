@@ -534,3 +534,13 @@ FERTILIZER_PLANT_S_STRING = "Plant Harvest Up (S)"
 505 = "Chamber of Five"
 506 = "Seliana Room"
 
+[type]
+TYPE_FLYING_WYVERN = "Flying Wyvern"
+TYPE_BIRD_WYVERN = "Bird Wyvern"
+TYPE_BRUTE_WYVERN = "Brute Wyvern"
+TYPE_PISCINE_WYVERN = "Piscine Wyvern"
+TYPE_FANGED_WYVERN = "Fanged Wyvern"
+TYPE_FANGED_BEAST = "Fanged Beast"
+TYPE_ELDER_DRAGON = "Elder Dragon"
+TYPE_RELICT = "???"
+

@@ -50,7 +50,7 @@ fn short_target(target: &str) -> String {
 impl Log for Logger {
     fn enabled(&self, m: &Metadata) -> bool {
         // 第三方库只记警告以上
-        let ours = ["rustyhunt", "game_world", "rh_core", "platform", "address_map", "ui_kit", "plugin_host"]
+        let ours = ["rustyhunt", "game_world", "rh_core", "platform", "address_map", "ui_kit", "plugin_host", "plugin"]
             .iter()
             .any(|p| m.target().starts_with(p));
         m.level() <= log::max_level() && (ours || m.level() <= Level::Warn)

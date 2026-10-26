@@ -534,3 +534,13 @@ FERTILIZER_PLANT_S_STRING = "草·果實收獲量UP【小】"
 505 = "星辰集會所小屋"
 506 = "月辰小屋"
 
+[type]
+TYPE_FLYING_WYVERN = "飛龍種"
+TYPE_BIRD_WYVERN = "鳥龍種"
+TYPE_BRUTE_WYVERN = "獸龍種"
+TYPE_PISCINE_WYVERN = "魚龍種"
+TYPE_FANGED_WYVERN = "牙龍種"
+TYPE_FANGED_BEAST = "牙獸種"
+TYPE_ELDER_DRAGON = "古龍種"
+TYPE_RELICT = "???"
+

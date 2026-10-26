@@ -223,7 +223,8 @@ pub fn default_placement(game: Game, id: &str, monster_side: bool) -> Placement 
         (_, WEAPON) => Placement::top_left(60.0, 236.0),
         (_, BASE) => Placement::top_right(140.0, 330.0),
         (_, PERF) => Placement::bottom_right(20.0, 186.0),
-        _ => Placement::top_left(200.0, 200.0),
+        // 插件模块：放在任务时钟下面，那里内置模块不用
+        _ => Placement::top_center(0.0, 110.0),
     }
 }
 

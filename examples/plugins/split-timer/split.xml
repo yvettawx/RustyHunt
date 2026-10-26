@@ -1,0 +1,16 @@
+<!-- 分段计时的界面描述，格式和主题的模块模板相同；data 是插件交来的数据 -->
+<column gap="6">
+  <row gap="10" align="center">
+    <tag text="分段"/>
+    <text text="{quest.elapsed | time}" font="number" size="22"/>
+  </row>
+  <for each="s in data.rows" gap="2">
+    <row gap="14" align="center">
+      <text text="{s.name}" size="13" width="96"/>
+      <text text="{s.time}" font="number" size="13" width="64"/>
+      <if when="module.show.diff">
+        <text text="{s.diff}" font="number" size="13" color="{s.color}"/>
+      </if>
+    </row>
+  </for>
+</column>

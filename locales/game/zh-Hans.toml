@@ -534,3 +534,13 @@ FERTILIZER_PLANT_S_STRING = "草与果实收获量提升【小】"
 505 = "五只龙之间"
 506 = "月辰小屋"
 
+[type]
+TYPE_FLYING_WYVERN = "飞龙种"
+TYPE_BIRD_WYVERN = "鸟龙种"
+TYPE_BRUTE_WYVERN = "兽龙种"
+TYPE_PISCINE_WYVERN = "鱼龙种"
+TYPE_FANGED_WYVERN = "牙龙种"
+TYPE_FANGED_BEAST = "牙兽种"
+TYPE_ELDER_DRAGON = "古龙种"
+TYPE_RELICT = "???"
+
