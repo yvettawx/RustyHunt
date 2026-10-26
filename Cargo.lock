@@ -1062,7 +1062,7 @@ checksum = "815c559daf605a5b4ea35530604643c1e87504353c0d1a14763f9c2b9d518493"
 dependencies = [
  "cranelift-codegen",
  "libc",
- "mach2",
+ "mach2 0.6.0",
  "target-lexicon 0.13.5",
 ]
 
@@ -2574,6 +2574,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libudis86-sys"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "139bbf9ddb1bfc90c1ac64dd2923d9c957cd433cee7315c018125d72ab08a6b0"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "linebender_resource_handle"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2617,6 +2627,15 @@ name = "log"
 version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
+
+[[package]]
+name = "mach2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d640282b302c0bb0a2a8e0233ead9035e3bed871f0b7e81fe4a1ec829765db44"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "mach2"
@@ -2675,6 +2694,16 @@ checksum = "b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c"
 dependencies = [
  "adler2",
  "simd-adler32",
+]
+
+[[package]]
+name = "mmap-fixed-fixed"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0681853891801e4763dc252e843672faf32bcfee27a0aa3b19733902af450acc"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -3632,6 +3661,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "region"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6b6ebd13bc009aef9cd476c1310d49ac354d36e240cf1bd753290f3dc7199a7"
+dependencies = [
+ "bitflags 1.3.2",
+ "libc",
+ "mach2 0.4.3",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "resvg"
 version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3644,6 +3685,22 @@ dependencies = [
  "svgtypes",
  "tiny-skia 0.12.0",
  "usvg",
+]
+
+[[package]]
+name = "retour"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9af44d40e2400b44d491bfaf8eae111b09f23ac4de6e92728e79d93e699c527"
+dependencies = [
+ "cfg-if",
+ "generic-array",
+ "libc",
+ "libudis86-sys",
+ "mmap-fixed-fixed",
+ "once_cell",
+ "region",
+ "slice-pool2",
 ]
 
 [[package]]
@@ -3851,6 +3908,15 @@ dependencies = [
  "serde",
  "serde_json",
  "toml 1.1.8+spec-1.1.0",
+]
+
+[[package]]
+name = "rustyhunt-native"
+version = "1.0.0"
+dependencies = [
+ "platform",
+ "retour",
+ "rustyhunt-core",
 ]
 
 [[package]]
@@ -4071,6 +4137,12 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
+
+[[package]]
+name = "slice-pool2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a3d689654af89bdfeba29a914ab6ac0236d382eb3b764f7454dde052f2821f8"
 
 [[package]]
 name = "slotmap"
@@ -4970,7 +5042,7 @@ dependencies = [
  "futures",
  "libc",
  "log",
- "mach2",
+ "mach2 0.6.0",
  "memfd",
  "object",
  "once_cell",

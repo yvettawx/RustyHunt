@@ -1,0 +1,19 @@
+[package]
+name = "rustyhunt-native"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "注入游戏进程的伤害 hook，默认不加载"
+
+[lib]
+name = "rustyhunt_native"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+rustyhunt-core = { path = "../core" }
+
+[target.'cfg(windows)'.dependencies]
+retour = "0.3"
+
+[dev-dependencies]
+platform = { path = "../platform" }

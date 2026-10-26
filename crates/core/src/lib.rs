@@ -4,6 +4,7 @@
 pub mod events;
 pub mod i18n;
 pub mod model;
+pub mod native;
 pub mod modules;
 pub mod paths;
 pub mod settings;
