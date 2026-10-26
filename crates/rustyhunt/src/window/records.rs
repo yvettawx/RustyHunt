@@ -167,9 +167,9 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ui.spacing_mut().item_spacing.x = 48.0;
         ui.vertical(|ui| {
             ui.set_width(280.0);
-            let tabs: Vec<(String, bool)> = [i18n::t("label.all"), i18n::t("game.world"), i18n::t("game.rise"), i18n::t("game.wilds")]
+            let tabs: Vec<(String, bool)> = [i18n::t("label.all"), i18n::t("game_short.world"), i18n::t("game_short.rise"), i18n::t("game_short.wilds")]
                 .into_iter()
-                .map(|t| (t.replace("怪物猎人 ", ""), true))
+                .map(|t| (t, true))
                 .collect();
             if let Some(f) = widgets::tabs(ui, pal, &tabs, st.filter, false) {
                 st.filter = f;
@@ -187,7 +187,7 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 }
                 text_at(ui, pos2(r.min.x + 14.0, r.min.y + 13.0), Align2::LEFT_TOP, &i.monster(&h.monster), if on { Font::TextBold } else { Font::Text }, 15.0, pal.ink);
                 text_at(ui, pos2(r.max.x, r.min.y + 14.0), Align2::RIGHT_TOP, &mmss(h.duration), Font::NumBold, 14.0, pal.ink);
-                let sub = format!("{}　{}", i18n::t(&format!("game.{}", h.game)).replace("怪物猎人 ", ""), super::fmt_when(h.started_at));
+                let sub = format!("{}　{}", i18n::t(&format!("game_short.{}", h.game)), super::fmt_when(h.started_at));
                 text_at(ui, pos2(r.min.x + 14.0, r.min.y + 38.0), Align2::LEFT_TOP, &sub, Font::Text, 12.0, pal.mute);
                 ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 if resp.clicked() {
@@ -206,19 +206,33 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
 
 fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) {
     let i = i18n::current();
-    ui.horizontal(|ui| {
-        widgets::tag(ui, pal, &i.monster(&h.monster), 24.0);
-        let sub = format!("{} {}　{}", i18n::t(&format!("game.{}", h.game)).replace("怪物猎人 ", ""), i18n::t(&format!("rank.{}", h.rank)), super::fmt_when(h.started_at));
-        label_mute(ui, pal, &sub, 13.0);
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Max), |ui| {
-            ui.vertical(|ui| {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
-                    let capture = h.result == "capture";
-                    label(ui, i18n::t(&format!("result.{}", h.result)), Font::Text, 12.0, if capture { pal.accent } else { pal.mute });
-                    label(ui, mmss(h.duration), Font::NumHeavy, 44.0, pal.ink);
-                });
+    // 右边是结果和用时，左边放名牌和副标题；名字很长时副标题换到下一行
+    let dur = widgets::galley(ui, &mmss(h.duration), Font::NumHeavy, 44.0, pal.ink);
+    let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), (dur.size().y + 18.0).max(84.0)), Sense::hover());
+    let capture = h.result == "capture";
+    text_at(ui, r.right_top(), Align2::RIGHT_TOP, &i18n::t(&format!("result.{}", h.result)), Font::Text, 12.0, if capture { pal.accent } else { pal.mute });
+    let dw = dur.size().x;
+    ui.painter().galley(pos2(r.max.x - dw, r.min.y + 16.0), dur, pal.ink);
+    let left = Rect::from_min_max(r.min, pos2(r.max.x - dw - 32.0, r.max.y));
+    let name = i.monster(&h.monster);
+    let sub = format!("{} {}　{}", i18n::t(&format!("game_short.{}", h.game)), i18n::t(&format!("rank.{}", h.rank)), super::fmt_when(h.started_at));
+    let need = widgets::galley(ui, &name, Font::TextBold, 24.0, pal.ink).size().x + 24.0 + 18.0 + widgets::galley(ui, &sub, Font::Text, 13.0, pal.mute).size().x;
+    ui.scope_builder(egui::UiBuilder::new().max_rect(left), |ui| {
+        let row = |ui: &mut Ui| {
+            widgets::tag(ui, pal, &name, 24.0);
+            label_mute(ui, pal, &sub, 13.0);
+        };
+        if need <= left.width() {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 18.0;
+                row(ui);
             });
-        });
+        } else {
+            ui.vertical(|ui| {
+                ui.spacing_mut().item_spacing.y = 8.0;
+                row(ui);
+            });
+        }
     });
     ui.add_space(26.0);
 
@@ -340,7 +354,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             crate::bestiary::read(shared.clone());
         }
     }
-    let tabs = [(i18n::t("game.world").replace("怪物猎人 ", ""), true), (i18n::t("game.rise").replace("怪物猎人 ", ""), false), (i18n::t("game.wilds").replace("怪物猎人 ", ""), false)];
+    let tabs = [(i18n::t("game_short.world"), true), (i18n::t("game_short.rise"), false), (i18n::t("game_short.wilds"), false)];
     widgets::tabs(ui, pal, &tabs, 0, false);
     ui.add_space(20.0);
 

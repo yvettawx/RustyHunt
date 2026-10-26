@@ -33,7 +33,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
 
     // 游戏页签和方案
     ui.horizontal(|ui| {
-        let tabs: Vec<(String, bool)> = Game::ALL.iter().map(|g| (i18n::t(&format!("game.{}", g.key())).replace("怪物猎人 ", ""), g.supported())).collect();
+        let tabs: Vec<(String, bool)> = Game::ALL.iter().map(|g| (i18n::t(&format!("game_short.{}", g.key())), g.supported())).collect();
         widgets::tabs(ui, pal, &tabs, 0, false);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.spacing_mut().item_spacing.x = 12.0;
@@ -57,7 +57,12 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 w.modules.new_profile = Some(String::new());
             }
             let mut sel = names.iter().position(|n| *n == active).unwrap_or(0);
-            if widgets::select(ui, pal, "profile", &names, &mut sel, 110.0) {
+            // 默认方案的名字存的是简体中文，显示时按界面语言
+            let shown: Vec<String> = names
+                .iter()
+                .map(|n| if n == rh_core::settings::DEFAULT_PROFILE { i18n::t("modules.default_profile") } else { n.clone() })
+                .collect();
+            if widgets::select(ui, pal, "profile", &shown, &mut sel, 110.0) {
                 let n = names[sel].clone();
                 shared.edit_settings(|s| s.layouts_mut(game).active = n);
             }

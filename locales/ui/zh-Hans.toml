@@ -14,6 +14,11 @@ world = "怪物猎人 世界"
 rise = "怪物猎人 崛起"
 wilds = "怪物猎人 荒野"
 
+[game_short]
+world = "世界"
+rise = "崛起"
+wilds = "荒野"
+
 [conn]
 connected = "已连接"
 demo = "演示数据"
@@ -229,6 +234,7 @@ backing_none = "关"
 backing_solid = "实底"
 backing_blur = "模糊"
 profile_name = "方案名"
+default_profile = "默认"
 plugin = "来自插件"
 
 [density]

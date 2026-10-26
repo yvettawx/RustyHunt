@@ -256,17 +256,20 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             let Some(look) = ailment_look(f, st, m, a) else { continue };
             let c = cv.faded(look.alpha);
             let color = if a.active() { accent } else { text };
-            let nsz = c.text(fx, y - 1.0, &f.i18n.game(&a.key), Font::Text, 11.0, color, Align2::LEFT_TOP);
+            let name = f.i18n.game(&a.key);
+            let v = ailment_value(a);
+            // 放不下整项就不画了，不超出血条的右端
+            let item_w = cv.measure(&name, Font::Text, 11.0, 0.0).x + 36.0 + cv.measure(&v, Font::NumBold, 10.0, 0.0).x;
+            if fx + item_w > w {
+                break;
+            }
+            let nsz = c.text(fx, y - 1.0, &name, Font::Text, 11.0, color, Align2::LEFT_TOP);
             let bx = fx + nsz.x + 6.0;
             let r = if a.active() { a.timer_ratio() } else { a.buildup_ratio() };
             c.bar("ailment", bx, y + 5.0, 24.0, 2.0, &[Layer::fill(r, if a.active() { accent } else { text })], false);
-            let v = ailment_value(a);
             let vsz = c.text(bx + 30.0, y, &v, Font::NumBold, 10.0, if a.active() { accent } else { cv.tok("text-mute") }, Align2::LEFT_TOP);
             fx = bx + 30.0 + vsz.x + 12.0;
             row_h = row_h.max(nsz.y);
-            if fx > w {
-                break;
-            }
         }
     }
     y += row_h.max(12.0);

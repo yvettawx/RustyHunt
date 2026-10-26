@@ -379,4 +379,22 @@ size = "large"
         assert!(t.keys("monster").len() > 90);
         assert_eq!(t.get("monster.rathalos", Lang::ZhHans), Some("火龙"));
     }
+
+    #[test]
+    fn bundled_ui_languages_have_the_same_keys() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../locales/ui");
+        let keys = |l: Lang| {
+            let t = Table::parse(&std::fs::read_to_string(dir.join(format!("{}.toml", l.code()))).unwrap()).unwrap();
+            let mut k: Vec<String> = t.keys().cloned().collect();
+            k.sort();
+            k
+        };
+        let base = keys(Lang::ZhHans);
+        for l in [Lang::ZhHant, Lang::Ja, Lang::En] {
+            let k = keys(l);
+            let missing: Vec<&String> = base.iter().filter(|x| !k.contains(x)).collect();
+            let extra: Vec<&String> = k.iter().filter(|x| !base.contains(x)).collect();
+            assert!(missing.is_empty() && extra.is_empty(), "{}: 缺 {missing:?}，多 {extra:?}", l.code());
+        }
+    }
 }
