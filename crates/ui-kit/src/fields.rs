@@ -434,9 +434,7 @@ mod tests {
         if std::env::var_os("RH_WRITE_DOCS").is_some() {
             std::fs::write(&path, &text).unwrap();
         }
-        let on_disk = std::fs::read_to_string(&path).unwrap_or_default().replace("
-", "
-");
+        let on_disk = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
         assert!(on_disk == text, "docs/fields.md 和字段表不一致，用 RH_WRITE_DOCS=1 重新生成");
     }
 

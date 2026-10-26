@@ -35,4 +35,5 @@ fn injects_into_child_process() {
     assert_eq!(ask("STATS"), rh_core::native::Stats::default().format());
     assert!(ask("HOOK 0").starts_with("ERR"));
     child.kill().unwrap();
+    let _ = child.wait();
 }

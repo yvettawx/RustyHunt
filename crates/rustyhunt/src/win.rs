@@ -15,7 +15,7 @@ use windows_sys::Win32::System::Threading::{CreateMutexW, GetCurrentProcessId};
 use windows_sys::Win32::UI::Shell::ShellExecuteW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, EnumWindows, GWL_EXSTYLE, GetSystemMetrics, GetWindowLongPtrW, GetWindowRect,
-    GetWindowTextW, GetWindowThreadProcessId, HWND_TOPMOST, IsWindowVisible, MB_ICONERROR, MB_OK, MessageBoxW,
+    GetWindowTextW, GetWindowThreadProcessId, HWND_TOPMOST, MB_ICONERROR, MB_OK, MessageBoxW,
     RegisterClassW, SM_CXSCREEN, SM_CYSCREEN, SW_HIDE, SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW,
     SetForegroundWindow, SetWindowLongPtrW, SetWindowPos, ShowWindow, WNDCLASSW, WS_EX_APPWINDOW, WS_EX_LAYERED,
     WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
@@ -182,9 +182,6 @@ pub fn own_window(title: &str) -> Option<isize> {
     c.found
 }
 
-pub fn is_visible(hwnd: isize) -> bool {
-    unsafe { IsWindowVisible(hwnd as HWND) != 0 }
-}
 
 /// 单实例：已经有一个在运行时返回 false。
 pub fn single_instance() -> bool {
@@ -203,13 +200,6 @@ pub fn open(path: &Path) {
     }
 }
 
-pub fn open_url(url: &str) {
-    let op = wide(OsStr::new("open"));
-    let p = wide(OsStr::new(url));
-    unsafe {
-        ShellExecuteW(std::ptr::null_mut(), op.as_ptr(), p.as_ptr(), std::ptr::null(), std::ptr::null(), SW_SHOWNORMAL);
-    }
-}
 
 pub fn error_box(title: &str, text: &str) {
     let t = wide(OsStr::new(title));

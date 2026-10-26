@@ -870,10 +870,52 @@ pub fn install(staged: Staged) -> Result<(), String> {
     Ok(())
 }
 
-/// 清单里新声明、用户还没确认过的权限（升级后权限变化）。
-pub fn unconfirmed(v: &View) -> Vec<Permission> {
-    let Some(shared) = SHARED.get() else { return Vec::new() };
-    let s = shared.settings();
-    let confirmed = s.plugins.get(&v.manifest.id).map(|x| x.confirmed.clone()).unwrap_or_default();
-    v.manifest.permissions.iter().copied().filter(|p| !confirmed.contains(p.key())).collect()
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    fn zip_of(files: &[(&str, &[u8])]) -> Vec<u8> {
+        let mut buf = Vec::new();
+        {
+            let mut w = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
+            for (name, data) in files {
+                w.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+                w.write_all(data).unwrap();
+            }
+            w.finish().unwrap();
+        }
+        buf
+    }
+
+    #[test]
+    fn prepare_reads_zip_and_rejects_bad_packages() {
+        let tmp = std::env::temp_dir().join(format!("rh-plugins-{}", std::process::id()));
+        // 数据目录只能设一次；别的测试先设过了就不跑，免得写进真正的数据目录
+        if paths::init(Some(tmp.clone())) != tmp.as_path() {
+            return;
+        }
+        std::fs::create_dir_all(&tmp).unwrap();
+        let ex = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/plugins/split-timer");
+        let manifest = std::fs::read(ex.join("plugin.toml")).unwrap();
+        let template = std::fs::read(ex.join("split.xml")).unwrap();
+
+        let good = tmp.join("good.zip");
+        std::fs::write(&good, zip_of(&[("split-timer/plugin.toml", &manifest), ("split-timer/split.xml", &template), ("split-timer/plugin.wasm", b"\0asm")])).unwrap();
+        let s = prepare(&good).unwrap();
+        assert_eq!(s.manifest.id, "split-timer");
+        assert!(s.root.join("split.xml").is_file());
+        let staging = s.dir.clone();
+        drop(s);
+        assert!(!staging.exists(), "临时文件夹要删掉");
+
+        let no_wasm = tmp.join("no-wasm.zip");
+        std::fs::write(&no_wasm, zip_of(&[("plugin.toml", &manifest)])).unwrap();
+        assert!(prepare(&no_wasm).err().unwrap().contains("plugin.wasm"));
+
+        let empty = tmp.join("empty.zip");
+        std::fs::write(&empty, zip_of(&[("readme.txt", b"hi")])).unwrap();
+        assert!(prepare(&empty).is_err());
+        let _ = std::fs::remove_dir_all(tmp);
+    }
 }

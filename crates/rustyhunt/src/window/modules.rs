@@ -169,7 +169,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             let info = &infos[w.modules.selected];
             let cfg = shared.settings().profile(game).module(&info.id).cloned().unwrap_or_default();
             let (pr, _) = ui.allocate_exact_size(vec2(width, 190.0), Sense::hover());
-            preview_backdrop(ui, pr);
+            preview_backdrop(ui, pal, pr);
             if cfg.enabled {
                 w.modules.preview.draw(ui, pr, &shared, &info.id);
             }
@@ -201,11 +201,12 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
 }
 
 /// 预览框的底：深色，带一点竖向渐变，不用游戏截图。
-fn preview_backdrop(ui: &Ui, r: Rect) {
+fn preview_backdrop(ui: &Ui, pal: &Pal, r: Rect) {
     let p = ui.painter();
     let mut mesh = egui::epaint::Mesh::default();
-    let top = Color32::from_rgb(0x2a, 0x2b, 0x2a);
-    let bottom = Color32::from_rgb(0x12, 0x12, 0x12);
+    // 主题的 window.desk 做底，上面提亮一点
+    let bottom = pal.desk;
+    let top = egui::lerp(egui::Rgba::from(bottom)..=egui::Rgba::from(Color32::WHITE), 0.1).into();
     mesh.colored_vertex(r.left_top(), top);
     mesh.colored_vertex(r.right_top(), top);
     mesh.colored_vertex(r.right_bottom(), bottom);

@@ -443,6 +443,7 @@ high = "上位"
 master = "大師"
 
 [records]
+ask_delete = "刪除這筆紀錄"
 hunts = "狩獵"
 bestiary = "圖鑑"
 read_at = "讀取於 {t}"

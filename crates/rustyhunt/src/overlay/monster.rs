@@ -337,7 +337,7 @@ fn section(cv: &Canvas, f: &Frame, x: f32, y: f32, w: f32, label: &str, legend: 
 
 fn parts_grid(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster, w: f32) -> f32 {
     let n = m.parts.len();
-    let cols = n.min(8).max(1);
+    let cols = n.clamp(1, 8);
     let rows = n.div_ceil(cols);
     let gap = 16.0;
     let cw = (w - gap * (cols as f32 - 1.0)) / cols as f32;

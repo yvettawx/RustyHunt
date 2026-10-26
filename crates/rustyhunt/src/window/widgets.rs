@@ -108,12 +108,6 @@ pub fn switch(ui: &mut Ui, pal: &Pal, on: &mut bool) -> Response {
     resp
 }
 
-/// 不改值的开关（显示状态，点了交给调用方处理）。
-pub fn switch_view(ui: &mut Ui, pal: &Pal, on: bool) -> Response {
-    let mut v = on;
-    let r = switch(ui, pal, &mut v);
-    r
-}
 
 /// 分段选择：黑框，选中的一格反色。
 pub fn seg(ui: &mut Ui, pal: &Pal, options: &[String], selected: &mut usize) -> bool {

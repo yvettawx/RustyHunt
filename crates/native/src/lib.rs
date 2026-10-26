@@ -23,8 +23,8 @@ const MONSTER_ID_OFFSET: usize = 0x12280;
 
 /// 每一位表示一个怪物编号是不是大型怪物（含训练场的柱子 59）。
 /// 数据来自上游 HunterPie 的 WorldUtils.cpp。
-const LARGE_LO: u64 = 0b1110_1000000010_0000000000_1111111111_1111111111_1111111111_1010010011;
-const LARGE_HI: u64 = 0b00000000_0000000000_0000000011_1111111111_1110000011_1111111111_111111;
+const LARGE_LO: u64 = 0xE808_00FF_FFFF_FE93;
+const LARGE_HI: u64 = 0x0000_003F_FF83_FFFF;
 
 fn is_large(id: i32) -> bool {
     match id {
@@ -191,6 +191,14 @@ mod tests {
         unsafe { f(monster.as_mut_ptr(), 50, std::ptr::null_mut(), 0, 0, 0, 0, 0, 0) };
         assert_eq!(Stats::parse(&answer("STATS")).unwrap().hits, 2, "取消 hook 后不再计数");
         assert_eq!(CALLS.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    #[allow(clippy::unusual_byte_groupings)]
+    fn bitsets_match_upstream() {
+        // 上游写成二进制，按十个一组对着怪物编号排
+        assert_eq!(LARGE_LO, 0b1110_1000000010_0000000000_1111111111_1111111111_1111111111_1010010011);
+        assert_eq!(LARGE_HI, 0b00000000_0000000000_0000000011_1111111111_1110000011_1111111111_111111);
     }
 
     #[test]

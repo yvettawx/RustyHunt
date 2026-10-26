@@ -39,14 +39,13 @@ pub const PLAYER_COLORS: [Color32; 4] = crate::overlay::SLOT_COLORS;
 pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let tab = w.records.tab;
     widgets::page_header(ui, pal, &i18n::t("nav.records"), |ui| {
-        if tab == 1 {
-            if button(ui, pal, &i18n::t("action.import"), Btn::Outline, false).clicked()
-                && let Some(p) = rfd::FileDialog::new().add_filter("JSON", &["json"]).pick_file()
-            {
-                match std::fs::read_to_string(&p).map_err(|e| e.to_string()).and_then(|t| crate::bestiary::import_json(&t)) {
-                    Ok(n) => log::info!("导入图鉴 {n} 条"),
-                    Err(e) => log::warn!("导入图鉴失败：{e}"),
-                }
+        if tab == 1
+            && button(ui, pal, &i18n::t("action.import"), Btn::Outline, false).clicked()
+            && let Some(p) = rfd::FileDialog::new().add_filter("JSON", &["json"]).pick_file()
+        {
+            match std::fs::read_to_string(&p).map_err(|e| e.to_string()).and_then(|t| crate::bestiary::import_json(&t)) {
+                Ok(n) => log::info!("导入图鉴 {n} 条"),
+                Err(e) => log::warn!("导入图鉴失败：{e}"),
             }
         }
         let r = button(ui, pal, &i18n::t("action.export"), Btn::Outline, false);
@@ -143,7 +142,13 @@ fn save_text(name: &str, text: &str) {
 }
 
 fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
+    let mut remove = None;
     let st = &mut w.records;
+    if RELOAD.swap(false, std::sync::atomic::Ordering::Relaxed) {
+        st.loaded = None;
+        st.selected = None;
+        st.detail = None;
+    }
     if st.loaded.is_none_or(|t| t.elapsed().as_secs() > 4) {
         st.loaded = Some(std::time::Instant::now());
         let game = [None, Some("world"), Some("rise"), Some("wilds")][st.filter];
@@ -197,14 +202,31 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         });
         ui.vertical(|ui| {
             ui.set_width(width - 280.0 - 48.0);
-            if let Some(h) = st.detail.clone() {
-                detail(ui, pal, &h);
+            if let Some(h) = st.detail.clone()
+                && detail(ui, pal, &h)
+            {
+                remove = Some(h);
             }
         });
     });
+    if let Some(h) = remove {
+        let name = i18n::current().monster(&h.monster);
+        w.ask(i18n::t("records.ask_delete"), vec![format!("{name}　{}", super::fmt_when(h.started_at))], i18n::t("action.delete"), move |shared| {
+            match crate::records::open().and_then(|c| crate::records::delete(&c, h.id)) {
+                Ok(()) => log::info!("删除狩猎记录 #{}", h.id),
+                Err(e) => log::warn!("删除狩猎记录失败：{e}"),
+            }
+            RELOAD.store(true, std::sync::atomic::Ordering::Relaxed);
+            shared.repaint();
+        });
+    }
 }
 
-fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) {
+/// 删了记录之后让列表马上重读
+static RELOAD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// 画一场狩猎的详情；返回 true 表示点了删除。
+fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     let i = i18n::current();
     // 右边是结果和用时，左边放名牌和副标题；名字很长时副标题换到下一行
     let dur = widgets::galley(ui, &mmss(h.duration), Font::NumHeavy, 44.0, pal.ink);
@@ -331,6 +353,8 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) {
             last_right = cx + half;
         }
     }
+    ui.add_space(30.0);
+    link(ui, pal, &i18n::t("action.delete")).clicked()
 }
 
 fn event_label(e: &crate::records::EventRow) -> String {
@@ -345,6 +369,9 @@ fn event_label(e: &crate::records::EventRow) -> String {
         other => other.to_string(),
     }
 }
+
+/// 对一只怪物的手动登记做的修改
+type ManualEdit = Box<dyn FnOnce(&mut crate::bestiary::Manual)>;
 
 fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let shared = w.shared.clone();
@@ -462,7 +489,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     ui.painter().line_segment([pos2(hr.min.x, hr.max.y), pos2(hr.max.x, hr.max.y)], Stroke::new(1.0, pal.ink));
 
     let q = st.query.trim().to_lowercase();
-    let mut changes: Vec<(String, Box<dyn FnOnce(&mut crate::bestiary::Manual)>)> = Vec::new();
+    let mut changes: Vec<(String, ManualEdit)> = Vec::new();
     for r in &rows {
         let name = i.monster(&r.key);
         let ok = (q.is_empty() || name.to_lowercase().contains(&q) || r.key.contains(&q))

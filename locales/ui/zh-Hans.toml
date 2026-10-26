@@ -443,6 +443,7 @@ high = "上位"
 master = "大师"
 
 [records]
+ask_delete = "删除这条记录"
 hunts = "狩猎"
 bestiary = "图鉴"
 read_at = "读取于 {t}"

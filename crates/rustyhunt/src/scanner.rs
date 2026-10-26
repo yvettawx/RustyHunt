@@ -230,6 +230,8 @@ impl Scanner {
             reader.map().len(),
             module.base
         );
+        // 崩溃日志里要写游戏版本
+        crate::crash::set_game_version(&version);
         {
             let mut live = self.shared.live.write().unwrap();
             *live = Live {
@@ -237,7 +239,6 @@ impl Scanner {
                 pid: Some(pid),
                 exe: Game::World.exe().into(),
                 version: Some(version),
-                map_file: map_path.file_name().and_then(|n| n.to_str()).map(str::to_string),
                 attached_at: Some(Instant::now()),
                 ..Live::default()
             };

@@ -443,6 +443,7 @@ high = "High Rank"
 master = "Master Rank"
 
 [records]
+ask_delete = "Delete this record"
 hunts = "Hunts"
 bestiary = "Hunter's Notes"
 read_at = "Read at {t}"

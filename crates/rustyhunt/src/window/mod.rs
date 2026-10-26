@@ -13,7 +13,7 @@ pub mod widgets;
 
 use std::sync::Arc;
 
-use egui::{Align2, Color32, CornerRadius, Id, Pos2, Rect, Sense, Stroke, Ui, ViewportBuilder, ViewportId, pos2, vec2};
+use egui::{Align2, Color32, CornerRadius, Id, Rect, Sense, Stroke, Ui, ViewportBuilder, ViewportId, pos2, vec2};
 use rh_core::i18n;
 use ui_kit::Font;
 
@@ -103,12 +103,15 @@ impl Page {
     }
 }
 
+/// 弹窗确认后执行的动作
+pub type OnYes = Box<dyn FnOnce(&Arc<Shared>) + Send>;
+
 /// 弹窗：开启前确认（注入、插件权限等）。
 pub struct Modal {
     pub title: String,
     pub lines: Vec<String>,
     pub yes: String,
-    pub on_yes: Box<dyn FnOnce(&Arc<Shared>) + Send>,
+    pub on_yes: OnYes,
 }
 
 pub struct MainWindow {
@@ -162,9 +165,6 @@ impl MainWindow {
         }
     }
 
-    pub fn go(&mut self, p: Page) {
-        self.page = p;
-    }
 
     pub fn onboarding_step(&mut self, step: usize) {
         let shared = self.shared.clone();
@@ -714,8 +714,8 @@ impl MainWindow {
                                             });
                                         });
                                     }
-                                    crate::update::Download::Ready { .. } => {
-                                        widgets::label_mute(ui, pal, &i18n::t("update.ready"), 12.0);
+                                    crate::update::Download::Ready { version } => {
+                                        widgets::label_mute(ui, pal, &format!("{version}　{}", i18n::t("update.ready")), 12.0);
                                     }
                                 }
                             }
@@ -803,6 +803,3 @@ pub fn fmt_when(ts: i64) -> String {
     }
 }
 
-pub fn point_in(r: Rect, p: Option<Pos2>) -> bool {
-    p.is_some_and(|p| r.contains(p))
-}

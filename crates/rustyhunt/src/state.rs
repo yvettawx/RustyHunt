@@ -32,7 +32,6 @@ pub struct Live {
     pub pid: Option<u32>,
     pub exe: String,
     pub version: Option<String>,
-    pub map_file: Option<String>,
     pub attached_at: Option<Instant>,
     /// 游戏客户区在屏幕上的位置，物理像素
     pub game_rect: Option<platform::window::Rect>,
@@ -60,7 +59,6 @@ impl Default for Live {
             pid: None,
             exe: String::new(),
             version: None,
-            map_file: None,
             attached_at: None,
             game_rect: None,
             game_foreground: false,

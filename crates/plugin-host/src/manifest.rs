@@ -230,7 +230,7 @@ max = 10
         m.validate().unwrap();
         assert_eq!(m.entry, "plugin.wasm");
         assert_eq!(m.permissions, vec![Permission::Files]);
-        assert_eq!(m.modules[0].elements[0].default_on, true);
+        assert!(m.modules[0].elements[0].default_on);
         assert_eq!(m.module_key("split"), "split-timer.split");
         assert!(matches!(m.settings[1].kind, SettingKind::Number { max, .. } if max == 10.0));
     }

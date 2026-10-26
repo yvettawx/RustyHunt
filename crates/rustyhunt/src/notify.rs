@@ -42,11 +42,6 @@ impl Notification {
             toast: true,
         }
     }
-
-    pub fn quiet(mut self) -> Notification {
-        self.toast = false;
-        self
-    }
 }
 
 #[derive(Default)]

@@ -443,6 +443,7 @@ high = "上位"
 master = "マスター"
 
 [records]
+ask_delete = "この記録を削除"
 hunts = "狩猟"
 bestiary = "ハンターノート"
 read_at = "{t} に読み込み"

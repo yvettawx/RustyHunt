@@ -29,8 +29,6 @@ struct Logger {
     lines: Mutex<VecDeque<Line>>,
     file: Mutex<Option<File>>,
     path: PathBuf,
-    /// 每次新增一行就加一，界面据此判断要不要刷新
-    seq: std::sync::atomic::AtomicU64,
 }
 
 static LOGGER: OnceLock<Logger> = OnceLock::new();
@@ -76,7 +74,6 @@ impl Log for Logger {
             l.pop_front();
         }
         l.push_back(line);
-        self.seq.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn flush(&self) {
@@ -100,7 +97,6 @@ pub fn init(level: rh_core::settings::LogLevel) {
         lines: Mutex::new(VecDeque::with_capacity(KEEP)),
         file: Mutex::new(file),
         path,
-        seq: Default::default(),
     });
     let _ = log::set_logger(logger);
     set_level(level);
@@ -132,12 +128,6 @@ pub fn tail(n: usize) -> Vec<Line> {
         .unwrap_or_default()
 }
 
-pub fn seq() -> u64 {
-    LOGGER
-        .get()
-        .map(|l| l.seq.load(std::sync::atomic::Ordering::Relaxed))
-        .unwrap_or(0)
-}
 
 pub fn file_path() -> PathBuf {
     LOGGER
