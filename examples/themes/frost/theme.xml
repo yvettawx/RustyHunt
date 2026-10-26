@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  示例主题：冰原。浅色主界面，冷色强调；只改令牌和组件样式，模块保持默认结构。
+-->
+<theme xmlns="urn:rustyhunt:theme:1"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="urn:rustyhunt:theme:1 ../../../docs/theme.xsd"
+       id="frost" name="冰原" version="1.0.0" author="RustyHunt" app="1.0" base="light"
+       description="浅色主界面，冷色强调，圆角组件" tags="light,cool">
+
+  <tokens>
+    <color name="accent" value="#5cb8ff"/>
+    <color name="ghost" value="#a8dcff"/>
+    <color name="cool" value="#d6f0ff"/>
+    <color name="window.paper" value="#e7ecef"/>
+    <color name="window.ink" value="#18232b"/>
+    <color name="window.mute" value="#6c7b85"/>
+    <color name="window.faint" value="#a9b6be"/>
+    <color name="window.line" value="#cfd8dd"/>
+    <color name="window.block" value="#18232b"/>
+    <color name="window.onblock" value="#e7ecef"/>
+    <color name="window.accent" value="#2f8fd8"/>
+    <color name="window.desk" value="#1d2429"/>
+    <duration name="toast" ms="3200"/>
+  </tokens>
+
+  <styles>
+    <bar shape="round" radius="3" segments="0"/>
+    <tag shape="round" radius="3"/>
+    <pip shape="circle"/>
+    <switch shape="round"/>
+    <panel shape="round" radius="6" fill="#0d151c99"/>
+  </styles>
+</theme>

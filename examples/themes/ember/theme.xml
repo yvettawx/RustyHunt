@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  示例主题：熔岩。深色底，暖色强调；
+  演示三层：令牌（颜色、字体、时长）、组件样式（血条、标签）、模块模板（时钟）。
+  格式说明见 docs/theme.md，编辑器里配上 docs/theme.xsd 可以自动补全。
+-->
+<theme xmlns="urn:rustyhunt:theme:1"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="urn:rustyhunt:theme:1 ../../../docs/theme.xsd"
+       id="ember" name="熔岩" version="1.0.0" author="RustyHunt" app="1.0" base="dark"
+       description="深色底，暖色强调，分段血条" tags="dark,warm">
+
+  <tokens>
+    <!-- overlay -->
+    <color name="accent" value="#ffb347"/>
+    <color name="text" value="#f0e3d6"/>
+    <color name="danger" value="#ff5a3c"/>
+    <color name="ghost" value="#ffd08a"/>
+    <color name="hatch" value="#f0e3d64d"/>
+    <!-- 主界面 -->
+    <color name="window.paper" value="#1c1614"/>
+    <color name="window.ink" value="#f0e3d6"/>
+    <color name="window.mute" value="#9a8a7c"/>
+    <color name="window.faint" value="#5a4b42"/>
+    <color name="window.line" value="#332823"/>
+    <color name="window.block" value="#e85a31"/>
+    <color name="window.onblock" value="#1c1614"/>
+    <color name="window.accent" value="#ffb347"/>
+    <color name="window.desk" value="#0c0807"/>
+
+    <font name="number" family="Montserrat" weight="800"/>
+    <duration name="fade" ms="400"/>
+  </tokens>
+
+  <styles>
+    <!-- 所有条：平行四边形，空槽画斜线 -->
+    <bar shape="parallelogram" skew="4" empty="hatch"/>
+    <!-- 怪物和自身的血条：分 10 段，两端加小竖线 -->
+    <bar for="monster-hp" segments="10" gap="2" caps="true"/>
+    <bar for="player-hp" segments="10" gap="2" caps="true"/>
+    <tag shape="cut" cut="4"/>
+    <pip shape="diamond"/>
+  </styles>
+
+  <!-- 时钟改成一圈圆环：剩余时间占任务总时长的比例 -->
+  <module id="clock">
+    <row gap="12" align="center">
+      <arc value="{quest.time_left / quest.time_max | clamp01}" radius="18" thickness="4" from="0" to="360" stroke="accent" track="track">
+        <state when="quest.time_left &lt; 300" stroke="danger" animate="pulse"/>
+      </arc>
+      <column gap="0">
+        <text text="{quest.time_left | time}" font="number" size="26"/>
+        <text text="{game.stage}" size="12" color="text-mute"/>
+      </column>
+    </row>
+  </module>
+</theme>

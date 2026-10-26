@@ -54,7 +54,8 @@ pub fn list() -> Vec<Entry> {
         let id = dir.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
         match load_checked(&dir) {
             Ok(t) => out.push(Entry {
-                id: t.manifest.id.clone(),
+                // 用文件夹名：设置里存的、apply 找的都是它
+                id: id.clone(),
                 error: t.module_errors.first().map(|e| e.to_string()),
                 theme: Some(t),
                 dir: Some(dir),
@@ -127,13 +128,18 @@ pub fn install_fonts(ctx: &egui::Context, theme: &Theme) {
 
 pub fn apply(shared: &Shared, id: &str) {
     shared.edit_settings(|s| s.theme = id.to_string());
+    reload(shared);
+    log::info!("应用主题 {id}");
+}
+
+/// 按设置重新载入当前主题。
+pub fn reload(shared: &Shared) {
     let t = load_active(&shared.settings());
     if let Some(ctx) = shared.ctx.get() {
         install_fonts(ctx, &t);
         crate::window::style::apply(ctx, &t);
     }
     shared.set_theme(t);
-    log::info!("应用主题 {id}");
 }
 
 fn newest_mtime(dir: &Path) -> Option<SystemTime> {
@@ -165,8 +171,20 @@ pub fn watch(shared: Arc<Shared>) {
         .name("theme-watch".into())
         .spawn(move || {
             let mut last: Option<(String, Option<SystemTime>)> = None;
+            let mut last_dark: Option<bool> = None;
             while !shared.quit.load(std::sync::atomic::Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(700));
+                // 跟随系统深浅色：系统切换时换内置主题
+                if shared.settings().theme_follow_system {
+                    let dark = crate::win::system_dark();
+                    if last_dark.is_some_and(|d| d != dark) {
+                        reload(&shared);
+                    }
+                    last_dark = Some(dark);
+                    last = None;
+                    continue;
+                }
+                last_dark = None;
                 let id = shared.settings().theme.clone();
                 if id == "light" || id == "dark" {
                     last = None;
@@ -178,12 +196,7 @@ pub fn watch(shared: Arc<Shared>) {
                     Some((lid, lm)) if *lid == id && *lm == m => continue,
                     Some((lid, _)) if *lid == id => {
                         log::info!("主题 {id} 的文件有改动，重新载入");
-                        let t = load_active(&shared.settings());
-                        if let Some(ctx) = shared.ctx.get() {
-                            install_fonts(ctx, &t);
-                            crate::window::style::apply(ctx, &t);
-                        }
-                        shared.set_theme(t);
+                        reload(&shared);
                     }
                     _ => {}
                 }
@@ -235,6 +248,9 @@ pub fn import(src: &Path) -> Result<String, String> {
     }
     let theme = Theme::load_dir(&root).map_err(|e: ThemeError| e.to_string())?;
     let id = theme.manifest.id.clone();
+    if id.is_empty() || !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+        return Err(format!("主题 id \"{id}\" 只能用字母、数字、- 和 _"));
+    }
     let dest = rh_core::paths::themes().join(&id);
     let _ = std::fs::remove_dir_all(&dest);
     copy_dir(&root, &dest)?;
