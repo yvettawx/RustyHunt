@@ -24,10 +24,7 @@ impl Vdf {
 
     pub fn get(&self, key: &str) -> Option<&Vdf> {
         match self {
-            Vdf::Obj(m) => m
-                .iter()
-                .find(|(k, _)| k.eq_ignore_ascii_case(key))
-                .map(|(_, v)| v),
+            Vdf::Obj(m) => m.iter().find(|(k, _)| k.eq_ignore_ascii_case(key)).map(|(_, v)| v),
             Vdf::Str(_) => None,
         }
     }
@@ -260,11 +257,7 @@ pub fn accounts(steam: &Path) -> Vec<Account> {
 
 /// 某个账号下某个游戏的云存档目录。
 pub fn remote_dir(steam: &Path, account_id: u32, app_id: u32) -> PathBuf {
-    steam
-        .join("userdata")
-        .join(account_id.to_string())
-        .join(app_id.to_string())
-        .join("remote")
+    steam.join("userdata").join(account_id.to_string()).join(app_id.to_string()).join("remote")
 }
 
 #[cfg(test)]

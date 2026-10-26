@@ -263,11 +263,7 @@ fn find_root(dir: &Path) -> Option<PathBuf> {
     if dir.join("theme.xml").is_file() {
         return Some(dir.to_path_buf());
     }
-    std::fs::read_dir(dir)
-        .ok()?
-        .flatten()
-        .map(|e| e.path())
-        .find(|p| p.join("theme.xml").is_file())
+    std::fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).find(|p| p.join("theme.xml").is_file())
 }
 
 fn copy_dir(src: &Path, dst: &Path) -> Result<(), String> {

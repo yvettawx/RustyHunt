@@ -103,10 +103,7 @@ impl State {
             };
             for (i, part) in m.parts.iter().enumerate() {
                 let Some(old) = p.parts.get(i) else { continue };
-                if (part.flinch - old.flinch).abs() > 0.01
-                    || (part.durability - old.durability).abs() > 0.01
-                    || part.breaks != old.breaks
-                {
+                if (part.flinch - old.flinch).abs() > 0.01 || (part.durability - old.durability).abs() > 0.01 || part.breaks != old.breaks {
                     self.activity.touch(format!("{}:p{i}", m.uid), now);
                 }
                 if part.breaks > old.breaks {
@@ -144,24 +141,14 @@ impl State {
             }
             let target = f.target.map(|m| m.uid);
             let toast = match &e {
-                Event::PartBreak { uid, part, .. } if Some(*uid) == target => {
-                    Some((f.t("toast.break"), f.i18n.game(part), ToastStyle::Accent))
-                }
-                Event::PartSever { uid, part } if Some(*uid) == target => {
-                    Some((f.t("toast.sever"), f.i18n.game(part), ToastStyle::Accent))
-                }
-                Event::AilmentTrigger { uid, ailment, .. } if Some(*uid) == target => {
-                    Some((f.i18n.game(ailment), String::new(), ToastStyle::Plain))
-                }
+                Event::PartBreak { uid, part, .. } if Some(*uid) == target => Some((f.t("toast.break"), f.i18n.game(part), ToastStyle::Accent)),
+                Event::PartSever { uid, part } if Some(*uid) == target => Some((f.t("toast.sever"), f.i18n.game(part), ToastStyle::Accent)),
+                Event::AilmentTrigger { uid, ailment, .. } if Some(*uid) == target => Some((f.i18n.game(ailment), String::new(), ToastStyle::Plain)),
                 Event::Enrage { uid } if Some(*uid) == target => Some((f.t("toast.enrage"), String::new(), ToastStyle::Accent)),
                 Event::Tired { uid } if Some(*uid) == target => Some((f.t("toast.tired"), String::new(), ToastStyle::Plain)),
-                Event::Capturable { uid } if Some(*uid) == target => {
-                    Some((f.t("toast.capturable"), String::new(), ToastStyle::Accent))
-                }
+                Event::Capturable { uid } if Some(*uid) == target => Some((f.t("toast.capturable"), String::new(), ToastStyle::Accent)),
                 Event::MonsterDeath { uid, .. } if Some(*uid) == target => Some((f.t("toast.slain"), String::new(), ToastStyle::Accent)),
-                Event::MonsterCapture { uid, .. } if Some(*uid) == target => {
-                    Some((f.t("toast.captured"), String::new(), ToastStyle::Accent))
-                }
+                Event::MonsterCapture { uid, .. } if Some(*uid) == target => Some((f.t("toast.captured"), String::new(), ToastStyle::Accent)),
                 _ => None,
             };
             if let Some((tag, text, style)) = toast {
@@ -485,7 +472,11 @@ impl Preview {
             frame_us: 0,
             preview: true,
         };
-        let cfg = ModuleConfig { opacity: 1.0, scale: 1.0, ..cfg };
+        let cfg = ModuleConfig {
+            opacity: 1.0,
+            scale: 1.0,
+            ..cfg
+        };
         // 先量尺寸（画到看不见的区域），再按比例画到预览框里
         let hidden = ui.painter().with_clip_rect(Rect::NOTHING);
         let probe = Canvas::new(hidden, Pos2::ZERO, 1.0, &theme);

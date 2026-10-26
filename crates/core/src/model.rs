@@ -313,7 +313,11 @@ impl Sharpness {
     /// 当前颜色还能打多少下
     pub fn hits_left(&self) -> i32 {
         let level = self.level.index();
-        let start = if level == 0 { 0 } else { self.thresholds.get(level - 1).copied().unwrap_or(0) };
+        let start = if level == 0 {
+            0
+        } else {
+            self.thresholds.get(level - 1).copied().unwrap_or(0)
+        };
         (self.current - start).max(0)
     }
 }

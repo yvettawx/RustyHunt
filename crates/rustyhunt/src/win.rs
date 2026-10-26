@@ -8,17 +8,15 @@ use platform::wide;
 use windows_sys::Win32::Foundation::{HWND, LPARAM, RECT};
 use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleW, GetProcAddress};
 use windows_sys::Win32::System::Registry::{
-    HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_SZ, RRF_RT_REG_DWORD, RegCloseKey, RegDeleteValueW, RegGetValueW,
-    RegOpenKeyExW, RegSetValueExW,
+    HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_SZ, RRF_RT_REG_DWORD, RegCloseKey, RegDeleteValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW,
 };
 use windows_sys::Win32::System::Threading::{CreateMutexW, GetCurrentProcessId};
 use windows_sys::Win32::UI::Shell::ShellExecuteW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, EnumWindows, GWL_EXSTYLE, GetSystemMetrics, GetWindowLongPtrW, GetWindowRect,
-    GetWindowTextW, GetWindowThreadProcessId, HWND_TOPMOST, MB_ICONERROR, MB_OK, MessageBoxW,
-    RegisterClassW, SM_CXSCREEN, SM_CYSCREEN, SW_HIDE, SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW,
-    SetForegroundWindow, SetWindowLongPtrW, SetWindowPos, ShowWindow, WNDCLASSW, WS_EX_APPWINDOW, WS_EX_LAYERED,
-    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
+    CreateWindowExW, DefWindowProcW, EnumWindows, GWL_EXSTYLE, GetSystemMetrics, GetWindowLongPtrW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId,
+    HWND_TOPMOST, MB_ICONERROR, MB_OK, MessageBoxW, RegisterClassW, SM_CXSCREEN, SM_CYSCREEN, SW_HIDE, SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW,
+    SetForegroundWindow, SetWindowLongPtrW, SetWindowPos, ShowWindow, WNDCLASSW, WS_EX_APPWINDOW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
 };
 
 /// overlay 窗口：不在任务栏出现，不抢焦点。
@@ -90,12 +88,7 @@ pub fn create_blur_window() -> isize {
             inst,
             std::ptr::null(),
         );
-        windows_sys::Win32::UI::WindowsAndMessaging::SetLayeredWindowAttributes(
-            h,
-            0,
-            255,
-            windows_sys::Win32::UI::WindowsAndMessaging::LWA_ALPHA,
-        );
+        windows_sys::Win32::UI::WindowsAndMessaging::SetLayeredWindowAttributes(h, 0, 255, windows_sys::Win32::UI::WindowsAndMessaging::LWA_ALPHA);
         h as isize
     }
 }
@@ -123,7 +116,9 @@ fn set_blur(hwnd: HWND, tint: u8, strength: f32) {
     unsafe {
         let user32 = wide(OsStr::new("user32.dll"));
         let m = GetModuleHandleW(user32.as_ptr());
-        let Some(f) = GetProcAddress(m, c"SetWindowCompositionAttribute".as_ptr() as *const u8) else { return };
+        let Some(f) = GetProcAddress(m, c"SetWindowCompositionAttribute".as_ptr() as *const u8) else {
+            return;
+        };
         let f: SetWca = std::mem::transmute(f);
         let mut accent = AccentPolicy {
             state: if strength >= 12.0 { 4 } else { 3 },
@@ -182,7 +177,6 @@ pub fn own_window(title: &str) -> Option<isize> {
     c.found
 }
 
-
 /// 单实例：已经有一个在运行时返回 false。
 pub fn single_instance() -> bool {
     let name = wide(OsStr::new("Local\\RustyHunt.SingleInstance"));
@@ -199,7 +193,6 @@ pub fn open(path: &Path) {
         ShellExecuteW(std::ptr::null_mut(), op.as_ptr(), p.as_ptr(), std::ptr::null(), std::ptr::null(), SW_SHOWNORMAL);
     }
 }
-
 
 pub fn error_box(title: &str, text: &str) {
     let t = wide(OsStr::new(title));

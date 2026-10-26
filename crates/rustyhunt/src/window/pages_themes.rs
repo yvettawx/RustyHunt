@@ -135,7 +135,15 @@ fn card(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, e: &Entry, width: f32, on: b
             let g = widgets::galley(ui, &text, Font::TextBold, 12.0, pal.ink);
             let (r, _) = ui.allocate_exact_size(vec2(g.size().x + 14.0, 18.0), Sense::hover());
             widgets::diamond(ui, pos2(r.min.x + 3.0, r.center().y), 7.0, pal.accent);
-            text_at(ui, pos2(r.min.x + 14.0, r.center().y), Align2::LEFT_CENTER, &text, Font::TextBold, 12.0, pal.ink);
+            text_at(
+                ui,
+                pos2(r.min.x + 14.0, r.center().y),
+                Align2::LEFT_CENTER,
+                &text,
+                Font::TextBold,
+                12.0,
+                pal.ink,
+            );
         } else if !broken && link(ui, pal, &i18n::t("action.apply")).clicked() {
             apply(w, &e.id);
         }
@@ -181,7 +189,11 @@ fn preview(ui: &Ui, r: Rect, e: &Entry, broken: bool) {
     p.line_segment([pos2(side.max.x, r.min.y), pos2(side.max.x, r.max.y)], Stroke::new(1.0, fade(c.line)));
     let x = r.min.x + 60.0;
     let right = r.max.x - 16.0;
-    p.rect_filled(Rect::from_min_max(pos2(x, r.min.y + 22.0), pos2(right, r.min.y + 28.0)), CornerRadius::ZERO, fade(c.line));
+    p.rect_filled(
+        Rect::from_min_max(pos2(x, r.min.y + 22.0), pos2(right, r.min.y + 28.0)),
+        CornerRadius::ZERO,
+        fade(c.line),
+    );
     let tag = p.layout_no_wrap(i18n::current().monster("raging_brachydios"), Font::TextBold.id(13.0), fade(c.onblock));
     let tr = Rect::from_min_size(pos2(x, r.min.y + 46.0), tag.size() + vec2(16.0, 5.0));
     p.rect_filled(tr, CornerRadius::ZERO, fade(c.block));
@@ -195,12 +207,22 @@ fn preview(ui: &Ui, r: Rect, e: &Entry, broken: bool) {
         p.with_clip_rect(hp).line_segment([a, b], Stroke::new(1.0, fade(c.mute)));
         sx += 5.0;
     }
-    p.rect_filled(Rect::from_min_size(hp.min, vec2(hp.width() * 0.62, hp.height())), CornerRadius::ZERO, fade(c.ink));
+    p.rect_filled(
+        Rect::from_min_size(hp.min, vec2(hp.width() * 0.62, hp.height())),
+        CornerRadius::ZERO,
+        fade(c.ink),
+    );
     let ay = r.min.y + 114.0;
     p.add(egui::Shape::convex_polygon(
         vec![pos2(x + 4.0, ay - 4.0), pos2(x + 8.0, ay), pos2(x + 4.0, ay + 4.0), pos2(x, ay)],
         fade(c.accent),
         Stroke::NONE,
     ));
-    p.text(pos2(x + 16.0, ay), Align2::LEFT_CENTER, format!("{} 0:21", i18n::t("state.enraged")), Font::Text.id(11.0), fade(c.mute));
+    p.text(
+        pos2(x + 16.0, ay),
+        Align2::LEFT_CENTER,
+        format!("{} 0:21", i18n::t("state.enraged")),
+        Font::Text.id(11.0),
+        fade(c.mute),
+    );
 }

@@ -67,7 +67,15 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
     let healing = p.hp_healing_to > p.hp + 0.5;
     if healing {
         let nsz = cv.tag_size(&p.name, Font::TextBold, 12.0, (7.0, 3.0, 7.0, 2.0));
-        cv.text(nsz.x + 10.0, header_h - 16.0, &f.t("state.healing"), Font::TextBold, 11.0, cv.tok("ok"), Align2::LEFT_TOP);
+        cv.text(
+            nsz.x + 10.0,
+            header_h - 16.0,
+            &f.t("state.healing"),
+            Font::TextBold,
+            11.0,
+            cv.tok("ok"),
+            Align2::LEFT_TOP,
+        );
     }
     if cfg.shows("p-num") {
         let right = px(p.hp_max);
@@ -76,12 +84,28 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         let ms = cv.measure(&max_s, Font::NumBold, 12.0, 0.0);
         cv.text(right - ms.x, header_h - 15.0, &max_s, Font::NumBold, 12.0, mute, Align2::LEFT_TOP);
         let cs = cv.measure(&cur_s, Font::Num, 22.0, 0.0);
-        cv.text(right - ms.x - 2.0 - cs.x, header_h - 25.0, &cur_s, Font::Num, 22.0, if low { danger } else { text }, Align2::LEFT_TOP);
+        cv.text(
+            right - ms.x - 2.0 - cs.x,
+            header_h - 25.0,
+            &cur_s,
+            Font::Num,
+            22.0,
+            if low { danger } else { text },
+            Align2::LEFT_TOP,
+        );
         let red = p.hp_recoverable - p.hp;
         if red > 1.0 && !healing {
             let s = format!("+{}", red.round());
             let rs = cv.measure(&s, Font::Num, 12.0, 0.0);
-            cv.text(right - ms.x - 2.0 - cs.x - 8.0 - rs.x, header_h - 15.0, &s, Font::Num, 12.0, danger, Align2::LEFT_TOP);
+            cv.text(
+                right - ms.x - 2.0 - cs.x - 8.0 - rs.x,
+                header_h - 15.0,
+                &s,
+                Font::Num,
+                12.0,
+                danger,
+                Align2::LEFT_TOP,
+            );
         }
     }
 
@@ -124,8 +148,24 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         cv.bar("stamina", 0.0, sy, px(p.stamina_max), 6.0, &[Layer::fill(p.stamina / p.stamina_max, c)], false);
         if cfg.shows("p-num") {
             let s = format!("{}", p.stamina.round());
-            let sz = cv.text(px(p.stamina_max) + 8.0, sy - 2.0, &s, Font::NumBold, 11.0, if tired { cv.tok("accent") } else { text }, Align2::LEFT_TOP);
-            cv.text(px(p.stamina_max) + 8.0 + sz.x + 1.0, sy - 1.0, &format!("/{}", p.stamina_max.round()), Font::NumBold, 10.0, mute, Align2::LEFT_TOP);
+            let sz = cv.text(
+                px(p.stamina_max) + 8.0,
+                sy - 2.0,
+                &s,
+                Font::NumBold,
+                11.0,
+                if tired { cv.tok("accent") } else { text },
+                Align2::LEFT_TOP,
+            );
+            cv.text(
+                px(p.stamina_max) + 8.0 + sz.x + 1.0,
+                sy - 1.0,
+                &format!("/{}", p.stamina_max.round()),
+                Font::NumBold,
+                10.0,
+                mute,
+                Align2::LEFT_TOP,
+            );
         }
         bottom = sy + 6.0;
     }
@@ -150,7 +190,16 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         let mut ax = col_w + 16.0;
         for d in p.debuffs() {
             let name = f.i18n.game(&d.key);
-            let tsz = cv.tag(ax, 27.0, &name, Font::TextBold, 11.0, (6.0, 2.0, 6.0, 1.0), cv.tok("accent"), Color32::from_rgb(0x11, 0x11, 0x11));
+            let tsz = cv.tag(
+                ax,
+                27.0,
+                &name,
+                Font::TextBold,
+                11.0,
+                (6.0, 2.0, 6.0, 1.0),
+                cv.tok("accent"),
+                Color32::from_rgb(0x11, 0x11, 0x11),
+            );
             let t = buff_time(d.timer, d.infinite);
             let ts = cv.text(ax + tsz.x + 5.0, 27.0, &t, Font::Num, 12.0, cv.tok("accent"), Align2::LEFT_TOP);
             let rw = tsz.x + 5.0 + ts.x;
@@ -244,7 +293,11 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
         for a in list {
             let name = f.i18n.game(&a.key);
             let is_low = !a.infinite && a.timer < low_secs && cfg.shows("b-low");
-            let (bg, fg) = if is_low { (accent, Color32::from_rgb(0x11, 0x11, 0x11)) } else { (cv.tok("ink"), text) };
+            let (bg, fg) = if is_low {
+                (accent, Color32::from_rgb(0x11, 0x11, 0x11))
+            } else {
+                (cv.tok("ink"), text)
+            };
             let tsz = cv.tag(x, y, &name, Font::TextBold, 10.0, (5.0, 2.0, 5.0, 1.0), bg, fg);
             x += tsz.x;
             if cfg.shows("b-time") {
@@ -272,7 +325,16 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
                 y += module_header(cv, &f.t("module.buffs"), 260.0, "", Some(40.0));
                 any = true;
             }
-            let tsz = cv.tag(x, y, &f.i18n.game(&d.key), Font::TextBold, 10.0, (5.0, 2.0, 5.0, 1.0), accent, Color32::from_rgb(0x11, 0x11, 0x11));
+            let tsz = cv.tag(
+                x,
+                y,
+                &f.i18n.game(&d.key),
+                Font::TextBold,
+                10.0,
+                (5.0, 2.0, 5.0, 1.0),
+                accent,
+                Color32::from_rgb(0x11, 0x11, 0x11),
+            );
             let ts = cv.text(x + tsz.x + 5.0, y, &buff_time(d.timer, d.infinite), Font::Num, 12.0, accent, Align2::LEFT_TOP);
             x += tsz.x + 5.0 + ts.x + 10.0;
             row_h = row_h.max(tsz.y);
@@ -314,12 +376,7 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         y + 18.0
     };
     match &p.weapon_state {
-        WeaponState::Longsword {
-            gauge,
-            level,
-            level_timer,
-            ..
-        } => {
+        WeaponState::Longsword { gauge, level, level_timer, .. } => {
             y = row(y, &f.t("weapon.spirit_gauge"), gauge / 100.0, text, &format!("{}%", gauge.round()));
             let (lv_name, lv_color) = match level {
                 1 => (f.t("weapon.spirit_white"), Color32::from_rgb(0xf2, 0xf0, 0xe9)),
@@ -371,7 +428,11 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
                 x += 12.0;
             }
             y += 18.0;
-            let r = if *kinsect_stamina_max > 0.0 { kinsect_stamina / kinsect_stamina_max } else { 0.0 };
+            let r = if *kinsect_stamina_max > 0.0 {
+                kinsect_stamina / kinsect_stamina_max
+            } else {
+                0.0
+            };
             y = row(y, &f.t("weapon.kinsect"), r, text, &format!("{}%", (r * 100.0).round()));
         }
         WeaponState::ChargeBlade {

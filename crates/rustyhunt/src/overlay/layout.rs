@@ -55,13 +55,19 @@ pub fn backdrop(ctx: &egui::Context, screen: Rect, s: f32, st: &LayoutState, gam
         let mut x = 0.0;
         while x * s < screen.width() {
             let c = if (x as i32) % 64 == 0 { major } else { fine };
-            p.line_segment([pos2(screen.min.x + x * s, screen.min.y), pos2(screen.min.x + x * s, screen.max.y)], Stroke::new(1.0, c));
+            p.line_segment(
+                [pos2(screen.min.x + x * s, screen.min.y), pos2(screen.min.x + x * s, screen.max.y)],
+                Stroke::new(1.0, c),
+            );
             x += 8.0;
         }
         let mut y = 0.0;
         while y * s < screen.height() {
             let c = if (y as i32) % 64 == 0 { major } else { fine };
-            p.line_segment([pos2(screen.min.x, screen.min.y + y * s), pos2(screen.max.x, screen.min.y + y * s)], Stroke::new(1.0, c));
+            p.line_segment(
+                [pos2(screen.min.x, screen.min.y + y * s), pos2(screen.max.x, screen.min.y + y * s)],
+                Stroke::new(1.0, c),
+            );
             y += 8.0;
         }
     }
@@ -87,16 +93,7 @@ fn dashed_rect(p: &egui::Painter, r: Rect, color: Color32) {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn interact(
-    ui: &mut egui::Ui,
-    shared: &Arc<Shared>,
-    st: &mut LayoutState,
-    rects: &BTreeMap<String, Rect>,
-    screen: Rect,
-    s: f32,
-    frame_w: f32,
-    game: Game,
-) {
+pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, rects: &BTreeMap<String, Rect>, screen: Rect, s: f32, frame_w: f32, game: Game) {
     let ctx = ui.ctx().clone();
     let painter = ctx.layer_painter(top_layer());
     let to_screen = |r: Rect| Rect::from_min_max(screen.min + r.min.to_vec2() * s, screen.min + r.max.to_vec2() * s);
@@ -118,16 +115,25 @@ pub fn interact(
             let r = to_screen(*z);
             let c = if *hit { ORANGE } else { rgba(242, 240, 233, 0.35) };
             dashed_rect(&painter, r, c);
-            painter.text(r.min + vec2(6.0, 4.0), Align2::LEFT_TOP, name, Font::Text.id(11.0 * s.max(0.7)), if *hit { ORANGE } else { rgba(242, 240, 233, 0.5) });
+            painter.text(
+                r.min + vec2(6.0, 4.0),
+                Align2::LEFT_TOP,
+                name,
+                Font::Text.id(11.0 * s.max(0.7)),
+                if *hit { ORANGE } else { rgba(242, 240, 233, 0.5) },
+            );
         }
     }
 
     // 先放开设置锁再查插件模块的名字：插件那边持有自己的锁时会写设置
     let ids: Vec<String> = shared.settings().profile(game).modules.keys().cloned().collect();
-    let names: BTreeMap<String, String> = ids.into_iter().map(|id| {
-        let n = crate::plugins::module_name(&id);
-        (id, n)
-    }).collect();
+    let names: BTreeMap<String, String> = ids
+        .into_iter()
+        .map(|id| {
+            let n = crate::plugins::module_name(&id);
+            (id, n)
+        })
+        .collect();
 
     let mut changed: Option<(String, ModuleConfig)> = None;
     for (id, r) in rects {
@@ -147,7 +153,9 @@ pub fn interact(
         if resp.dragged()
             && let Some(d) = st.drag.as_ref().filter(|d| &d.id == id)
         {
-            let total = ctx.input(|i| i.pointer.press_origin().zip(i.pointer.latest_pos()).map(|(a, b)| b - a)).unwrap_or_default();
+            let total = ctx
+                .input(|i| i.pointer.press_origin().zip(i.pointer.latest_pos()).map(|(a, b)| b - a))
+                .unwrap_or_default();
             let snap = |v: f32| (v / 8.0).round() * 8.0;
             let x = snap(d.start.x + total.x / s).clamp(0.0, (frame_w - d.size.0).max(0.0));
             let y = snap(d.start.y + total.y / s).clamp(0.0, (1080.0 - d.size.1).max(0.0));
@@ -276,7 +284,8 @@ fn toolbar(ctx: &egui::Context, shared: &Arc<Shared>, st: &mut LayoutState, scre
                         let g = ui.painter().layout_no_wrap(title, Font::TextBold.id(14.0), PAPER);
                         let (tr, _) = ui.allocate_exact_size(vec2(g.size().x + 36.0, 40.0), Sense::hover());
                         ui.painter().galley(pos2(tr.min.x + 18.0, tr.center().y - g.size().y / 2.0), g, PAPER);
-                        ui.painter().line_segment([tr.right_top(), tr.right_bottom()], Stroke::new(1.0, Color32::from_rgb(0x33, 0x33, 0x33)));
+                        ui.painter()
+                            .line_segment([tr.right_top(), tr.right_bottom()], Stroke::new(1.0, Color32::from_rgb(0x33, 0x33, 0x33)));
                         let _ = r;
 
                         // 方案

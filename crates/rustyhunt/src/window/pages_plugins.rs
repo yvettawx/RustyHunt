@@ -70,17 +70,38 @@ fn list_item(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, i: usize, v: &View) {
     let (r, resp) = ui.allocate_exact_size(vec2(300.0, 64.0), Sense::click());
     let on = i == w.plugins.selected;
     if on {
-        ui.painter().rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 14.0), vec2(2.0, r.height() - 28.0)), CornerRadius::ZERO, pal.ink);
+        ui.painter().rect_filled(
+            Rect::from_min_size(pos2(r.min.x, r.min.y + 14.0), vec2(2.0, r.height() - 28.0)),
+            CornerRadius::ZERO,
+            pal.ink,
+        );
     }
     let m = &v.manifest;
-    text_at(ui, pos2(r.min.x + 14.0, r.min.y + 22.0), Align2::LEFT_CENTER, &m.name, if on { Font::TextBold } else { Font::Text }, 15.0, pal.ink);
+    text_at(
+        ui,
+        pos2(r.min.x + 14.0, r.min.y + 22.0),
+        Align2::LEFT_CENTER,
+        &m.name,
+        if on { Font::TextBold } else { Font::Text },
+        15.0,
+        pal.ink,
+    );
     let (sub, err) = match &v.status {
         Status::Failed(_) => (i18n::t("state.disabled"), true),
         Status::Incompatible(e) | Status::Broken(e) => (e.clone(), true),
         _ => (m.author.clone(), false),
     };
-    text_at(ui, pos2(r.min.x + 14.0, r.min.y + 44.0), Align2::LEFT_CENTER, &sub, Font::Text, 12.0, if err { pal.accent } else { pal.mute });
-    ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+    text_at(
+        ui,
+        pos2(r.min.x + 14.0, r.min.y + 44.0),
+        Align2::LEFT_CENTER,
+        &sub,
+        Font::Text,
+        12.0,
+        if err { pal.accent } else { pal.mute },
+    );
+    ui.painter()
+        .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
     let sr = Rect::from_min_size(pos2(r.max.x - 28.0, r.center().y - 7.0), vec2(28.0, 14.0));
     let mut enabled = v.enabled;
     let mut changed = false;
@@ -99,9 +120,13 @@ fn row(ui: &mut Ui, pal: &Pal, text: &str, right: impl FnOnce(&mut Ui)) {
     let width = ui.available_width();
     let (r, _) = ui.allocate_exact_size(vec2(width, 40.0), Sense::hover());
     text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, text, Font::Text, 13.0, pal.ink);
-    ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+    ui.painter()
+        .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
     let cr = Rect::from_min_max(pos2(r.min.x + r.width() * 0.4, r.min.y), r.max);
-    ui.scope_builder(egui::UiBuilder::new().max_rect(cr).layout(egui::Layout::right_to_left(egui::Align::Center)), right);
+    ui.scope_builder(
+        egui::UiBuilder::new().max_rect(cr).layout(egui::Layout::right_to_left(egui::Align::Center)),
+        right,
+    );
 }
 
 fn group(ui: &mut Ui, pal: &Pal, title: &str) {
@@ -203,7 +228,11 @@ fn detail(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, v: &View) {
                     let step = if whole { 1.0 } else { ((max - min) / 100.0) as f32 };
                     ui.allocate_ui_with_layout(vec2(246.0, 40.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
                         if widgets::range(ui, pal, &s.key, &mut x, *min as f32, *max as f32, step, "", 180.0) {
-                            let v = if whole { toml::Value::Integer(x.round() as i64) } else { toml::Value::Float(x as f64) };
+                            let v = if whole {
+                                toml::Value::Integer(x.round() as i64)
+                            } else {
+                                toml::Value::Float(x as f64)
+                            };
                             plugins::set_setting(&m.id, &s.key, v);
                         }
                     });

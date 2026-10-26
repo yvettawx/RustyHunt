@@ -252,19 +252,19 @@ pub fn party_values(s: &Snapshot) -> Vec<Value> {
 
 /// 整棵数据树。
 pub fn context(s: &Snapshot, o: &ContextOptions) -> Value {
-    let target = o
-        .target
-        .and_then(|uid| s.monster(uid))
-        .or_else(|| s.large_monsters().next());
+    let target = o.target.and_then(|uid| s.monster(uid)).or_else(|| s.large_monsters().next());
     let p = &s.player;
-    let sharp = p.sharpness.as_ref().map_or(json!({"level": 0, "color": "", "hits_left": 0, "ratio": 0.0}), |sh| {
-        json!({
-            "level": sh.level.index(),
-            "color": o.i18n.t(&format!("sharpness.{}", sh.level.index())),
-            "hits_left": sh.hits_left(),
-            "ratio": round2(ratio(sh.current as f32, sh.max as f32)),
-        })
-    });
+    let sharp = p
+        .sharpness
+        .as_ref()
+        .map_or(json!({"level": 0, "color": "", "hits_left": 0, "ratio": 0.0}), |sh| {
+            json!({
+                "level": sh.level.index(),
+                "color": o.i18n.t(&format!("sharpness.{}", sh.level.index())),
+                "hits_left": sh.hits_left(),
+                "ratio": round2(ratio(sh.current as f32, sh.max as f32)),
+            })
+        });
     let mut root = Map::new();
     root.insert(
         "game".into(),
@@ -295,10 +295,7 @@ pub fn context(s: &Snapshot, o: &ContextOptions) -> Value {
         "monster".into(),
         target.map_or_else(|| monster_value(&Monster::default(), o), |m| monster_value(m, o)),
     );
-    root.insert(
-        "monsters".into(),
-        Value::Array(s.large_monsters().map(|m| monster_value(m, o)).collect()),
-    );
+    root.insert("monsters".into(), Value::Array(s.large_monsters().map(|m| monster_value(m, o)).collect()));
     root.insert(
         "player".into(),
         json!({
@@ -317,12 +314,14 @@ pub fn context(s: &Snapshot, o: &ContextOptions) -> Value {
     root.insert("party".into(), Value::Array(party_values(s)));
     root.insert(
         "base".into(),
-        s.base.as_ref().map_or(json!({"argosy_days": 0, "tailraiders_quests": 0, "harvest_items": 0, "steam_stored": 0}), |b| {
-            json!({
-                "argosy_days": b.argosy_days, "tailraiders_quests": b.tailraiders_quests,
-                "harvest_items": b.harvest_items, "steam_stored": b.steam_stored,
-            })
-        }),
+        s.base
+            .as_ref()
+            .map_or(json!({"argosy_days": 0, "tailraiders_quests": 0, "harvest_items": 0, "steam_stored": 0}), |b| {
+                json!({
+                    "argosy_days": b.argosy_days, "tailraiders_quests": b.tailraiders_quests,
+                    "harvest_items": b.harvest_items, "steam_stored": b.steam_stored,
+                })
+            }),
     );
     Value::Object(root)
 }
@@ -410,15 +409,19 @@ pub fn markdown() -> String {
         let g = path.split(['.', '[']).next().unwrap_or("");
         if g != group {
             group = g;
-            out += &format!("
+            out += &format!(
+                "
 ## {g}
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-");
+"
+            );
         }
-        out += &format!("| `{path}` | {kind} | {desc} |
-");
+        out += &format!(
+            "| `{path}` | {kind} | {desc} |
+"
+        );
     }
     out
 }

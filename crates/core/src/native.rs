@@ -45,7 +45,12 @@ mod tests {
 
     #[test]
     fn stats_round_trip() {
-        let s = Stats { total: 1234.0, critical: 400.5, hits: 30, critical_hits: 9 };
+        let s = Stats {
+            total: 1234.0,
+            critical: 400.5,
+            hits: 30,
+            critical_hits: 9,
+        };
         assert_eq!(Stats::parse(&s.format()), Some(s));
         assert_eq!(Stats::parse("STATS 1 2"), None);
     }

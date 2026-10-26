@@ -69,7 +69,8 @@ pub fn check(dir: &Path) -> Report {
         }
     }
     if r.bytes > MAX_PACK_BYTES {
-        r.errors.push(format!("整个包 {:.1} MB，不能超过 {} MB", r.bytes as f64 / 1048576.0, MAX_PACK_BYTES / 1048576));
+        r.errors
+            .push(format!("整个包 {:.1} MB，不能超过 {} MB", r.bytes as f64 / 1048576.0, MAX_PACK_BYTES / 1048576));
     }
     match Theme::load_dir(dir) {
         Ok(t) => {

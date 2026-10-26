@@ -134,18 +134,7 @@ impl<'a> Canvas<'a> {
         self.text_ex(x, y, text, font, size, color, align, 0.0, true)
     }
 
-    pub fn text_ex(
-        &self,
-        x: f32,
-        y: f32,
-        text: &str,
-        font: Font,
-        size: f32,
-        color: Color32,
-        align: Align2,
-        spacing: f32,
-        shadow: bool,
-    ) -> Vec2 {
+    pub fn text_ex(&self, x: f32, y: f32, text: &str, font: Font, size: f32, color: Color32, align: Align2, spacing: f32, shadow: bool) -> Vec2 {
         if text.is_empty() {
             return Vec2::ZERO;
         }
@@ -181,17 +170,7 @@ impl<'a> Canvas<'a> {
     }
 
     /// 黑色名牌。返回大小。
-    pub fn tag(
-        &self,
-        x: f32,
-        y: f32,
-        text: &str,
-        font: Font,
-        size: f32,
-        pad: (f32, f32, f32, f32),
-        bg: Color32,
-        fg: Color32,
-    ) -> Vec2 {
+    pub fn tag(&self, x: f32, y: f32, text: &str, font: Font, size: f32, pad: (f32, f32, f32, f32), bg: Color32, fg: Color32) -> Vec2 {
         let t = self.measure(text, font, size, 0.06);
         let w = t.x + pad.0 + pad.2;
         let h = t.y + pad.1 + pad.3;
@@ -419,8 +398,7 @@ impl<'a> Canvas<'a> {
             let fill = if on { self.c(color) } else { Color32::TRANSPARENT };
             match shape {
                 PipShape::Square => {
-                    self.painter
-                        .rect(r, CornerRadius::ZERO, fill, stroke, egui::StrokeKind::Inside);
+                    self.painter.rect(r, CornerRadius::ZERO, fill, stroke, egui::StrokeKind::Inside);
                 }
                 PipShape::Circle => {
                     self.painter.circle(r.center(), size * self.scale / 2.0, fill, stroke);
@@ -434,11 +412,8 @@ impl<'a> Canvas<'a> {
     pub fn diamond(&self, cx: f32, cy: f32, size: f32, fill: Color32, stroke: Color32) {
         let h = size / 2.0;
         let pts = vec![self.p(cx, cy - h), self.p(cx + h, cy), self.p(cx, cy + h), self.p(cx - h, cy)];
-        self.painter.add(Shape::convex_polygon(
-            pts,
-            self.c(fill),
-            Stroke::new(self.scale.max(0.8), self.c(stroke)),
-        ));
+        self.painter
+            .add(Shape::convex_polygon(pts, self.c(fill), Stroke::new(self.scale.max(0.8), self.c(stroke))));
     }
 
     pub fn dot(&self, cx: f32, cy: f32, r: f32, color: Color32, glow: bool) {

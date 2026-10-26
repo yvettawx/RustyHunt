@@ -39,9 +39,18 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 let on = w.settings.tab == i;
                 let (r, resp) = ui.allocate_exact_size(vec2(120.0, 32.0), Sense::click());
                 let color = if on || resp.hovered() { pal.ink } else { pal.mute };
-                text_at(ui, pos2(r.min.x + 14.0, r.center().y), Align2::LEFT_CENTER, &i18n::t(t), if on { Font::TextBold } else { Font::Text }, 14.0, color);
+                text_at(
+                    ui,
+                    pos2(r.min.x + 14.0, r.center().y),
+                    Align2::LEFT_CENTER,
+                    &i18n::t(t),
+                    if on { Font::TextBold } else { Font::Text },
+                    14.0,
+                    color,
+                );
                 if on {
-                    ui.painter().rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 9.0), vec2(2.0, 14.0)), CornerRadius::ZERO, pal.ink);
+                    ui.painter()
+                        .rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 9.0), vec2(2.0, 14.0)), CornerRadius::ZERO, pal.ink);
                 }
                 if resp.clicked() {
                     w.settings.tab = i;
@@ -169,7 +178,13 @@ fn hotkeys(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             let capturing = w.settings.capturing.as_deref() == Some(id.as_str());
             let value = hk.plugin.get(&id).cloned().unwrap_or_else(|| a.default_key.clone());
             setting_row(ui, pal, &a.name, Some(&a.plugin_name), |ui| {
-                let text = if capturing { i18n::t("hotkey.press") } else if value.is_empty() { "—".into() } else { value };
+                let text = if capturing {
+                    i18n::t("hotkey.press")
+                } else if value.is_empty() {
+                    "—".into()
+                } else {
+                    value
+                };
                 if key_box(ui, pal, &text, capturing).clicked() {
                     w.settings.capturing = Some(id.clone());
                     w.settings.capture_armed = false;
@@ -227,7 +242,10 @@ fn files(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         if link(ui, pal, &i18n::t("action.import")).clicked()
             && let Some(p) = rfd::FileDialog::new().add_filter("TOML", &["toml"]).pick_file()
         {
-            match std::fs::read_to_string(&p).map_err(|e| e.to_string()).and_then(|t| toml::from_str::<rh_core::settings::Settings>(&t).map_err(|e| e.to_string())) {
+            match std::fs::read_to_string(&p)
+                .map_err(|e| e.to_string())
+                .and_then(|t| toml::from_str::<rh_core::settings::Settings>(&t).map_err(|e| e.to_string()))
+            {
                 Ok(mut s) => {
                     s.normalize();
                     *shared.settings.write().unwrap() = s;
@@ -270,7 +288,13 @@ fn injection(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         if ok {
             ui.painter().circle_filled(pos2(r.min.x + 3.0, r.center().y), 3.0, pal.accent);
         }
-        let color = if ok { pal.ink } else if matches!(s, crate::injection::ItemStatus::Failed(_)) { pal.accent } else { pal.mute };
+        let color = if ok {
+            pal.ink
+        } else if matches!(s, crate::injection::ItemStatus::Failed(_)) {
+            pal.accent
+        } else {
+            pal.mute
+        };
         ui.painter().galley(pos2(r.max.x - g.size().x, r.center().y - g.size().y / 2.0), g, color);
     };
     let mut ask_patch = false;
@@ -326,7 +350,8 @@ fn injection(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         let (r, _) = ui.allocate_exact_size(vec2(ui.available_width().min(640.0), 38.0), Sense::hover());
         text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, k, Font::Text, 13.0, pal.mute);
         text_at(ui, pos2(r.max.x, r.center().y), Align2::RIGHT_CENTER, v, Font::Mono, 12.0, pal.ink);
-        ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], egui::Stroke::new(1.0, pal.line));
+        ui.painter()
+            .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], egui::Stroke::new(1.0, pal.line));
     };
     let live = shared.live();
     kv(ui, &i18n::t("home.process"), if live.exe.is_empty() { "-" } else { &live.exe });
@@ -342,9 +367,15 @@ fn injection(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
 
 fn notify(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let shared = w.shared.clone();
-    setting_row(ui, pal, &i18n::t("notify.toast"), None, |ui| sw(ui, pal, &shared, |s| s.notify.toast, |s, v| s.notify.toast = v));
-    setting_row(ui, pal, &i18n::t("notify.sound"), None, |ui| sw(ui, pal, &shared, |s| s.notify.sound, |s, v| s.notify.sound = v));
-    setting_row(ui, pal, &i18n::t("notify.in_game"), None, |ui| sw(ui, pal, &shared, |s| s.notify.in_game, |s, v| s.notify.in_game = v));
+    setting_row(ui, pal, &i18n::t("notify.toast"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.toast, |s, v| s.notify.toast = v)
+    });
+    setting_row(ui, pal, &i18n::t("notify.sound"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.sound, |s, v| s.notify.sound = v)
+    });
+    setting_row(ui, pal, &i18n::t("notify.in_game"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.in_game, |s, v| s.notify.in_game = v)
+    });
     let channels = crate::plugins::channels();
     if !channels.is_empty() {
         ui.add_space(26.0);
@@ -364,10 +395,18 @@ fn notify(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     }
     ui.add_space(26.0);
     label_mute(ui, pal, &i18n::t("notify.which"), 12.0);
-    setting_row(ui, pal, &i18n::t("notify.kind_update"), None, |ui| sw(ui, pal, &shared, |s| s.notify.update, |s, v| s.notify.update = v));
-    setting_row(ui, pal, &i18n::t("notify.kind_map"), None, |ui| sw(ui, pal, &shared, |s| s.notify.map_mismatch, |s, v| s.notify.map_mismatch = v));
-    setting_row(ui, pal, &i18n::t("notify.kind_crown"), None, |ui| sw(ui, pal, &shared, |s| s.notify.crown, |s, v| s.notify.crown = v));
-    setting_row(ui, pal, &i18n::t("notify.kind_disconnect"), None, |ui| sw(ui, pal, &shared, |s| s.notify.disconnect, |s, v| s.notify.disconnect = v));
+    setting_row(ui, pal, &i18n::t("notify.kind_update"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.update, |s, v| s.notify.update = v)
+    });
+    setting_row(ui, pal, &i18n::t("notify.kind_map"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.map_mismatch, |s, v| s.notify.map_mismatch = v)
+    });
+    setting_row(ui, pal, &i18n::t("notify.kind_crown"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.crown, |s, v| s.notify.crown = v)
+    });
+    setting_row(ui, pal, &i18n::t("notify.kind_disconnect"), None, |ui| {
+        sw(ui, pal, &shared, |s| s.notify.disconnect, |s, v| s.notify.disconnect = v)
+    });
 }
 
 fn language(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {

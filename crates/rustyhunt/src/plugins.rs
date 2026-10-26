@@ -196,7 +196,12 @@ fn load_dir(dir: &Path) -> Plugin {
 pub fn scan() {
     let Some(shared) = SHARED.get() else { return };
     let mut dirs: Vec<PathBuf> = std::fs::read_dir(paths::plugins())
-        .map(|rd| rd.flatten().map(|e| e.path()).filter(|p| p.is_dir() && p.join("plugin.toml").exists()).collect())
+        .map(|rd| {
+            rd.flatten()
+                .map(|e| e.path())
+                .filter(|p| p.is_dir() && p.join("plugin.toml").exists())
+                .collect()
+        })
         .unwrap_or_default();
     dirs.sort();
     let mut r = reg();
@@ -259,7 +264,12 @@ fn stop(p: &mut Plugin) {
 
 fn handle(shared: &Arc<Shared>, id: &str, o: Out) {
     let name = || {
-        reg().plugins.iter().find(|p| p.manifest.id == id).map(Plugin::label).unwrap_or_else(|| id.to_string())
+        reg()
+            .plugins
+            .iter()
+            .find(|p| p.manifest.id == id)
+            .map(Plugin::label)
+            .unwrap_or_else(|| id.to_string())
     };
     match o {
         Out::Log { level, text } => {
@@ -404,7 +414,13 @@ fn split_key(id: &str) -> Option<(&str, &str)> {
 /// 插件模块交上来的数据，放进模板上下文的 `data` 里。
 pub fn module_data(id: &str) -> Option<Value> {
     let (pid, mid) = split_key(id)?;
-    reg().plugins.iter().find(|p| p.manifest.id == pid && p.running.is_some())?.data.get(mid).cloned()
+    reg()
+        .plugins
+        .iter()
+        .find(|p| p.manifest.id == pid && p.running.is_some())?
+        .data
+        .get(mid)
+        .cloned()
 }
 
 /// 画插件模块：按当前主题解析插件给的模板，数据是快照字段加插件交来的 `data`。
@@ -458,7 +474,11 @@ pub fn module_infos() -> Vec<ModuleInfo> {
 
 pub fn module_name(id: &str) -> String {
     if let Some((pid, mid)) = split_key(id)
-        && let Some(m) = reg().plugins.iter().find(|p| p.manifest.id == pid).and_then(|p| p.manifest.modules.iter().find(|m| m.id == mid))
+        && let Some(m) = reg()
+            .plugins
+            .iter()
+            .find(|p| p.manifest.id == pid)
+            .and_then(|p| p.manifest.modules.iter().find(|m| m.id == mid))
     {
         return m.name.clone();
     }
@@ -498,7 +518,11 @@ pub fn actions() -> Vec<ActionInfo> {
 
 /// 插件动作的默认热键，热键线程在用户没改过时用它。
 pub fn default_keys() -> Vec<(String, String)> {
-    actions().into_iter().filter(|a| !a.default_key.is_empty()).map(|a| (format!("{}.{}", a.plugin, a.id), a.default_key)).collect()
+    actions()
+        .into_iter()
+        .filter(|a| !a.default_key.is_empty())
+        .map(|a| (format!("{}.{}", a.plugin, a.id), a.default_key))
+        .collect()
 }
 
 pub struct ChannelInfo {
@@ -571,13 +595,22 @@ pub fn run_exporter(e: &ExporterInfo, hunts: &[crate::records::Hunt]) {
     let (tx, rx) = channel();
     {
         let r = reg();
-        let Some(p) = r.plugins.iter().find(|p| p.manifest.id == e.plugin) else { return };
-        p.send(Msg::Export { input: input.to_string(), reply: tx });
+        let Some(p) = r.plugins.iter().find(|p| p.manifest.id == e.plugin) else {
+            return;
+        };
+        p.send(Msg::Export {
+            input: input.to_string(),
+            reply: tx,
+        });
     }
     match rx.recv_timeout(Duration::from_secs(3)) {
         Ok(Ok(bytes)) => {
             let ext = e.ext.trim_start_matches('.');
-            if let Some(path) = rfd::FileDialog::new().set_file_name(format!("rustyhunt-hunts.{ext}")).add_filter(&e.name, &[ext]).save_file() {
+            if let Some(path) = rfd::FileDialog::new()
+                .set_file_name(format!("rustyhunt-hunts.{ext}"))
+                .add_filter(&e.name, &[ext])
+                .save_file()
+            {
                 match std::fs::write(&path, bytes) {
                     Ok(()) => log::info!("导出到 {}", path.display()),
                     Err(err) => log::warn!("导出失败：{err}"),
@@ -625,7 +658,9 @@ pub fn set_enabled(id: &str, on: bool) {
     shared.edit_settings(|s| s.plugins.entry(id.to_string()).or_default().enabled = on);
     let mut r = reg();
     let out = r.out.clone();
-    let Some(p) = r.plugins.iter_mut().find(|p| p.manifest.id == id) else { return };
+    let Some(p) = r.plugins.iter_mut().find(|p| p.manifest.id == id) else {
+        return;
+    };
     if on {
         if p.running.is_none()
             && let Some(out) = out
@@ -690,7 +725,9 @@ pub fn uninstall(id: &str) -> Result<(), String> {
     let Some(shared) = SHARED.get() else { return Ok(()) };
     let dir = {
         let mut r = reg();
-        let Some(i) = r.plugins.iter().position(|p| p.manifest.id == id) else { return Ok(()) };
+        let Some(i) = r.plugins.iter().position(|p| p.manifest.id == id) else {
+            return Ok(());
+        };
         let mut p = r.plugins.remove(i);
         stop(&mut p);
         p.dir
@@ -743,7 +780,9 @@ fn unzip(file: &Path, to: &Path) -> Result<(), String> {
     let mut total = 0u64;
     for i in 0..z.len() {
         let mut e = z.by_index(i).map_err(|e| e.to_string())?;
-        let Some(rel) = e.enclosed_name() else { return Err("压缩包里有不安全的路径".into()) };
+        let Some(rel) = e.enclosed_name() else {
+            return Err("压缩包里有不安全的路径".into());
+        };
         total += e.size();
         if total > 64 * 1024 * 1024 {
             return Err("插件包超过 64 MB".into());
@@ -792,7 +831,9 @@ pub fn prepare(path: &Path) -> Result<Staged, String> {
     if temp && let Err(e) = unzip(path, &dir) {
         return fail(e);
     }
-    let Some(root) = manifest_root(&dir) else { return fail("没有 plugin.toml".into()) };
+    let Some(root) = manifest_root(&dir) else {
+        return fail("没有 plugin.toml".into());
+    };
     let manifest = match Manifest::load(&root) {
         Ok(m) => m,
         Err(e) => return fail(e),
@@ -822,7 +863,9 @@ fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
 /// 用户确认权限后装进 `plugins/<id>`，授予清单里的全部权限并启用。同 id 的旧版本被替换，
 /// 旧版本的 `data` 文件夹保留。
 pub fn install(staged: Staged) -> Result<(), String> {
-    let Some(shared) = SHARED.get() else { return Err("插件系统没有启动".into()) };
+    let Some(shared) = SHARED.get() else {
+        return Err("插件系统没有启动".into());
+    };
     let m = staged.manifest.clone();
     let src = staged.root.clone();
     let dest = paths::plugins().join(&m.id);
@@ -901,7 +944,15 @@ mod tests {
         let template = std::fs::read(ex.join("split.xml")).unwrap();
 
         let good = tmp.join("good.zip");
-        std::fs::write(&good, zip_of(&[("split-timer/plugin.toml", &manifest), ("split-timer/split.xml", &template), ("split-timer/plugin.wasm", b"\0asm")])).unwrap();
+        std::fs::write(
+            &good,
+            zip_of(&[
+                ("split-timer/plugin.toml", &manifest),
+                ("split-timer/split.xml", &template),
+                ("split-timer/plugin.wasm", b"\0asm"),
+            ]),
+        )
+        .unwrap();
         let s = prepare(&good).unwrap();
         assert_eq!(s.manifest.id, "split-timer");
         assert!(s.root.join("split.xml").is_file());

@@ -43,7 +43,15 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         }
         let c = if m.is_self { cv.clone() } else { cv.faded(0.78) };
         if cfg.shows("d-rank") {
-            c.text(0.0, y, &format!("{:02}", rank + 1), Font::NumHeavy, 13.0, if m.is_self { accent } else { cv.tok("text-mute") }, Align2::LEFT_TOP);
+            c.text(
+                0.0,
+                y,
+                &format!("{:02}", rank + 1),
+                Font::NumHeavy,
+                13.0,
+                if m.is_self { accent } else { cv.tok("text-mute") },
+                Align2::LEFT_TOP,
+            );
         }
         let nx = if cfg.shows("d-rank") { 30.0 } else { 0.0 };
         let color = SLOT_COLORS[(m.slot.clamp(0, 3)) as usize];
@@ -61,10 +69,19 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         c.text(w - vs.x, y - 1.0, &v, Font::Num, 13.0, text, Align2::LEFT_TOP);
         y += 17.0;
         if cfg.shows("d-bar") {
-            c.bar("damage", nx, y, w - nx, 2.0, &[Layer::fill(m.damage / top, if m.is_self { accent } else { cv.tok("text-mute") })], false);
+            c.bar(
+                "damage",
+                nx,
+                y,
+                w - nx,
+                2.0,
+                &[Layer::fill(m.damage / top, if m.is_self { accent } else { cv.tok("text-mute") })],
+                false,
+            );
             y += 2.0;
         }
-        if m.is_self && cfg.shows("d-split")
+        if m.is_self
+            && cfg.shows("d-split")
             && let Some(split) = &s.damage_split
         {
             y += 4.0;
@@ -90,11 +107,7 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         let h = &f.live.dps_history;
         let mx = h.iter().copied().fold(1.0, f32::max) * 1.15;
         let n = h.len() as f32 - 1.0;
-        let pts: Vec<(f32, f32)> = h
-            .iter()
-            .enumerate()
-            .map(|(i, v)| (i as f32 / n * w, y + 25.0 - v / mx * 22.0))
-            .collect();
+        let pts: Vec<(f32, f32)> = h.iter().enumerate().map(|(i, v)| (i as f32 / n * w, y + 25.0 - v / mx * 22.0)).collect();
         cv.polyline(&pts, 1.5, accent);
         y += 28.0;
     }
@@ -118,7 +131,13 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
     for m in list {
         let is_t = Some(m.uid) == target || m.target == Target::Own;
         let c = if is_t { cv.clone() } else { cv.faded(0.72) };
-        c.diamond(4.0, y + 9.0, 6.0, if is_t { accent } else { Color32::TRANSPARENT }, if is_t { accent } else { text });
+        c.diamond(
+            4.0,
+            y + 9.0,
+            6.0,
+            if is_t { accent } else { Color32::TRANSPARENT },
+            if is_t { accent } else { text },
+        );
         let name = f.i18n.monster(&m.key);
         let ns = c.text(17.0, y + 2.0, &name, Font::Text, 12.0, text, Align2::LEFT_TOP);
         let mut x = 17.0 + ns.x + 5.0;
@@ -157,7 +176,15 @@ pub fn clock(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
     {
         let ls = cv.text_ex(0.0, 9.0, &f.t("label.time_left"), Font::TextBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
         let warn = q.time_left < 300.0;
-        let ts = cv.text(ls.x + 10.0, 0.0, &mmss(q.time_left), Font::NumHeavy, 24.0, if warn { cv.tok("accent") } else { cv.tok("text") }, Align2::LEFT_TOP);
+        let ts = cv.text(
+            ls.x + 10.0,
+            0.0,
+            &mmss(q.time_left),
+            Font::NumHeavy,
+            24.0,
+            if warn { cv.tok("accent") } else { cv.tok("text") },
+            Align2::LEFT_TOP,
+        );
         x = ls.x + 10.0 + ts.x;
         h = h.max(ts.y);
     }

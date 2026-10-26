@@ -16,8 +16,8 @@
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::OnceLock;
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
 use wasmtime::{AsContextMut, Caller, Config, Engine, Extern, Instance, Linker, Module, Store, StoreLimits, StoreLimitsBuilder, TypedFunc};
@@ -38,21 +38,33 @@ pub enum Msg {
     Action(String),
     Settings(String),
     Notify(String),
-    Export {
-        input: String,
-        reply: Sender<Result<Vec<u8>, String>>,
-    },
+    Export { input: String, reply: Sender<Result<Vec<u8>, String>> },
     Stop,
 }
 
 /// 插件线程发回宿主的消息。
 #[derive(Debug, Clone, PartialEq)]
 pub enum Out {
-    Log { level: u32, text: String },
-    ModuleData { module: String, json: String },
-    RecordField { key: String, value: String },
-    Notify { title: String, body: String },
-    Serve { port: u16, json: String },
+    Log {
+        level: u32,
+        text: String,
+    },
+    ModuleData {
+        module: String,
+        json: String,
+    },
+    RecordField {
+        key: String,
+        value: String,
+    },
+    Notify {
+        title: String,
+        body: String,
+    },
+    Serve {
+        port: u16,
+        json: String,
+    },
     /// 插件出错或超时，已停止
     Failed(String),
 }
@@ -120,10 +132,14 @@ fn read_str(caller: &mut Caller<'_, HostCtx>, ptr: i32, len: i32) -> Option<Stri
 
 /// 把字节写进插件内存（调用插件的 rh_alloc），返回 (ptr << 32) | len；失败返回 -1。
 fn give(caller: &mut Caller<'_, HostCtx>, bytes: &[u8]) -> i64 {
-    let Some(alloc) = caller.get_export("rh_alloc").and_then(Extern::into_func) else { return -1 };
+    let Some(alloc) = caller.get_export("rh_alloc").and_then(Extern::into_func) else {
+        return -1;
+    };
     let Ok(alloc) = alloc.typed::<i32, i32>(&caller) else { return -1 };
     let Ok(ptr) = alloc.call(&mut *caller, bytes.len() as i32) else { return -1 };
-    let Some(mem) = caller.get_export("memory").and_then(Extern::into_memory) else { return -1 };
+    let Some(mem) = caller.get_export("memory").and_then(Extern::into_memory) else {
+        return -1;
+    };
     if mem.write(&mut *caller, ptr as usize, bytes).is_err() {
         return -1;
     }
@@ -147,24 +163,16 @@ fn link(linker: &mut Linker<HostCtx>) -> wasmtime::Result<()> {
             });
         }
     })?;
-    linker.func_wrap(
-        "rh",
-        "set_module_data",
-        |mut c: Caller<'_, HostCtx>, mp: i32, ml: i32, jp: i32, jl: i32| {
-            if let (Some(module), Some(json)) = (read_str(&mut c, mp, ml), read_str(&mut c, jp, jl)) {
-                c.data().send(Out::ModuleData { module, json });
-            }
-        },
-    )?;
-    linker.func_wrap(
-        "rh",
-        "set_record_field",
-        |mut c: Caller<'_, HostCtx>, kp: i32, kl: i32, vp: i32, vl: i32| {
-            if let (Some(key), Some(value)) = (read_str(&mut c, kp, kl), read_str(&mut c, vp, vl)) {
-                c.data().send(Out::RecordField { key, value });
-            }
-        },
-    )?;
+    linker.func_wrap("rh", "set_module_data", |mut c: Caller<'_, HostCtx>, mp: i32, ml: i32, jp: i32, jl: i32| {
+        if let (Some(module), Some(json)) = (read_str(&mut c, mp, ml), read_str(&mut c, jp, jl)) {
+            c.data().send(Out::ModuleData { module, json });
+        }
+    })?;
+    linker.func_wrap("rh", "set_record_field", |mut c: Caller<'_, HostCtx>, kp: i32, kl: i32, vp: i32, vl: i32| {
+        if let (Some(key), Some(value)) = (read_str(&mut c, kp, kl), read_str(&mut c, vp, vl)) {
+            c.data().send(Out::RecordField { key, value });
+        }
+    })?;
     linker.func_wrap("rh", "notify", |mut c: Caller<'_, HostCtx>, tp: i32, tl: i32, bp: i32, bl: i32| {
         if let (Some(title), Some(body)) = (read_str(&mut c, tp, tl), read_str(&mut c, bp, bl)) {
             c.data().send(Out::Notify { title, body });
@@ -187,24 +195,22 @@ fn link(linker: &mut Linker<HostCtx>) -> wasmtime::Result<()> {
             _ => -1,
         }
     })?;
-    linker.func_wrap(
-        "rh",
-        "fs_write",
-        |mut c: Caller<'_, HostCtx>, pp: i32, pl: i32, dp: i32, dl: i32| -> i32 {
-            if !c.data().allowed(Permission::Files) {
-                return -2;
-            }
-            if dl as usize > MAX_FILE {
-                return -1;
-            }
-            let (Some(rel), Some(data)) = (read_str(&mut c, pp, pl), read_bytes(&mut c, dp, dl)) else { return -1 };
-            let Some(path) = sandbox(&c.data().data_dir, &rel) else { return -1 };
-            if let Some(p) = path.parent() {
-                let _ = std::fs::create_dir_all(p);
-            }
-            if std::fs::write(path, data).is_ok() { 0 } else { -1 }
-        },
-    )?;
+    linker.func_wrap("rh", "fs_write", |mut c: Caller<'_, HostCtx>, pp: i32, pl: i32, dp: i32, dl: i32| -> i32 {
+        if !c.data().allowed(Permission::Files) {
+            return -2;
+        }
+        if dl as usize > MAX_FILE {
+            return -1;
+        }
+        let (Some(rel), Some(data)) = (read_str(&mut c, pp, pl), read_bytes(&mut c, dp, dl)) else {
+            return -1;
+        };
+        let Some(path) = sandbox(&c.data().data_dir, &rel) else { return -1 };
+        if let Some(p) = path.parent() {
+            let _ = std::fs::create_dir_all(p);
+        }
+        if std::fs::write(path, data).is_ok() { 0 } else { -1 }
+    })?;
     linker.func_wrap("rh", "http_get", |mut c: Caller<'_, HostCtx>, up: i32, ul: i32| -> i64 {
         if !c.data().allowed(Permission::Net) {
             return -2;
@@ -215,11 +221,12 @@ fn link(linker: &mut Linker<HostCtx>) -> wasmtime::Result<()> {
         }
         // 网络请求不算进调用时限
         c.as_context_mut().set_epoch_deadline(deadline_ticks() + 600);
-        let agent: ureq::Agent = ureq::Agent::config_builder()
-            .timeout_global(Some(Duration::from_secs(5)))
-            .build()
-            .into();
-        match agent.get(&url).call().and_then(|mut r| r.body_mut().with_config().limit(MAX_FILE as u64).read_to_vec()) {
+        let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(5))).build().into();
+        match agent
+            .get(&url)
+            .call()
+            .and_then(|mut r| r.body_mut().with_config().limit(MAX_FILE as u64).read_to_vec())
+        {
             Ok(b) => give(&mut c, &b),
             Err(_) => -1,
         }
@@ -431,9 +438,21 @@ mod tests {
         let r = spawn(&m, &dir, &dir.join("data"), HashSet::new(), "{}".into(), otx).unwrap();
         r.tx.send(Msg::Event("{\"type\":\"enrage\"}".into())).unwrap();
         let (_, a) = orx.recv_timeout(Duration::from_secs(5)).unwrap();
-        assert_eq!(a, Out::Log { level: 2, text: "{\"type\":\"enrage\"}".into() });
+        assert_eq!(
+            a,
+            Out::Log {
+                level: 2,
+                text: "{\"type\":\"enrage\"}".into()
+            }
+        );
         let (_, b) = orx.recv_timeout(Duration::from_secs(5)).unwrap();
-        assert_eq!(b, Out::ModuleData { module: "split".into(), json: "{\"t\":1}".into() });
+        assert_eq!(
+            b,
+            Out::ModuleData {
+                module: "split".into(),
+                json: "{\"t\":1}".into()
+            }
+        );
         r.tx.send(Msg::Stop).unwrap();
         r.handle.join().unwrap();
         let _ = std::fs::remove_dir_all(dir);

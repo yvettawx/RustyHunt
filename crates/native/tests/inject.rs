@@ -9,9 +9,19 @@ use std::time::Duration;
 #[test]
 #[ignore]
 fn injects_into_child_process() {
-    let dll = std::env::current_exe().unwrap().parent().unwrap().parent().unwrap().join("rustyhunt_native.dll");
+    let dll = std::env::current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("rustyhunt_native.dll");
     assert!(dll.is_file(), "先编译 DLL：{}", dll.display());
-    let mut child = std::process::Command::new("ping").args(["-n", "30", "127.0.0.1"]).stdout(std::process::Stdio::null()).spawn().unwrap();
+    let mut child = std::process::Command::new("ping")
+        .args(["-n", "30", "127.0.0.1"])
+        .stdout(std::process::Stdio::null())
+        .spawn()
+        .unwrap();
     std::thread::sleep(Duration::from_millis(300));
     let p = platform::process::Process::open_writable(child.id()).unwrap();
     p.inject_dll(&dll).unwrap();

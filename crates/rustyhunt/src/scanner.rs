@@ -400,13 +400,7 @@ impl Scanner {
 }
 
 /// 按目标模式选目标怪物。
-pub fn select_target(
-    snap: &Snapshot,
-    mode: TargetMode,
-    manual: Option<u64>,
-    hits: &std::collections::HashMap<u64, f64>,
-    _cursor: &mut usize,
-) -> Option<u64> {
+pub fn select_target(snap: &Snapshot, mode: TargetMode, manual: Option<u64>, hits: &std::collections::HashMap<u64, f64>, _cursor: &mut usize) -> Option<u64> {
     let alive: Vec<&rh_core::model::Monster> = snap.large_monsters().filter(|m| m.alive()).collect();
     let fallback = || {
         alive

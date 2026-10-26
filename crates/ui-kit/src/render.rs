@@ -23,10 +23,7 @@ pub struct Images {
 
 impl Images {
     pub fn new(dir: Option<PathBuf>) -> Images {
-        Images {
-            dir,
-            loaded: HashMap::new(),
-        }
+        Images { dir, loaded: HashMap::new() }
     }
 
     pub fn set_dir(&mut self, dir: Option<PathBuf>) {
@@ -58,7 +55,11 @@ fn load_image(ctx: &egui::Context, path: &Path, w: u32, h: u32) -> Option<Textur
     let image = if ext == "svg" {
         let tree = resvg::usvg::Tree::from_data(&bytes, &resvg::usvg::Options::default()).ok()?;
         let s = tree.size();
-        let (tw, th) = if w > 0 && h > 0 { (w, h) } else { (s.width().ceil() as u32, s.height().ceil() as u32) };
+        let (tw, th) = if w > 0 && h > 0 {
+            (w, h)
+        } else {
+            (s.width().ceil() as u32, s.height().ceil() as u32)
+        };
         let (tw, th) = (tw.clamp(1, crate::theme::MAX_IMAGE_SIDE), th.clamp(1, crate::theme::MAX_IMAGE_SIDE));
         let mut pix = resvg::tiny_skia::Pixmap::new(tw, th)?;
         let tf = resvg::tiny_skia::Transform::from_scale(tw as f32 / s.width(), th as f32 / s.height());
@@ -82,12 +83,7 @@ struct Env<'a> {
 
 impl Scope for Env<'_> {
     fn get(&self, name: &str) -> Option<&Value> {
-        self.vars
-            .iter()
-            .rev()
-            .find(|(n, _)| n == name)
-            .map(|(_, v)| v)
-            .or_else(|| self.root.get(name))
+        self.vars.iter().rev().find(|(n, _)| n == name).map(|(_, v)| v).or_else(|| self.root.get(name))
     }
 }
 
@@ -237,8 +233,12 @@ impl Renderer<'_, '_> {
             }
             Kind::Tag => {
                 let p = e.num("padding", 4.0);
-                self.canvas
-                    .tag_size(&e.text("text"), self.font(&e, Font::TextBold), e.num("size", 12.0), (p * 2.0, p * 0.75, p * 2.0, p * 0.5))
+                self.canvas.tag_size(
+                    &e.text("text"),
+                    self.font(&e, Font::TextBold),
+                    e.num("size", 12.0),
+                    (p * 2.0, p * 0.75, p * 2.0, p * 0.5),
+                )
             }
             Kind::Bar => vec2(e.num("width", 100.0), e.num("height", 6.0)),
             Kind::Arc => {
@@ -417,7 +417,9 @@ impl Renderer<'_, '_> {
                 layers.push(Layer::fill(e.num("value", 0.0), self.color(&e, "fill", "text")));
                 let kind = e.text("kind");
                 // 没有覆盖样式时直接用当前主题画；复制主题要连模板一起复制，很贵
-                let custom = ["shape", "segments", "gap", "skew", "radius", "caps", "edge", "glow", "empty", "track"].iter().any(|k| e.has(k));
+                let custom = ["shape", "segments", "gap", "skew", "radius", "caps", "edge", "glow", "empty", "track"]
+                    .iter()
+                    .any(|k| e.has(k));
                 if !custom {
                     cv.bar(&kind, 0.0, 0.0, w, h, &layers, false);
                 } else {
@@ -466,10 +468,7 @@ impl Renderer<'_, '_> {
                     {
                         theme.tokens.colors.insert("track".into(), c);
                     }
-                    let tc = Canvas {
-                        theme: &theme,
-                        ..cv.clone()
-                    };
+                    let tc = Canvas { theme: &theme, ..cv.clone() };
                     tc.bar(&kind, 0.0, 0.0, w, h, &layers, false);
                 }
                 if e.has("marker") {
@@ -500,7 +499,11 @@ impl Renderer<'_, '_> {
             }
             Kind::Rect => {
                 let (w, h) = (e.num("width", 0.0), e.num("height", 0.0));
-                let fill = if e.has("fill") { self.color(&e, "fill", "text") } else { Color32::TRANSPARENT };
+                let fill = if e.has("fill") {
+                    self.color(&e, "fill", "text")
+                } else {
+                    Color32::TRANSPARENT
+                };
                 let stroke = if e.has("stroke") {
                     Stroke::new(e.num("stroke-width", 1.0) * cv.scale, cv.c(self.color(&e, "stroke", "text")))
                 } else {
@@ -520,7 +523,8 @@ impl Renderer<'_, '_> {
                 if glow > 0.0 {
                     for i in 1..=3 {
                         let g = glow * i as f32 / 3.0;
-                        cv.painter.rect_filled(cv.r(-g, -g, w + 2.0 * g, h + 2.0 * g), CornerRadius::ZERO, fade(cv.c(fill), 0.08));
+                        cv.painter
+                            .rect_filled(cv.r(-g, -g, w + 2.0 * g, h + 2.0 * g), CornerRadius::ZERO, fade(cv.c(fill), 0.08));
                     }
                 }
                 if radius > 0.0 && skew == 0.0 && cut == 0.0 {
@@ -556,7 +560,11 @@ impl Renderer<'_, '_> {
             }
             Kind::Circle => {
                 let r = e.num("radius", 4.0);
-                let fill = if e.has("fill") { self.color(&e, "fill", "text") } else { Color32::TRANSPARENT };
+                let fill = if e.has("fill") {
+                    self.color(&e, "fill", "text")
+                } else {
+                    Color32::TRANSPARENT
+                };
                 let stroke = if e.has("stroke") {
                     Stroke::new(e.num("stroke-width", 1.0) * cv.scale, cv.c(self.color(&e, "stroke", "text")))
                 } else {
@@ -609,7 +617,11 @@ impl Renderer<'_, '_> {
                 let req = if src.to_ascii_lowercase().ends_with(".svg") { (px(w), px(h)) } else { (0, 0) };
                 if let Some((tex, size)) = self.images.get(&self.ctx, &src, req.0, req.1) {
                     let (w, h) = (if w > 0.0 { w } else { size.x }, if h > 0.0 { h } else { size.y });
-                    let tint = if e.has("tint") { cv.c(self.color(&e, "tint", "text")) } else { cv.c(Color32::WHITE) };
+                    let tint = if e.has("tint") {
+                        cv.c(self.color(&e, "tint", "text"))
+                    } else {
+                        cv.c(Color32::WHITE)
+                    };
                     let nine: Vec<f32> = e.text("nine").split(',').filter_map(|v| v.trim().parse().ok()).collect();
                     let flip = e.text("flip");
                     if let [l, t, r, b] = nine[..] {
@@ -663,12 +675,18 @@ fn stack_size(kind: Kind, sizes: &[(Vec2, Vec2)], gap: f32, pad: f32) -> Vec2 {
     let n = visible.len() as f32;
     let g = if n > 1.0 { gap * (n - 1.0) } else { 0.0 };
     let v = match kind {
-        Kind::Row => vec2(visible.iter().map(|(s, _)| s.x).sum::<f32>() + g, visible.iter().map(|(s, _)| s.y).fold(0.0, f32::max)),
+        Kind::Row => vec2(
+            visible.iter().map(|(s, _)| s.x).sum::<f32>() + g,
+            visible.iter().map(|(s, _)| s.y).fold(0.0, f32::max),
+        ),
         Kind::Stack => vec2(
             visible.iter().map(|(s, o)| s.x + o.x).fold(0.0, f32::max),
             visible.iter().map(|(s, o)| s.y + o.y).fold(0.0, f32::max),
         ),
-        _ => vec2(visible.iter().map(|(s, _)| s.x).fold(0.0, f32::max), visible.iter().map(|(s, _)| s.y).sum::<f32>() + g),
+        _ => vec2(
+            visible.iter().map(|(s, _)| s.x).fold(0.0, f32::max),
+            visible.iter().map(|(s, _)| s.y).sum::<f32>() + g,
+        ),
     };
     v + vec2(pad * 2.0, pad * 2.0)
 }
@@ -683,10 +701,7 @@ fn parse_points(s: &str) -> Vec<(f32, f32)> {
 }
 
 fn bounds(pts: &[(f32, f32)]) -> Vec2 {
-    vec2(
-        pts.iter().map(|p| p.0).fold(0.0, f32::max),
-        pts.iter().map(|p| p.1).fold(0.0, f32::max),
-    )
+    vec2(pts.iter().map(|p| p.0).fold(0.0, f32::max), pts.iter().map(|p| p.1).fold(0.0, f32::max))
 }
 
 fn rotate_points(pts: &mut [(f32, f32)], deg: f32, c: (f32, f32)) {
@@ -868,10 +883,7 @@ fn nine_slice(cv: &Canvas, tex: &TextureHandle, size: Vec2, m: (f32, f32, f32, f
 
 /// 量模板的尺寸。
 pub fn measure(t: &Template, canvas: &Canvas, images: &mut Images, ctx: &egui::Context, data: &Value) -> Vec2 {
-    let mut env = Env {
-        root: data,
-        vars: Vec::new(),
-    };
+    let mut env = Env { root: data, vars: Vec::new() };
     let mut r = Renderer {
         canvas,
         images,
@@ -884,10 +896,7 @@ pub fn measure(t: &Template, canvas: &Canvas, images: &mut Images, ctx: &egui::C
 
 /// 画模板，返回（尺寸，是否有动画需要继续重绘）。
 pub fn render(t: &Template, canvas: &Canvas, images: &mut Images, ctx: &egui::Context, data: &Value, time: f64) -> (Vec2, bool) {
-    let mut env = Env {
-        root: data,
-        vars: Vec::new(),
-    };
+    let mut env = Env { root: data, vars: Vec::new() };
     let mut r = Renderer {
         canvas,
         images,

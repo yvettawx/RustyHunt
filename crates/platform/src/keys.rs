@@ -91,10 +91,7 @@ fn parse_key(s: &str) -> Option<u16> {
     {
         return Some(0x6F + n);
     }
-    NAMES
-        .iter()
-        .find(|(_, n)| n.eq_ignore_ascii_case(s))
-        .map(|(k, _)| *k)
+    NAMES.iter().find(|(_, n)| n.eq_ignore_ascii_case(s)).map(|(k, _)| *k)
 }
 
 impl Hotkey {
@@ -167,10 +164,7 @@ pub fn chord_down(hk: &Hotkey) -> bool {
     if hk.is_modifier_only() {
         return is_down(hk.key);
     }
-    is_down(hk.key)
-        && is_down(VK_CONTROL) == hk.ctrl
-        && is_down(VK_SHIFT) == hk.shift
-        && is_down(VK_MENU) == hk.alt
+    is_down(hk.key) && is_down(VK_CONTROL) == hk.ctrl && is_down(VK_SHIFT) == hk.shift && is_down(VK_MENU) == hk.alt
 }
 
 /// 记录每个热键上一次的状态，得到"刚按下"的边沿。

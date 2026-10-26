@@ -163,10 +163,7 @@ impl Tokens {
                 .into_iter()
                 .map(|(k, v)| (k.to_string(), v))
                 .collect(),
-            sizes: [("idle-opacity", 0.5), ("shadow", 1.0)]
-                .into_iter()
-                .map(|(k, v)| (k.to_string(), v))
-                .collect(),
+            sizes: [("idle-opacity", 0.5), ("shadow", 1.0)].into_iter().map(|(k, v)| (k.to_string(), v)).collect(),
         }
     }
 }
@@ -393,10 +390,7 @@ impl Ctx<'_> {
     fn attr_f32(&self, node: roxmltree::Node, name: &str, default: f32) -> Result<f32, ThemeError> {
         match node.attribute(name) {
             None => Ok(default),
-            Some(v) => v
-                .trim_end_matches("px")
-                .parse()
-                .map_err(|_| self.err(node, format!("{name}=\"{v}\" 不是数字"))),
+            Some(v) => v.trim_end_matches("px").parse().map_err(|_| self.err(node, format!("{name}=\"{v}\" 不是数字"))),
         }
     }
 
@@ -600,16 +594,14 @@ fn bar_style(cx: &Ctx, node: roxmltree::Node, base: &BarStyle) -> Result<BarStyl
 fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<(), ThemeError> {
     for s in node.children().filter(|n| n.is_element()) {
         match s.tag_name().name() {
-            "bar" => {
-                match s.attribute("for") {
-                    None => theme.styles.bar = bar_style(cx, s, &theme.styles.bar)?,
-                    Some(kind) => {
-                        let base = theme.styles.bar.clone();
-                        let st = bar_style(cx, s, &base)?;
-                        theme.styles.bars.insert(kind.to_string(), st);
-                    }
+            "bar" => match s.attribute("for") {
+                None => theme.styles.bar = bar_style(cx, s, &theme.styles.bar)?,
+                Some(kind) => {
+                    let base = theme.styles.bar.clone();
+                    let st = bar_style(cx, s, &base)?;
+                    theme.styles.bars.insert(kind.to_string(), st);
                 }
-            }
+            },
             "tag" => {
                 let t = &mut theme.styles.tag;
                 t.shape = match s.attribute("shape") {

@@ -39,23 +39,48 @@ pub struct Placement {
 
 impl Placement {
     pub const fn top_left(x: f32, y: f32) -> Placement {
-        Placement { h: HAnchor::Left, v: VAnchor::Top, dx: x, dy: y }
+        Placement {
+            h: HAnchor::Left,
+            v: VAnchor::Top,
+            dx: x,
+            dy: y,
+        }
     }
 
     pub const fn top_right(right: f32, y: f32) -> Placement {
-        Placement { h: HAnchor::Right, v: VAnchor::Top, dx: right, dy: y }
+        Placement {
+            h: HAnchor::Right,
+            v: VAnchor::Top,
+            dx: right,
+            dy: y,
+        }
     }
 
     pub const fn top_center(offset: f32, y: f32) -> Placement {
-        Placement { h: HAnchor::Center, v: VAnchor::Top, dx: offset, dy: y }
+        Placement {
+            h: HAnchor::Center,
+            v: VAnchor::Top,
+            dx: offset,
+            dy: y,
+        }
     }
 
     pub const fn bottom_center(offset: f32, bottom: f32) -> Placement {
-        Placement { h: HAnchor::Center, v: VAnchor::Bottom, dx: offset, dy: bottom }
+        Placement {
+            h: HAnchor::Center,
+            v: VAnchor::Bottom,
+            dx: offset,
+            dy: bottom,
+        }
     }
 
     pub const fn bottom_right(right: f32, bottom: f32) -> Placement {
-        Placement { h: HAnchor::Right, v: VAnchor::Bottom, dx: right, dy: bottom }
+        Placement {
+            h: HAnchor::Right,
+            v: VAnchor::Bottom,
+            dx: right,
+            dy: bottom,
+        }
     }
 
     /// 左上角在画面里的坐标。`frame_w` 是参考画面的宽（高固定 1080）。
@@ -201,11 +226,7 @@ pub fn builtin() -> Vec<ModuleInfo> {
         ),
         module(CLOCK, true, &[("c-quest", true), ("c-game", true)]),
         module(WEAPON, true, &[("w-gauge", true), ("w-num", true)]),
-        module(
-            BASE,
-            false,
-            &[("h-argosy", true), ("h-tail", true), ("h-farm", true), ("h-steam", true)],
-        ),
+        module(BASE, false, &[("h-argosy", true), ("h-tail", true), ("h-farm", true), ("h-steam", true)]),
         module(PERF, false, &[("f-frame", true), ("f-read", true)]),
     ]
 }

@@ -92,12 +92,7 @@ pub fn diff(prev: &Snapshot, cur: &Snapshot) -> Vec<Event> {
         }),
         (Some(q), None) => out.push(Event::QuestEnd {
             quest_id: q.id,
-            status: cur
-                .quest
-                .as_ref()
-                .filter(|n| n.id == q.id)
-                .map(|n| n.status)
-                .unwrap_or(QuestStatus::Quit),
+            status: cur.quest.as_ref().filter(|n| n.id == q.id).map(|n| n.status).unwrap_or(QuestStatus::Quit),
             elapsed: prev.elapsed,
         }),
         (Some(a), Some(b)) if a.id != b.id => {

@@ -123,12 +123,7 @@ fn salt(key_salt: u32) -> [u8; 0x200] {
 }
 
 fn keys(key_salt: u32, salt: &[u8; 0x200]) -> Vec<[u8; 16]> {
-    let c = [
-        0x5A8B_79A9 ^ key_salt,
-        0x3461_6F90 ^ key_salt,
-        0xC4C6_38DF ^ key_salt,
-        0x94FB_64E8 ^ key_salt,
-    ];
+    let c = [0x5A8B_79A9 ^ key_salt, 0x3461_6F90 ^ key_salt, 0xC4C6_38DF ^ key_salt, 0x94FB_64E8 ^ key_salt];
     (0..32)
         .map(|i| {
             let index = u32::from_le_bytes(salt[i * 4..i * 4 + 4].try_into().unwrap());
@@ -187,9 +182,7 @@ fn guildcard_keys() -> &'static HashMap<usize, String> {
     static KEYS: OnceLock<HashMap<usize, String>> = OnceLock::new();
     KEYS.get_or_init(|| {
         let t: toml::Table = toml::from_str(GUILDCARD_MONSTERS).expect("内置对照表格式正确");
-        t.iter()
-            .filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str()?.to_string())))
-            .collect()
+        t.iter().filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str()?.to_string()))).collect()
     })
 }
 

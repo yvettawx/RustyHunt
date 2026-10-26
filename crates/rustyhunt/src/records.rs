@@ -121,10 +121,7 @@ pub struct Hunt {
 
 impl Hunt {
     pub fn self_dps(&self) -> f32 {
-        self.players
-            .iter()
-            .find(|p| p.is_self)
-            .map_or(0.0, |p| p.damage / self.duration.max(1.0))
+        self.players.iter().find(|p| p.is_self).map_or(0.0, |p| p.damage / self.duration.max(1.0))
     }
 }
 
@@ -227,7 +224,10 @@ pub fn insert(conn: &mut Connection, h: &Hunt) -> rusqlite::Result<i64> {
         )?;
     }
     for (t, slot, dps) in &h.curve {
-        tx.execute("INSERT INTO hunt_curve (hunt_id, t, slot, dps) VALUES (?1, ?2, ?3, ?4)", params![id, t, slot, dps])?;
+        tx.execute(
+            "INSERT INTO hunt_curve (hunt_id, t, slot, dps) VALUES (?1, ?2, ?3, ?4)",
+            params![id, t, slot, dps],
+        )?;
     }
     for e in &h.events {
         tx.execute(

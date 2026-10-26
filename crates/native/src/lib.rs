@@ -34,7 +34,12 @@ fn is_large(id: i32) -> bool {
     }
 }
 
-static STATS: Mutex<Stats> = Mutex::new(Stats { total: 0.0, critical: 0.0, hits: 0, critical_hits: 0 });
+static STATS: Mutex<Stats> = Mutex::new(Stats {
+    total: 0.0,
+    critical: 0.0,
+    hits: 0,
+    critical_hits: 0,
+});
 static TRAMPOLINE: AtomicUsize = AtomicUsize::new(0);
 
 struct Hook {
@@ -47,17 +52,7 @@ unsafe impl Send for Hook {}
 
 static HOOK: Mutex<Option<Hook>> = Mutex::new(None);
 
-unsafe extern "C" fn deal_damage(
-    target: *mut u8,
-    damage: i32,
-    position: *mut c_void,
-    tenderized: i32,
-    crit: i32,
-    unk0: i32,
-    unk1: i32,
-    unk2: i8,
-    attack: i32,
-) {
+unsafe extern "C" fn deal_damage(target: *mut u8, damage: i32, position: *mut c_void, tenderized: i32, crit: i32, unk0: i32, unk1: i32, unk2: i8, attack: i32) {
     let t = TRAMPOLINE.load(Ordering::Acquire);
     if t != 0 {
         let original: DealDamage = unsafe { std::mem::transmute::<usize, DealDamage>(t) };
@@ -186,7 +181,15 @@ mod tests {
         }
         assert_eq!(CALLS.load(Ordering::SeqCst), 2, "原函数照常执行");
         let s = Stats::parse(&answer("STATS")).unwrap();
-        assert_eq!(s, Stats { total: 200.0, critical: 120.0, hits: 2, critical_hits: 1 });
+        assert_eq!(
+            s,
+            Stats {
+                total: 200.0,
+                critical: 120.0,
+                hits: 2,
+                critical_hits: 1
+            }
+        );
         unhook();
         unsafe { f(monster.as_mut_ptr(), 50, std::ptr::null_mut(), 0, 0, 0, 0, 0, 0) };
         assert_eq!(Stats::parse(&answer("STATS")).unwrap().hits, 2, "取消 hook 后不再计数");

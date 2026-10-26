@@ -36,9 +36,7 @@ pub enum Op {
     Rem,
 }
 
-pub const FILTERS: &[&str] = &[
-    "percent", "int", "fixed", "thousands", "time", "upper", "lower", "default", "abs", "clamp01",
-];
+pub const FILTERS: &[&str] = &["percent", "int", "fixed", "thousands", "time", "upper", "lower", "default", "abs", "clamp01"];
 
 #[derive(Debug, Clone, PartialEq)]
 enum Tok {
@@ -66,10 +64,7 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
             i += 1;
         } else if c.is_ascii_digit() {
             let start = i;
-            while i < cs.len()
-                && (cs[i].is_ascii_digit()
-                    || (cs[i] == '.' && cs.get(i + 1).is_some_and(|d| d.is_ascii_digit()) && !after_dot(&out)))
-            {
+            while i < cs.len() && (cs[i].is_ascii_digit() || (cs[i] == '.' && cs.get(i + 1).is_some_and(|d| d.is_ascii_digit()) && !after_dot(&out))) {
                 i += 1;
             }
             let t: String = cs[start..i].iter().collect();
@@ -346,7 +341,11 @@ pub fn to_text(v: &Value) -> String {
         Value::String(s) => s.clone(),
         Value::Number(n) => {
             let x = n.as_f64().unwrap_or(0.0);
-            if x.fract() == 0.0 && x.abs() < 1e15 { format!("{}", x as i64) } else { format!("{x:.2}") }
+            if x.fract() == 0.0 && x.abs() < 1e15 {
+                format!("{}", x as i64)
+            } else {
+                format!("{x:.2}")
+            }
         }
         other => other.to_string(),
     }

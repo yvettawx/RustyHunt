@@ -59,7 +59,11 @@ impl eframe::App for Shot {
                 self.app.set_page(page, it.next().and_then(|t| t.parse().ok()).unwrap_or(0));
             }
         }
-        let target = if self.what.starts_with("main") { crate::window::main_viewport() } else { egui::ViewportId::ROOT };
+        let target = if self.what.starts_with("main") {
+            crate::window::main_viewport()
+        } else {
+            egui::ViewportId::ROOT
+        };
         if self.what == "layout" && self.frames == 5 {
             self.shared.act(crate::state::Action::SetLayout(true));
         }

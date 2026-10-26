@@ -63,10 +63,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 ui.add_space(12.0);
                 label(
                     ui,
-                    i18n::tf(
-                        "home.mismatch",
-                        &[("game", version), ("map", latest.as_deref().unwrap_or("-"))],
-                    ),
+                    i18n::tf("home.mismatch", &[("game", version), ("map", latest.as_deref().unwrap_or("-"))]),
                     Font::Text,
                     13.0,
                     pal.accent,
@@ -89,7 +86,11 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     shared.act(Action::SetLayout(true));
                 }
                 let visible = shared.settings().overlay_visible;
-                let t = if visible { i18n::t("action.pause_overlay") } else { i18n::t("action.resume_overlay") };
+                let t = if visible {
+                    i18n::t("action.pause_overlay")
+                } else {
+                    i18n::t("action.resume_overlay")
+                };
                 if button(ui, pal, &t, Btn::Outline, false).clicked() {
                     shared.act(Action::ToggleOverlay);
                 }
@@ -126,10 +127,18 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ui.add_space(12.0);
         let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 8.0), Sense::hover());
         hatch(ui, r, pal);
-        ui.painter().rect_filled(Rect::from_min_size(r.min, vec2(r.width() * m.hp_ratio(), r.height())), CornerRadius::ZERO, pal.ink);
+        ui.painter().rect_filled(
+            Rect::from_min_size(r.min, vec2(r.width() * m.hp_ratio(), r.height())),
+            CornerRadius::ZERO,
+            pal.ink,
+        );
         if m.capture_threshold > 0.0 {
             let x = r.min.x + r.width() * m.capture_threshold;
-            ui.painter().rect_filled(Rect::from_min_max(pos2(x - 1.0, r.min.y - 5.0), pos2(x + 1.0, r.max.y + 5.0)), CornerRadius::ZERO, pal.accent);
+            ui.painter().rect_filled(
+                Rect::from_min_max(pos2(x - 1.0, r.min.y - 5.0), pos2(x + 1.0, r.max.y + 5.0)),
+                CornerRadius::ZERO,
+                pal.accent,
+            );
         }
         ui.add_space(5.0);
         widgets::thin_bar(ui, pal.mute, pal.line, m.stamina_ratio(), vec2(ui.available_width(), 2.0));
@@ -157,9 +166,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     // 游戏和最近狩猎两列
     if w.home.loaded_at.is_none_or(|t| t.elapsed().as_secs() > 5) {
         w.home.loaded_at = Some(std::time::Instant::now());
-        w.home.recent = crate::records::open()
-            .and_then(|c| crate::records::list(&c, None, 6))
-            .unwrap_or_default();
+        w.home.recent = crate::records::open().and_then(|c| crate::records::list(&c, None, 6)).unwrap_or_default();
     }
     let avail = ui.available_width();
     let left_w = (avail - 56.0) / 2.25;
@@ -176,7 +183,15 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     widgets::diamond(ui, pos2(x + 3.0, r.min.y + 21.0), 6.0, pal.accent);
                     x += 15.0;
                 }
-                text_at(ui, pos2(x, r.min.y + 12.0), Align2::LEFT_TOP, &i18n::t(&format!("game.{}", g.key())), Font::TextBold, 15.0, pal.ink);
+                text_at(
+                    ui,
+                    pos2(x, r.min.y + 12.0),
+                    Align2::LEFT_TOP,
+                    &i18n::t(&format!("game.{}", g.key())),
+                    Font::TextBold,
+                    15.0,
+                    pal.ink,
+                );
                 let ds = if !g.supported() {
                     i18n::t("home.later")
                 } else if running {
@@ -185,7 +200,8 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     i18n::t("home.not_running")
                 };
                 text_at(ui, pos2(r.min.x, r.min.y + 34.0), Align2::LEFT_TOP, &ds, Font::Text, 12.0, pal.mute);
-                ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+                ui.painter()
+                    .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 if g.supported() {
                     let lr = Rect::from_min_size(pos2(r.max.x - 40.0, r.center().y - 9.0), vec2(40.0, 18.0));
                     ui.scope_builder(egui::UiBuilder::new().max_rect(lr), |ui| {
@@ -213,15 +229,49 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 let name = rh_core::i18n::current().monster(&h.monster);
                 let nr = text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, &name, Font::TextBold, 14.0, pal.ink);
                 if resp.hovered() {
-                    ui.painter().line_segment([pos2(nr.min.x, nr.max.y + 1.0), pos2(nr.max.x, nr.max.y + 1.0)], Stroke::new(1.0, pal.ink));
+                    ui.painter()
+                        .line_segment([pos2(nr.min.x, nr.max.y + 1.0), pos2(nr.max.x, nr.max.y + 1.0)], Stroke::new(1.0, pal.ink));
                 }
-                text_at(ui, pos2(nr.max.x + 8.0, r.center().y + 1.0), Align2::LEFT_CENTER, &super::fmt_when(h.started_at), Font::Text, 12.0, pal.mute);
+                text_at(
+                    ui,
+                    pos2(nr.max.x + 8.0, r.center().y + 1.0),
+                    Align2::LEFT_CENTER,
+                    &super::fmt_when(h.started_at),
+                    Font::Text,
+                    12.0,
+                    pal.mute,
+                );
                 let res_x = r.max.x;
                 let capture = h.result == "capture";
-                text_at(ui, pos2(res_x, r.center().y), Align2::RIGHT_CENTER, &i18n::t(&format!("result.{}", h.result)), Font::Text, 12.0, if capture { pal.accent } else { pal.mute });
-                text_at(ui, pos2(res_x - 56.0, r.center().y), Align2::RIGHT_CENTER, &format!("{} DPS", h.self_dps().round()), Font::NumBold, 13.0, pal.ink);
-                text_at(ui, pos2(res_x - 140.0, r.center().y), Align2::RIGHT_CENTER, &mmss(h.duration), Font::NumBold, 13.0, pal.ink);
-                ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+                text_at(
+                    ui,
+                    pos2(res_x, r.center().y),
+                    Align2::RIGHT_CENTER,
+                    &i18n::t(&format!("result.{}", h.result)),
+                    Font::Text,
+                    12.0,
+                    if capture { pal.accent } else { pal.mute },
+                );
+                text_at(
+                    ui,
+                    pos2(res_x - 56.0, r.center().y),
+                    Align2::RIGHT_CENTER,
+                    &format!("{} DPS", h.self_dps().round()),
+                    Font::NumBold,
+                    13.0,
+                    pal.ink,
+                );
+                text_at(
+                    ui,
+                    pos2(res_x - 140.0, r.center().y),
+                    Align2::RIGHT_CENTER,
+                    &mmss(h.duration),
+                    Font::NumBold,
+                    13.0,
+                    pal.ink,
+                );
+                ui.painter()
+                    .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 if resp.clicked() {
                     w.page = Page::Records;
                     w.records.tab = 0;

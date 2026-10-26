@@ -61,18 +61,12 @@ impl Data {
     }
 
     pub fn monster_key(&self, id: i32) -> String {
-        self.monster_keys
-            .get(&id)
-            .cloned()
-            .unwrap_or_else(|| format!("em{id:03}"))
+        self.monster_keys.get(&id).cloned().unwrap_or_else(|| format!("em{id:03}"))
     }
 
     /// 已知的怪物异常；字符串是纯数字的条目是未知异常，跳过
     pub fn ailment(&self, id: i32) -> Option<&str> {
-        self.ailments
-            .get(&id)
-            .map(String::as_str)
-            .filter(|s| !s.chars().all(|c| c.is_ascii_digit()))
+        self.ailments.get(&id).map(String::as_str).filter(|s| !s.chars().all(|c| c.is_ascii_digit()))
     }
 }
 
@@ -161,7 +155,11 @@ fn parse() -> Result<Data, String> {
         let group = node.parent().map(|p| p.tag_name().name()).unwrap_or_default();
         let category = node.attribute("Category").unwrap_or(group);
         let raw_id = node.attribute("Id").unwrap_or_default();
-        let id = if raw_id.starts_with("ABN_") { raw_id.to_string() } else { format!("{group}_{raw_id}") };
+        let id = if raw_id.starts_with("ABN_") {
+            raw_id.to_string()
+        } else {
+            format!("{group}_{raw_id}")
+        };
         let kind = match category {
             "Songs" => AbnormalityKind::Song,
             "Palico" => AbnormalityKind::Palico,
@@ -185,10 +183,7 @@ fn parse() -> Result<Data, String> {
     }
 
     let keys: toml::Table = toml::from_str(MONSTER_KEYS).map_err(|e| e.to_string())?;
-    let monster_keys = keys
-        .iter()
-        .filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str()?.to_string())))
-        .collect();
+    let monster_keys = keys.iter().filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str()?.to_string()))).collect();
 
     Ok(Data {
         monsters,

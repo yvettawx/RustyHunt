@@ -7,17 +7,16 @@ use std::path::Path;
 use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, HANDLE, INVALID_HANDLE_VALUE, STILL_ACTIVE, WAIT_OBJECT_0};
 use windows_sys::Win32::System::Diagnostics::Debug::{FlushInstructionCache, ReadProcessMemory, WriteProcessMemory};
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
-    CreateToolhelp32Snapshot, MODULEENTRY32W, Module32FirstW, Module32NextW, PROCESSENTRY32W, Process32FirstW,
-    Process32NextW, TH32CS_SNAPMODULE, TH32CS_SNAPMODULE32, TH32CS_SNAPPROCESS,
+    CreateToolhelp32Snapshot, MODULEENTRY32W, Module32FirstW, Module32NextW, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPMODULE,
+    TH32CS_SNAPMODULE32, TH32CS_SNAPPROCESS,
 };
 use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleW, GetProcAddress};
 use windows_sys::Win32::System::Memory::{
-    MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_EXECUTE_READWRITE, PAGE_READWRITE, VirtualAllocEx, VirtualFreeEx,
-    VirtualProtectEx,
+    MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_EXECUTE_READWRITE, PAGE_READWRITE, VirtualAllocEx, VirtualFreeEx, VirtualProtectEx,
 };
 use windows_sys::Win32::System::Threading::{
-    CreateRemoteThread, GetExitCodeProcess, GetExitCodeThread, OpenProcess, PROCESS_CREATE_THREAD,
-    PROCESS_QUERY_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_READ, PROCESS_VM_WRITE, WaitForSingleObject,
+    CreateRemoteThread, GetExitCodeProcess, GetExitCodeThread, OpenProcess, PROCESS_CREATE_THREAD, PROCESS_QUERY_INFORMATION, PROCESS_VM_OPERATION,
+    PROCESS_VM_READ, PROCESS_VM_WRITE, WaitForSingleObject,
 };
 
 use crate::memory::{Memory, ReadError, ReadResult};
@@ -72,11 +71,7 @@ pub fn processes() -> io::Result<Vec<ProcessEntry>> {
 
 /// 按可执行文件名找进程，不区分大小写。
 pub fn find_process(exe: &str) -> Option<u32> {
-    processes()
-        .ok()?
-        .into_iter()
-        .find(|p| p.exe.eq_ignore_ascii_case(exe))
-        .map(|p| p.pid)
+    processes().ok()?.into_iter().find(|p| p.exe.eq_ignore_ascii_case(exe)).map(|p| p.pid)
 }
 
 #[derive(Debug, Clone)]
@@ -157,24 +152,13 @@ impl Process {
     }
 
     pub fn module(&self, name: &str) -> Option<ModuleEntry> {
-        modules(self.pid)
-            .ok()?
-            .into_iter()
-            .find(|m| m.name.eq_ignore_ascii_case(name))
+        modules(self.pid).ok()?.into_iter().find(|m| m.name.eq_ignore_ascii_case(name))
     }
 
     pub fn write_bytes(&self, address: u64, bytes: &[u8]) -> io::Result<()> {
         self.require_writable()?;
         let mut written = 0usize;
-        let ok = unsafe {
-            WriteProcessMemory(
-                self.h(),
-                address as *const c_void,
-                bytes.as_ptr() as *const c_void,
-                bytes.len(),
-                &mut written,
-            )
-        };
+        let ok = unsafe { WriteProcessMemory(self.h(), address as *const c_void, bytes.as_ptr() as *const c_void, bytes.len(), &mut written) };
         if ok == 0 || written != bytes.len() {
             return Err(io::Error::last_os_error());
         }
@@ -185,9 +169,7 @@ impl Process {
     pub fn patch_code(&self, address: u64, bytes: &[u8]) -> io::Result<()> {
         self.require_writable()?;
         let mut old = 0u32;
-        let ok = unsafe {
-            VirtualProtectEx(self.h(), address as *const c_void, bytes.len(), PAGE_EXECUTE_READWRITE, &mut old)
-        };
+        let ok = unsafe { VirtualProtectEx(self.h(), address as *const c_void, bytes.len(), PAGE_EXECUTE_READWRITE, &mut old) };
         if ok == 0 {
             return Err(io::Error::last_os_error());
         }
@@ -206,9 +188,7 @@ impl Process {
         let path = wide(dll.as_os_str());
         let bytes: &[u8] = bytemuck::cast_slice(&path);
 
-        let remote = unsafe {
-            VirtualAllocEx(self.h(), std::ptr::null(), bytes.len(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)
-        };
+        let remote = unsafe { VirtualAllocEx(self.h(), std::ptr::null(), bytes.len(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE) };
         if remote.is_null() {
             return Err(io::Error::last_os_error());
         }
@@ -279,20 +259,9 @@ impl Memory for Process {
             return Ok(());
         }
         let mut read = 0usize;
-        let ok = unsafe {
-            ReadProcessMemory(
-                self.h(),
-                address as *const c_void,
-                buf.as_mut_ptr() as *mut c_void,
-                buf.len(),
-                &mut read,
-            )
-        };
+        let ok = unsafe { ReadProcessMemory(self.h(), address as *const c_void, buf.as_mut_ptr() as *mut c_void, buf.len(), &mut read) };
         if ok == 0 || read != buf.len() {
-            return Err(ReadError {
-                address,
-                len: buf.len(),
-            });
+            return Err(ReadError { address, len: buf.len() });
         }
         Ok(())
     }

@@ -16,7 +16,14 @@ fn main() -> ExitCode {
     for d in &dirs {
         let r = ui_kit::check::check(Path::new(d));
         match &r.theme {
-            Some(t) => println!("{d}：{} {}（{} 个文件，{:.1} KB，{} 个模块模板）", t.manifest.name, t.manifest.version, r.files, r.bytes as f64 / 1024.0, t.modules.len()),
+            Some(t) => println!(
+                "{d}：{} {}（{} 个文件，{:.1} KB，{} 个模块模板）",
+                t.manifest.name,
+                t.manifest.version,
+                r.files,
+                r.bytes as f64 / 1024.0,
+                t.modules.len()
+            ),
             None => println!("{d}"),
         }
         for e in &r.errors {

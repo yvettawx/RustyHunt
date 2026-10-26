@@ -24,10 +24,7 @@ pub fn init(root: Option<PathBuf>) -> &'static Path {
             if is_portable() {
                 exe_dir().join("data")
             } else {
-                std::env::var_os("APPDATA")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(exe_dir)
-                    .join("RustyHunt")
+                std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(exe_dir).join("RustyHunt")
             }
         })
     })

@@ -14,11 +14,7 @@ pub fn parse(s: &str) -> Option<Color32> {
         };
     }
     let (name, args) = s.split_once('(')?;
-    let args: Vec<f32> = args
-        .trim_end_matches(')')
-        .split(',')
-        .map(|a| a.trim().parse().ok())
-        .collect::<Option<_>>()?;
+    let args: Vec<f32> = args.trim_end_matches(')').split(',').map(|a| a.trim().parse().ok()).collect::<Option<_>>()?;
     let c = |x: f32| x.round().clamp(0.0, 255.0) as u8;
     match (name.trim(), args.as_slice()) {
         ("rgb", [r, g, b]) => Some(Color32::from_rgb(c(*r), c(*g), c(*b))),
@@ -54,10 +50,7 @@ mod tests {
         assert_eq!(parse("#ff6b1a"), Some(Color32::from_rgb(0xff, 0x6b, 0x1a)));
         assert_eq!(parse("#fff"), Some(Color32::WHITE));
         assert_eq!(parse("rgb(17, 17, 17)"), Some(Color32::from_rgb(17, 17, 17)));
-        assert_eq!(
-            parse("rgba(0,0,0,.5)"),
-            Some(Color32::from_rgba_unmultiplied(0, 0, 0, 128))
-        );
+        assert_eq!(parse("rgba(0,0,0,.5)"), Some(Color32::from_rgba_unmultiplied(0, 0, 0, 128)));
         assert_eq!(parse("#12345"), None);
         assert_eq!(parse("blue"), None);
     }

@@ -56,11 +56,12 @@ fn find_games(shared: &Shared) -> Vec<Found> {
     Game::ALL
         .iter()
         .map(|&g| {
-            let path = paths
-                .get(g.key())
-                .map(PathBuf::from)
-                .filter(|p| p.join(g.exe()).is_file())
-                .or_else(|| steam.as_ref().and_then(|s| platform::steam::app_dir(s, g.steam_app_id())).filter(|p| p.join(g.exe()).is_file()));
+            let path = paths.get(g.key()).map(PathBuf::from).filter(|p| p.join(g.exe()).is_file()).or_else(|| {
+                steam
+                    .as_ref()
+                    .and_then(|s| platform::steam::app_dir(s, g.steam_app_id()))
+                    .filter(|p| p.join(g.exe()).is_file())
+            });
             Found { game: g, path }
         })
         .collect()
@@ -82,7 +83,10 @@ impl State {
     pub fn new(shared: &Shared) -> State {
         let s = shared.settings().clone();
         let accounts = find_accounts();
-        let account = s.save_account.and_then(|id| accounts.iter().position(|a| a.id == id)).or((!accounts.is_empty()).then_some(0));
+        let account = s
+            .save_account
+            .and_then(|id| accounts.iter().position(|a| a.id == id))
+            .or((!accounts.is_empty()).then_some(0));
         let p = s.profile(Game::World);
         State {
             step: 0,
@@ -168,7 +172,15 @@ impl State {
                 let text = i18n::t(&format!("onboarding.{k}"));
                 let g = widgets::galley(ui, &text, if on { Font::TextBold } else { Font::Text }, 13.0, c);
                 let (rr, _) = ui.allocate_exact_size(vec2(g.size().x + 22.0, 18.0), Sense::hover());
-                text_at(ui, pos2(rr.min.x, rr.center().y), Align2::LEFT_CENTER, &format!("{:02}", i + 1), Font::Num, 11.0, num_c);
+                text_at(
+                    ui,
+                    pos2(rr.min.x, rr.center().y),
+                    Align2::LEFT_CENTER,
+                    &format!("{:02}", i + 1),
+                    Font::Num,
+                    11.0,
+                    num_c,
+                );
                 ui.painter().galley(pos2(rr.min.x + 22.0, rr.center().y - g.size().y / 2.0), g, c);
             }
         });
@@ -179,14 +191,27 @@ impl State {
         let w = ui.available_width();
         let (r, resp) = ui.allocate_exact_size(vec2(w, 48.0), Sense::click());
         if on {
-            ui.painter().rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 14.0), vec2(2.0, r.height() - 28.0)), CornerRadius::ZERO, pal.ink);
+            ui.painter().rect_filled(
+                Rect::from_min_size(pos2(r.min.x, r.min.y + 14.0), vec2(2.0, r.height() - 28.0)),
+                CornerRadius::ZERO,
+                pal.ink,
+            );
         }
         let c = if miss { pal.faint } else { pal.ink };
-        text_at(ui, pos2(r.min.x + 14.0, r.center().y), Align2::LEFT_CENTER, text, if on { Font::TextBold } else { Font::Text }, 15.0, c);
+        text_at(
+            ui,
+            pos2(r.min.x + 14.0, r.center().y),
+            Align2::LEFT_CENTER,
+            text,
+            if on { Font::TextBold } else { Font::Text },
+            15.0,
+            c,
+        );
         if !desc.is_empty() {
             text_at(ui, pos2(r.max.x, r.center().y), Align2::RIGHT_CENTER, desc, Font::Text, 12.0, pal.mute);
         }
-        ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+        ui.painter()
+            .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
         if resp.hovered() {
             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
         }
@@ -223,11 +248,14 @@ impl State {
                         // 找不到时手动选路径
                         let rr = Rect::from_min_size(pos2(ui.min_rect().min.x, row_top), vec2(w, 48.0));
                         let mut pick = false;
-                        ui.scope_builder(egui::UiBuilder::new().max_rect(rr).layout(egui::Layout::right_to_left(egui::Align::Center)), |ui| {
-                            ui.spacing_mut().item_spacing.x = 12.0;
-                            pick = link(ui, pal, &i18n::t("action.pick_path")).clicked();
-                            widgets::label_mute(ui, pal, &desc, 12.0);
-                        });
+                        ui.scope_builder(
+                            egui::UiBuilder::new().max_rect(rr).layout(egui::Layout::right_to_left(egui::Align::Center)),
+                            |ui| {
+                                ui.spacing_mut().item_spacing.x = 12.0;
+                                pick = link(ui, pal, &i18n::t("action.pick_path")).clicked();
+                                widgets::label_mute(ui, pal, &desc, 12.0);
+                            },
+                        );
                         if pick && let Some(dir) = rfd::FileDialog::new().pick_folder() {
                             if dir.join(g.exe()).is_file() {
                                 shared.edit_settings(|s| {
@@ -248,7 +276,11 @@ impl State {
                 }
                 for i in 0..self.accounts.len() {
                     let a = &self.accounts[i];
-                    let desc = if a.last > 0 { i18n::tf("onboarding.last_login", &[("t", &super::fmt_when(a.last))]) } else { String::new() };
+                    let desc = if a.last > 0 {
+                        i18n::tf("onboarding.last_login", &[("t", &super::fmt_when(a.last))])
+                    } else {
+                        String::new()
+                    };
                     if Self::opt(ui, pal, &a.name.clone(), &desc, self.account == Some(i), false) {
                         self.account = Some(i);
                         let id = self.accounts[i].id;
@@ -479,16 +511,27 @@ impl State {
             let g = self.games.get(self.game).map(|g| g.game).unwrap_or(Game::World);
             if scan < 1.0 {
                 let x = lerp(r.min.x, r.max.x, scan);
-                p.rect_filled(Rect::from_min_max(pos2(x - 1.0, r.min.y), pos2(x + 1.0, r.max.y)), CornerRadius::ZERO, Color32::from_white_alpha(120));
+                p.rect_filled(
+                    Rect::from_min_max(pos2(x - 1.0, r.min.y), pos2(x + 1.0, r.max.y)),
+                    CornerRadius::ZERO,
+                    Color32::from_white_alpha(120),
+                );
             }
             let mut text = g.exe().to_string();
             if scan >= 1.0 && !ok {
                 text = format!("{text}　{}", i18n::t("onboarding.not_found"));
             }
             let gal = p.layout_no_wrap(text, Font::Mono.id(10.0 * u.max(0.8)), HUD);
-            let br = Rect::from_min_size(pos2(r.min.x + r.width() * 0.03, r.max.y - r.height() * 0.05 - gal.size().y - 10.0), gal.size() + vec2(32.0, 10.0));
+            let br = Rect::from_min_size(
+                pos2(r.min.x + r.width() * 0.03, r.max.y - r.height() * 0.05 - gal.size().y - 10.0),
+                gal.size() + vec2(32.0, 10.0),
+            );
             p.rect_filled(br, CornerRadius::ZERO, Color32::from_black_alpha(150));
-            let dot = if ok { Color32::from_rgb(0x5f, 0xb5, 0x48) } else { Color32::from_rgb(0x86, 0x84, 0x7d) };
+            let dot = if ok {
+                Color32::from_rgb(0x5f, 0xb5, 0x48)
+            } else {
+                Color32::from_rgb(0x86, 0x84, 0x7d)
+            };
             p.circle_filled(pos2(br.min.x + 12.0, br.center().y), 3.0, dot);
             p.galley(pos2(br.min.x + 22.0, br.min.y + 5.0), gal, HUD);
         }
@@ -499,7 +542,13 @@ impl State {
             let y = r.max.y + 24.0;
             let kg = p.layout_no_wrap(key, Font::Mono.id(12.0), if down { pal.paper } else { pal.ink });
             let kr = Rect::from_min_size(pos2(r.min.x, y - 13.0), kg.size() + vec2(16.0, 8.0));
-            p.rect(kr, CornerRadius::ZERO, if down { pal.ink } else { Color32::TRANSPARENT }, Stroke::new(1.0, pal.line), StrokeKind::Inside);
+            p.rect(
+                kr,
+                CornerRadius::ZERO,
+                if down { pal.ink } else { Color32::TRANSPARENT },
+                Stroke::new(1.0, pal.line),
+                StrokeKind::Inside,
+            );
             p.galley(kr.min + vec2(8.0, 4.0), kg, pal.ink);
             let nr = p.text(pos2(kr.max.x + 12.0, kr.center().y), Align2::LEFT_CENTER, name, Font::Text.id(13.0), pal.ink);
             if !chip.is_empty() {
@@ -539,7 +588,11 @@ fn fade(c: Color32, a: f32) -> Color32 {
 
 /// 一条细线条：底槽加填充
 fn line(p: &egui::Painter, x: f32, y: f32, w: f32, h: f32, ratio: f32, fill: Color32, a: f32) {
-    p.rect_filled(Rect::from_min_size(pos2(x, y), vec2(w, h)), CornerRadius::ZERO, fade(Color32::from_black_alpha(115), a));
+    p.rect_filled(
+        Rect::from_min_size(pos2(x, y), vec2(w, h)),
+        CornerRadius::ZERO,
+        fade(Color32::from_black_alpha(115), a),
+    );
     p.rect_filled(Rect::from_min_size(pos2(x, y), vec2(w * ratio, h)), CornerRadius::ZERO, fade(fill, a));
 }
 
@@ -569,7 +622,13 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
         let w = r.width() * 0.215;
         let pa = f.player * a;
         tag(p, o.x, o.y, "mcwz", fs(8.0), pa);
-        p.text(pos2(o.x + w, o.y + fs(10.0)), Align2::RIGHT_BOTTOM, "128", Font::NumBold.id(fs(11.0)), fade(HUD, pa));
+        p.text(
+            pos2(o.x + w, o.y + fs(10.0)),
+            Align2::RIGHT_BOTTOM,
+            "128",
+            Font::NumBold.id(fs(11.0)),
+            fade(HUD, pa),
+        );
         line(p, o.x, o.y + fs(14.0), w, fs(4.0), 0.85, HUD, pa);
         line(p, o.x, o.y + fs(21.0), w, fs(2.0), 0.7, fade(HUD, 0.6), pa);
     }
@@ -579,7 +638,11 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
     if buff_a > 0.0 {
         let mut x = at(0.03, 0.30).x;
         let y = at(0.03, 0.30).y;
-        for (name, time) in [(i.game("ABNORMALITY_DEMONDRUG"), ""), (i.game("ABNORMALITY_ARMORSKIN"), "46s"), (i.game("ABNORMALITY_MIGHT_SEED"), "1:34")] {
+        for (name, time) in [
+            (i.game("ABNORMALITY_DEMONDRUG"), ""),
+            (i.game("ABNORMALITY_ARMORSKIN"), "46s"),
+            (i.game("ABNORMALITY_MIGHT_SEED"), "1:34"),
+        ] {
             let tr = tag(p, x, y, &name, fs(8.0), buff_a);
             x = tr.max.x + 3.0;
             if !time.is_empty() {
@@ -597,7 +660,11 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
         let o = at(f.dps_at.x, f.dps_at.y);
         let w = r.width() * 0.17;
         let you = i.t("label.you");
-        let rows = [("Aster", 68, 1.0, HUD), (you.as_str(), 61, 0.9, Color32::from_rgb(0xff, 0x6b, 0x1a)), ("Kiri", 56, 0.82, HUD)];
+        let rows = [
+            ("Aster", 68, 1.0, HUD),
+            (you.as_str(), 61, 0.9, Color32::from_rgb(0xff, 0x6b, 0x1a)),
+            ("Kiri", 56, 0.82, HUD),
+        ];
         let mut y = o.y;
         for (name, v, ratio, c) in rows {
             p.text(pos2(o.x, y), Align2::LEFT_TOP, name, Font::Text.id(fs(8.0)), fade(c, dps_a));
@@ -619,9 +686,21 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
     let tr = tag(p, o.x, o.y, &i.monster(key), fs(11.0), a);
     let weak = format!("{} {} {}", i.t("label.weak"), i.t("element.water"), i.t("element.ice"));
     if side < 0.5 {
-        p.text(pos2(tr.max.x + 8.0, tr.max.y), Align2::LEFT_BOTTOM, weak, Font::TextBold.id(fs(9.0)), fade(fade(HUD, 0.66), a));
+        p.text(
+            pos2(tr.max.x + 8.0, tr.max.y),
+            Align2::LEFT_BOTTOM,
+            weak,
+            Font::TextBold.id(fs(9.0)),
+            fade(fade(HUD, 0.66), a),
+        );
     }
-    p.text(pos2(o.x + mw, tr.max.y), Align2::RIGHT_BOTTOM, format!("{}%", (hp * 100.0) as i32), Font::Num.id(fs(15.0)), fade(HUD, a));
+    p.text(
+        pos2(o.x + mw, tr.max.y),
+        Align2::RIGHT_BOTTOM,
+        format!("{}%", (hp * 100.0) as i32),
+        Font::Num.id(fs(15.0)),
+        fade(HUD, a),
+    );
     let y = tr.max.y + 5.0;
     line(p, o.x, y, mw, fs(5.0), hp, HUD, a);
     line(p, o.x, y + fs(8.0), mw, fs(2.0), 0.48, fade(HUD, 0.6), a);
@@ -705,7 +784,13 @@ fn draw_book(p: &egui::Painter, pal: &Pal, r: Rect, t: f32, u: f32) {
         let cell = Rect::from_min_size(pos2(r.min.x + pad + (k % cols) as f32 * cw, top + (k / cols) as f32 * ch), vec2(cw, ch));
         p.rect_stroke(cell, CornerRadius::ZERO, Stroke::new(1.0, pal.line), StrokeKind::Inside);
         let on = lt > 0.25 + k as f32 * 0.14;
-        p.text(cell.min + vec2(8.0, 10.0), Align2::LEFT_TOP, i.monster(key), Font::Text.id(10.0 * u.max(0.8)), if on { pal.ink } else { pal.faint });
+        p.text(
+            cell.min + vec2(8.0, 10.0),
+            Align2::LEFT_TOP,
+            i.monster(key),
+            Font::Text.id(10.0 * u.max(0.8)),
+            if on { pal.ink } else { pal.faint },
+        );
         for (j, (has, fill, edge)) in [
             (*gold, Color32::from_rgb(0xe9, 0xc2, 0x5b), Color32::from_rgb(0xb8, 0x95, 0x2e)),
             (*mini, Color32::from_rgb(0xc9, 0xcd, 0xd2), Color32::from_rgb(0x9a, 0xa0, 0xa6)),
@@ -717,7 +802,11 @@ fn draw_book(p: &egui::Painter, pal: &Pal, r: Rect, t: f32, u: f32) {
             let d = 4.5;
             let pts = vec![c + vec2(0.0, -d), c + vec2(d, 0.0), c + vec2(0.0, d), c + vec2(-d, 0.0)];
             let lit = on && has;
-            p.add(egui::Shape::convex_polygon(pts, if lit { fill } else { Color32::TRANSPARENT }, Stroke::new(1.0, if lit { edge } else { pal.line })));
+            p.add(egui::Shape::convex_polygon(
+                pts,
+                if lit { fill } else { Color32::TRANSPARENT },
+                Stroke::new(1.0, if lit { edge } else { pal.line }),
+            ));
         }
     }
 }

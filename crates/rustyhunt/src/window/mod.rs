@@ -88,7 +88,15 @@ impl Page {
         Page::ALL.into_iter().find(|p| p.key().ends_with(k))
     }
 
-    const ALL: [Page; 7] = [Page::Home, Page::Modules, Page::Records, Page::Themes, Page::Plugins, Page::Settings, Page::Logs];
+    const ALL: [Page; 7] = [
+        Page::Home,
+        Page::Modules,
+        Page::Records,
+        Page::Themes,
+        Page::Plugins,
+        Page::Settings,
+        Page::Logs,
+    ];
 
     fn key(self) -> &'static str {
         match self {
@@ -164,7 +172,6 @@ impl MainWindow {
             shared,
         }
     }
-
 
     pub fn onboarding_step(&mut self, step: usize) {
         let shared = self.shared.clone();
@@ -313,20 +320,51 @@ impl MainWindow {
         let p = ui.painter();
         for (rect, resp, danger) in [(&cr, &close, true), (&mr, &max, false), (&nr, &min, false), (&br, &bell, false)] {
             if resp.hovered() {
-                p.rect_filled(*rect, CornerRadius::ZERO, if danger { Color32::from_rgb(0xc4, 0x37, 0x2b) } else { pal.hover() });
+                p.rect_filled(
+                    *rect,
+                    CornerRadius::ZERO,
+                    if danger { Color32::from_rgb(0xc4, 0x37, 0x2b) } else { pal.hover() },
+                );
             }
         }
-        let ic = |_rect: &Rect, hov: bool, white: bool| if hov && white { Color32::WHITE } else if hov { pal.ink } else { pal.mute };
+        let ic = |_rect: &Rect, hov: bool, white: bool| {
+            if hov && white {
+                Color32::WHITE
+            } else if hov {
+                pal.ink
+            } else {
+                pal.mute
+            }
+        };
         let c = cr.center();
         let s = Stroke::new(1.2, ic(&cr, close.hovered(), true));
         p.line_segment([c + vec2(-5.0, -5.0), c + vec2(5.0, 5.0)], s);
         p.line_segment([c + vec2(5.0, -5.0), c + vec2(-5.0, 5.0)], s);
-        p.rect_stroke(Rect::from_center_size(mr.center(), vec2(9.0, 9.0)), CornerRadius::ZERO, Stroke::new(1.2, ic(&mr, max.hovered(), false)), egui::StrokeKind::Inside);
-        p.line_segment([nr.center() + vec2(-5.0, 0.0), nr.center() + vec2(5.0, 0.0)], Stroke::new(1.2, ic(&nr, min.hovered(), false)));
+        p.rect_stroke(
+            Rect::from_center_size(mr.center(), vec2(9.0, 9.0)),
+            CornerRadius::ZERO,
+            Stroke::new(1.2, ic(&mr, max.hovered(), false)),
+            egui::StrokeKind::Inside,
+        );
+        p.line_segment(
+            [nr.center() + vec2(-5.0, 0.0), nr.center() + vec2(5.0, 0.0)],
+            Stroke::new(1.2, ic(&nr, min.hovered(), false)),
+        );
         // 铃铛
         let b = br.center();
         let bs = Stroke::new(1.1, ic(&br, bell.hovered(), false));
-        let pts = [b + vec2(-4.0, 3.0), b + vec2(-4.0, -1.0), b + vec2(-3.0, -4.0), b + vec2(0.0, -5.5), b + vec2(3.0, -4.0), b + vec2(4.0, -1.0), b + vec2(4.0, 3.0), b + vec2(5.5, 4.0), b + vec2(-5.5, 4.0), b + vec2(-4.0, 3.0)];
+        let pts = [
+            b + vec2(-4.0, 3.0),
+            b + vec2(-4.0, -1.0),
+            b + vec2(-3.0, -4.0),
+            b + vec2(0.0, -5.5),
+            b + vec2(3.0, -4.0),
+            b + vec2(4.0, -1.0),
+            b + vec2(4.0, 3.0),
+            b + vec2(5.5, 4.0),
+            b + vec2(-5.5, 4.0),
+            b + vec2(-4.0, 3.0),
+        ];
         p.add(egui::Shape::line(pts.to_vec(), bs));
         p.line_segment([b + vec2(-1.5, 6.0), b + vec2(1.5, 6.0)], bs);
         if self.shared.notifications.lock().unwrap().unread() > 0 {
@@ -369,7 +407,15 @@ impl MainWindow {
             let resp = ui.interact(row, Id::unique(("nav", i)), Sense::click());
             let on = *page == self.page;
             let num_color = if on { pal.accent } else { pal.faint };
-            text_at(ui, pos2(r.min.x + 22.0, row.center().y + 1.0), Align2::LEFT_CENTER, &format!("{:02}", i + 1), Font::Num, 10.0, num_color);
+            text_at(
+                ui,
+                pos2(r.min.x + 22.0, row.center().y + 1.0),
+                Align2::LEFT_CENTER,
+                &format!("{:02}", i + 1),
+                Font::Num,
+                10.0,
+                num_color,
+            );
             let color = if on || resp.hovered() { pal.ink } else { pal.mute };
             let lr = text_at(
                 ui,
@@ -381,8 +427,11 @@ impl MainWindow {
                 color,
             );
             if on {
-                ui.painter()
-                    .rect_filled(Rect::from_min_size(pos2(r.min.x, row.min.y + 10.0), vec2(2.0, 20.0)), CornerRadius::ZERO, pal.ink);
+                ui.painter().rect_filled(
+                    Rect::from_min_size(pos2(r.min.x, row.min.y + 10.0), vec2(2.0, 20.0)),
+                    CornerRadius::ZERO,
+                    pal.ink,
+                );
             }
             if *page == Page::Records && new_records {
                 ui.painter().circle_filled(pos2(lr.max.x + 9.0, row.center().y), 2.5, pal.accent);
@@ -398,14 +447,26 @@ impl MainWindow {
 
         // 底部：overlay 开关、布局模式开关、版本号
         let mut by = r.max.y - 22.0 - 14.0;
-        text_at(ui, pos2(r.min.x + 22.0, by + 7.0), Align2::LEFT_CENTER, rh_core::VERSION, Font::NumBold, 10.0, pal.faint);
+        text_at(
+            ui,
+            pos2(r.min.x + 22.0, by + 7.0),
+            Align2::LEFT_CENTER,
+            rh_core::VERSION,
+            Font::NumBold,
+            10.0,
+            pal.faint,
+        );
         by -= 14.0 + 34.0;
         let rows = [(i18n::t("action.layout"), 1), ("overlay".to_string(), 0)];
         for (label, which) in rows {
             let row = Rect::from_min_size(pos2(r.min.x + 22.0, by), vec2(r.width() - 44.0, 30.0));
             text_at(ui, pos2(row.min.x, row.center().y), Align2::LEFT_CENTER, &label, Font::Text, 13.0, pal.mute);
             let sr = Rect::from_min_size(pos2(row.max.x - 28.0, row.center().y - 7.0), vec2(28.0, 14.0));
-            let mut on = if which == 0 { self.shared.settings().overlay_visible } else { self.shared.layout_mode() };
+            let mut on = if which == 0 {
+                self.shared.settings().overlay_visible
+            } else {
+                self.shared.layout_mode()
+            };
             let mut changed = false;
             ui.scope_builder(egui::UiBuilder::new().max_rect(sr), |ui| {
                 changed = switch(ui, pal, &mut on).changed();
@@ -519,10 +580,7 @@ impl MainWindow {
             )),
             Kind::Crash { path } => {
                 let p = std::path::PathBuf::from(path);
-                Some((
-                    i18n::t("action.open_folder"),
-                    Box::new(move |_| crate::win::open(p.parent().unwrap_or(&p))),
-                ))
+                Some((i18n::t("action.open_folder"), Box::new(move |_| crate::win::open(p.parent().unwrap_or(&p)))))
             }
             Kind::SaveRead { .. } | Kind::Crown { .. } => Some((
                 i18n::t("action.view"),
@@ -772,11 +830,31 @@ fn resize_edges(ui: &mut Ui, r: Rect) {
     use egui::ResizeDirection as D;
     let m = 5.0;
     let edges = [
-        (Rect::from_min_max(r.min, pos2(r.min.x + m, r.max.y)), D::West, egui::CursorIcon::ResizeHorizontal),
-        (Rect::from_min_max(pos2(r.max.x - m, r.min.y), r.max), D::East, egui::CursorIcon::ResizeHorizontal),
-        (Rect::from_min_max(pos2(r.min.x, r.max.y - m), r.max), D::South, egui::CursorIcon::ResizeVertical),
-        (Rect::from_min_max(r.min, pos2(r.max.x, r.min.y + 3.0)), D::North, egui::CursorIcon::ResizeVertical),
-        (Rect::from_min_max(pos2(r.max.x - 12.0, r.max.y - 12.0), r.max), D::SouthEast, egui::CursorIcon::ResizeNwSe),
+        (
+            Rect::from_min_max(r.min, pos2(r.min.x + m, r.max.y)),
+            D::West,
+            egui::CursorIcon::ResizeHorizontal,
+        ),
+        (
+            Rect::from_min_max(pos2(r.max.x - m, r.min.y), r.max),
+            D::East,
+            egui::CursorIcon::ResizeHorizontal,
+        ),
+        (
+            Rect::from_min_max(pos2(r.min.x, r.max.y - m), r.max),
+            D::South,
+            egui::CursorIcon::ResizeVertical,
+        ),
+        (
+            Rect::from_min_max(r.min, pos2(r.max.x, r.min.y + 3.0)),
+            D::North,
+            egui::CursorIcon::ResizeVertical,
+        ),
+        (
+            Rect::from_min_max(pos2(r.max.x - 12.0, r.max.y - 12.0), r.max),
+            D::SouthEast,
+            egui::CursorIcon::ResizeNwSe,
+        ),
     ];
     for (i, (er, dir, cursor)) in edges.into_iter().enumerate() {
         let resp = ui.interact(er, Id::unique(("resize", i)), Sense::drag());
@@ -790,7 +868,9 @@ fn resize_edges(ui: &mut Ui, r: Rect) {
 }
 
 pub fn fmt_when(ts: i64) -> String {
-    let Some(t) = chrono::DateTime::from_timestamp(ts, 0) else { return String::new() };
+    let Some(t) = chrono::DateTime::from_timestamp(ts, 0) else {
+        return String::new();
+    };
     let t = t.with_timezone(&chrono::Local);
     let now = chrono::Local::now();
     let days = (now.date_naive() - t.date_naive()).num_days();
@@ -802,4 +882,3 @@ pub fn fmt_when(ts: i64) -> String {
         _ => t.format("%Y-%m-%d").to_string(),
     }
 }
-

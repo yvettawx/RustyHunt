@@ -147,8 +147,7 @@ impl AddressMap {
 
         for (index, line) in text.lines().enumerate() {
             let line_number = index + 1;
-            let entry =
-                parse_line(line).map_err(|error| MapError::InvalidLine { line_number, error })?;
+            let entry = parse_line(line).map_err(|error| MapError::InvalidLine { line_number, error })?;
 
             match entry {
                 Some(Entry::Address { name, value }) => {
@@ -228,11 +227,7 @@ pub fn available_versions(dir: &Path, prefix: &str) -> Vec<String> {
     let mut versions: Vec<String> = entries
         .filter_map(|e| e.ok())
         .filter_map(|e| e.file_name().into_string().ok())
-        .filter_map(|name| {
-            name.strip_prefix(&head)?
-                .strip_suffix(".map")
-                .map(str::to_string)
-        })
+        .filter_map(|name| name.strip_prefix(&head)?.strip_suffix(".map").map(str::to_string))
         .collect();
     versions.sort_by_key(|v| v.parse::<u64>().unwrap_or(0));
     versions
@@ -267,10 +262,7 @@ mod tests {
     #[test]
     fn parse_offsets_accepts_missing_prefix_and_spaces() {
         // 上游 Rise 地址表里 GUI::VisibilityFlag 有一项没写 0x
-        assert_eq!(
-            parse_offsets("0x58,48,0x68,0x10,0x30"),
-            Ok(vec![0x58, 0x48, 0x68, 0x10, 0x30])
-        );
+        assert_eq!(parse_offsets("0x58,48,0x68,0x10,0x30"), Ok(vec![0x58, 0x48, 0x68, 0x10, 0x30]));
         assert_eq!(parse_offsets("0x10, 0x20 "), Ok(vec![0x10, 0x20]));
     }
 
@@ -317,18 +309,9 @@ mod tests {
         assert_eq!(parse_line("Address"), Err(LineError::MissingName));
         assert_eq!(parse_line("Address Foo"), Err(LineError::MissingValue));
         assert_eq!(parse_line("Address Foo # 0x10"), Err(LineError::MissingValue));
-        assert_eq!(
-            parse_line("Pointer Foo 0x10"),
-            Err(LineError::UnknownKeyword("Pointer".to_string()))
-        );
-        assert!(matches!(
-            parse_line("Address Foo 0xZZ"),
-            Err(LineError::InvalidNumber(_))
-        ));
-        assert!(matches!(
-            parse_line("Offset Foo 0x10,,0x20"),
-            Err(LineError::InvalidNumber(_))
-        ));
+        assert_eq!(parse_line("Pointer Foo 0x10"), Err(LineError::UnknownKeyword("Pointer".to_string())));
+        assert!(matches!(parse_line("Address Foo 0xZZ"), Err(LineError::InvalidNumber(_))));
+        assert!(matches!(parse_line("Offset Foo 0x10,,0x20"), Err(LineError::InvalidNumber(_))));
     }
 
     #[test]

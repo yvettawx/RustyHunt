@@ -65,11 +65,7 @@ impl Tray {
             "quit" => s.act(Action::Quit),
             _ => {}
         }));
-        let t = Tray {
-            _icon: tray,
-            overlay,
-            density,
-        };
+        let t = Tray { _icon: tray, overlay, density };
         t.refresh(&shared);
         Some(t)
     }
@@ -77,7 +73,11 @@ impl Tray {
     /// 菜单里的状态文字跟着设置变。
     pub fn refresh(&self, shared: &Shared) {
         let s = shared.settings();
-        let state = if s.overlay_visible { i18n::t("state.showing") } else { i18n::t("state.hidden") };
+        let state = if s.overlay_visible {
+            i18n::t("state.showing")
+        } else {
+            i18n::t("state.hidden")
+        };
         self.overlay.set_text(format!("overlay\t{state}"));
         self.density.set_text(format!("{}\t{}", i18n::t("label.density"), i18n::t(s.density.key())));
     }

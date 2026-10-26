@@ -127,9 +127,7 @@ impl Terms {
                     }
                 }
                 if section == "monster" {
-                    terms
-                        .large
-                        .insert(key.clone(), e.get("size").and_then(|v| v.as_str()) == Some("large"));
+                    terms.large.insert(key.clone(), e.get("size").and_then(|v| v.as_str()) == Some("large"));
                 }
                 terms.entries.insert(full, names);
             }
@@ -139,10 +137,7 @@ impl Terms {
 
     pub fn get(&self, full_key: &str, lang: Lang) -> Option<&str> {
         let names = self.entries.get(full_key)?;
-        names
-            .get(&lang)
-            .or_else(|| names.get(&Lang::En))
-            .map(String::as_str)
+        names.get(&lang).or_else(|| names.get(&Lang::En)).map(String::as_str)
     }
 
     pub fn is_large(&self, monster_key: &str) -> Option<bool> {
@@ -151,11 +146,7 @@ impl Terms {
 
     pub fn keys(&self, section: &str) -> Vec<String> {
         let head = format!("{section}.");
-        let mut v: Vec<String> = self
-            .entries
-            .keys()
-            .filter_map(|k| k.strip_prefix(&head).map(str::to_string))
-            .collect();
+        let mut v: Vec<String> = self.entries.keys().filter_map(|k| k.strip_prefix(&head).map(str::to_string)).collect();
         v.sort();
         v
     }
@@ -165,10 +156,7 @@ impl Terms {
         let head = format!("{section}.");
         self.entries.iter().find_map(|(k, names)| {
             let key = k.strip_prefix(&head)?;
-            names
-                .get(&Lang::En)
-                .filter(|n| n.eq_ignore_ascii_case(english))
-                .map(|_| key.to_string())
+            names.get(&Lang::En).filter(|n| n.eq_ignore_ascii_case(english)).map(|_| key.to_string())
         })
     }
 }
@@ -215,9 +203,10 @@ impl I18n {
 
     pub fn ui_coverage(&self, lang: Lang) -> f32 {
         let base = self.ui.get(&Lang::ZhHans).map_or(0, Table::len).max(1);
-        let have = self.ui.get(&lang).map_or(0, |t| {
-            self.ui[&Lang::ZhHans].keys().filter(|k| t.get(k).is_some()).count()
-        });
+        let have = self
+            .ui
+            .get(&lang)
+            .map_or(0, |t| self.ui[&Lang::ZhHans].keys().filter(|k| t.get(k).is_some()).count());
         have as f32 / base as f32
     }
 
@@ -259,10 +248,7 @@ impl I18n {
     }
 
     pub fn monster_in(&self, key: &str, lang: Lang) -> String {
-        self.terms
-            .get(&format!("monster.{key}"), lang)
-            .map(str::to_string)
-            .unwrap_or_default()
+        self.terms.get(&format!("monster.{key}"), lang).map(str::to_string).unwrap_or_default()
     }
 
     pub fn map(&self, key: &str) -> String {
@@ -287,11 +273,7 @@ pub fn install(i18n: I18n) {
 }
 
 pub fn current() -> Arc<I18n> {
-    GLOBAL
-        .read()
-        .unwrap()
-        .clone()
-        .unwrap_or_else(|| Arc::new(I18n::default()))
+    GLOBAL.read().unwrap().clone().unwrap_or_else(|| Arc::new(I18n::default()))
 }
 
 pub fn t(key: &str) -> String {

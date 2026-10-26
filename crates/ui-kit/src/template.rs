@@ -77,8 +77,22 @@ impl Kind {
             Kind::Text => &["text", "font", "size", "color", "align", "spacing", "shadow"],
             Kind::Tag => &["text", "font", "size", "color", "fill", "shape", "cut", "radius", "padding"],
             Kind::Bar => &[
-                "value", "ghost", "fill", "ghost-fill", "track", "kind", "shape", "segments", "gap", "empty", "caps", "skew",
-                "radius", "edge", "marker", "marker-color",
+                "value",
+                "ghost",
+                "fill",
+                "ghost-fill",
+                "track",
+                "kind",
+                "shape",
+                "segments",
+                "gap",
+                "empty",
+                "caps",
+                "skew",
+                "radius",
+                "edge",
+                "marker",
+                "marker-color",
             ],
             Kind::Arc => &["value", "radius", "thickness", "from", "to", "stroke", "track", "cap"],
             Kind::Rect => &["fill", "stroke", "stroke-width", "radius", "cut", "shape", "pattern", "density", "angle"],
@@ -196,10 +210,7 @@ impl Parser<'_, '_> {
         for a in n.attributes() {
             let an = a.name();
             if kind == Kind::For && an == "each" {
-                let (var, list) = a
-                    .value()
-                    .split_once(" in ")
-                    .ok_or_else(|| self.err(n, "each 的写法是 \"变量 in 列表\""))?;
+                let (var, list) = a.value().split_once(" in ").ok_or_else(|| self.err(n, "each 的写法是 \"变量 in 列表\""))?;
                 let var = var.trim().to_string();
                 let list_expr = expr::parse(list.trim()).map_err(|e| self.err(n, e))?;
                 self.check_expr(n, &list_expr)?;

@@ -173,7 +173,15 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         let mut wx = x + 4.0 + sz.x;
         for e in &m.weaknesses {
             let n = f.t(&format!("element.{}", e.key()));
-            let s = cv.text(wx + 5.0, top_for_bottom(bottom - 2.0, 11.0, Font::TextBold), &n, Font::TextBold, 11.0, text, Align2::LEFT_TOP);
+            let s = cv.text(
+                wx + 5.0,
+                top_for_bottom(bottom - 2.0, 11.0, Font::TextBold),
+                &n,
+                Font::TextBold,
+                11.0,
+                text,
+                Align2::LEFT_TOP,
+            );
             wx += 5.0 + s.x;
         }
     }
@@ -185,7 +193,15 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         let small = 14.0;
         let pct = format!("{}", (ratio * 100.0).round() as i64);
         let ssz = cv.measure("%", Font::Num, small, 0.0);
-        cv.text(rx - ssz.x, top_for_bottom(bottom + 2.0, small, Font::Num), "%", Font::Num, small, text, Align2::LEFT_TOP);
+        cv.text(
+            rx - ssz.x,
+            top_for_bottom(bottom + 2.0, small, Font::Num),
+            "%",
+            Font::Num,
+            small,
+            text,
+            Align2::LEFT_TOP,
+        );
         let bsz = cv.measure(&pct, Font::NumHeavy, big, -0.02);
         cv.text_ex(
             rx - ssz.x - 1.0 - bsz.x,
@@ -203,14 +219,32 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     if cfg.shows("m-dmg") && f.now - f.live.combo_at < 1.6 && f.live.combo_damage > 0.0 {
         let s = format!("−{}", thousands(f.live.combo_damage));
         let sz = cv.measure(&s, Font::Num, 15.0, 0.0);
-        cv.text(rx - sz.x, top_for_bottom(bottom - 1.0, 15.0, Font::Num), &s, Font::Num, 15.0, text, Align2::LEFT_TOP);
+        cv.text(
+            rx - sz.x,
+            top_for_bottom(bottom - 1.0, 15.0, Font::Num),
+            &s,
+            Font::Num,
+            15.0,
+            text,
+            Align2::LEFT_TOP,
+        );
         rx -= sz.x + 14.0;
         st.animating = true;
     }
     if cfg.shows("m-abs") && f.density != Density::Minimal && !side {
         let s = format!("{} / {}", thousands(m.hp), thousands(m.hp_max));
         let sz = cv.measure(&s, Font::NumBold, 9.0, 0.06);
-        cv.text_ex(rx - sz.x, top_for_bottom(bottom - 2.0, 9.0, Font::NumBold), &s, Font::NumBold, 9.0, mute, Align2::LEFT_TOP, 0.06, true);
+        cv.text_ex(
+            rx - sz.x,
+            top_for_bottom(bottom - 2.0, 9.0, Font::NumBold),
+            &s,
+            Font::NumBold,
+            9.0,
+            mute,
+            Align2::LEFT_TOP,
+            0.06,
+            true,
+        );
     }
     y = bottom + 7.0;
 
@@ -226,7 +260,17 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         let mx = w * m.capture_threshold;
         cv.line((mx + 0.5, y - 6.0), (mx + 0.5, y + 13.0), 3.0, fade(cv.tok("shadow"), 0.5));
         cv.line((mx, y - 6.0), (mx, y + 13.0), 2.0, accent);
-        cv.text_ex(mx + 5.0, y + 6.0, &f.t("label.capture"), Font::TextBold, 9.0, accent, Align2::LEFT_TOP, 0.0, true);
+        cv.text_ex(
+            mx + 5.0,
+            y + 6.0,
+            &f.t("label.capture"),
+            Font::TextBold,
+            9.0,
+            accent,
+            Align2::LEFT_TOP,
+            0.0,
+            true,
+        );
     }
     y += 7.0;
 
@@ -266,8 +310,24 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             let nsz = c.text(fx, y - 1.0, &name, Font::Text, 11.0, color, Align2::LEFT_TOP);
             let bx = fx + nsz.x + 6.0;
             let r = if a.active() { a.timer_ratio() } else { a.buildup_ratio() };
-            c.bar("ailment", bx, y + 5.0, 24.0, 2.0, &[Layer::fill(r, if a.active() { accent } else { text })], false);
-            let vsz = c.text(bx + 30.0, y, &v, Font::NumBold, 10.0, if a.active() { accent } else { cv.tok("text-mute") }, Align2::LEFT_TOP);
+            c.bar(
+                "ailment",
+                bx,
+                y + 5.0,
+                24.0,
+                2.0,
+                &[Layer::fill(r, if a.active() { accent } else { text })],
+                false,
+            );
+            let vsz = c.text(
+                bx + 30.0,
+                y,
+                &v,
+                Font::NumBold,
+                10.0,
+                if a.active() { accent } else { cv.tok("text-mute") },
+                Align2::LEFT_TOP,
+            );
             fx = bx + 30.0 + vsz.x + 12.0;
             row_h = row_h.max(nsz.y);
         }
@@ -364,7 +424,11 @@ fn parts_grid(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monste
         let (v, word) = part_value(f, p);
         let vfont = if word { Font::Text } else { Font::NumBold };
         let vw = if cfg.shows("m-pval") { c.measure(&v, vfont, 9.0, 0.0).x + 6.0 } else { 0.0 };
-        let pw = if cfg.shows("m-pips") && p.breaks_max > 0 { p.breaks_max as f32 * 9.0 + 6.0 } else { 0.0 };
+        let pw = if cfg.shows("m-pips") && p.breaks_max > 0 {
+            p.breaks_max as f32 * 9.0 + 6.0
+        } else {
+            0.0
+        };
         let name = c.fit(&f.i18n.game(&p.key), Font::Text, 12.0, (cw - vw - pw).max(12.0));
         let nsz = c.text(x, y, &name, Font::Text, 12.0, name_color, Align2::LEFT_TOP);
         if cfg.shows("m-pips") && p.breaks_max > 0 {
@@ -378,7 +442,15 @@ fn parts_grid(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monste
         let b1 = if broken || p.breaks_max == 0 { 0.0 } else { p.durability_ratio() };
         c.bar("part", x, by, cw, 3.0, &[Layer::fill(b1, if flash { accent } else { text })], broken);
         if cfg.shows("m-b2") {
-            c.bar("part-flinch", x, by + 5.0, cw, 2.0, &[Layer::fill(p.flinch_ratio(), if flash { accent } else { mute })], false);
+            c.bar(
+                "part-flinch",
+                x,
+                by + 5.0,
+                cw,
+                2.0,
+                &[Layer::fill(p.flinch_ratio(), if flash { accent } else { mute })],
+                false,
+            );
         }
         let _ = look.hot;
     }
@@ -415,7 +487,15 @@ fn parts_rows(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monste
         let b1 = if broken || p.breaks_max == 0 { 0.0 } else { p.durability_ratio() };
         c.bar("part", bx, y + 7.0, bar_w, 3.0, &[Layer::fill(b1, if flash { accent } else { text })], broken);
         if cfg.shows("m-b2") {
-            c.bar("part-flinch", bx, y + 12.0, bar_w, 2.0, &[Layer::fill(p.flinch_ratio(), if flash { accent } else { mute })], false);
+            c.bar(
+                "part-flinch",
+                bx,
+                y + 12.0,
+                bar_w,
+                2.0,
+                &[Layer::fill(p.flinch_ratio(), if flash { accent } else { mute })],
+                false,
+            );
         }
         if cfg.shows("m-pips") && p.breaks_max > 0 {
             let pw = p.breaks_max as f32 * 9.0 - 3.0;
@@ -448,7 +528,15 @@ fn ailments_grid(cv: &Canvas, f: &Frame, st: &State, m: &Monster, y0: f32, w: f3
         c.text(x, y, &f.i18n.game(&a.key), Font::Text, 11.0, color, Align2::LEFT_TOP);
         let v = ailment_value(a);
         let vs = c.measure(&v, Font::NumBold, 10.0, 0.0);
-        c.text(x + cw - vs.x, y + 1.0, &v, Font::NumBold, 10.0, if a.active() { accent } else { cv.tok("text-mute") }, Align2::LEFT_TOP);
+        c.text(
+            x + cw - vs.x,
+            y + 1.0,
+            &v,
+            Font::NumBold,
+            10.0,
+            if a.active() { accent } else { cv.tok("text-mute") },
+            Align2::LEFT_TOP,
+        );
         let r = if a.active() { a.timer_ratio() } else { a.buildup_ratio() };
         c.bar("ailment", x, y + 17.0, cw, 2.0, &[Layer::fill(r, color)], false);
         i += 1;

@@ -15,8 +15,8 @@ use std::process::Command;
 
 use windows_sys::Win32::Globalization::GetUserDefaultUILanguage;
 use windows_sys::Win32::System::Registry::{
-    HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, KEY_WRITE, REG_DWORD, REG_OPTION_NON_VOLATILE, REG_SZ, RegCloseKey, RegCreateKeyExW,
-    RegDeleteTreeW, RegDeleteValueW, RegOpenKeyExW, RegSetValueExW,
+    HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, KEY_WRITE, REG_DWORD, REG_OPTION_NON_VOLATILE, REG_SZ, RegCloseKey, RegCreateKeyExW, RegDeleteTreeW,
+    RegDeleteValueW, RegOpenKeyExW, RegSetValueExW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{IDYES, MB_DEFBUTTON2, MB_ICONERROR, MB_ICONQUESTION, MB_OK, MB_YESNO, MessageBoxW};
 
@@ -57,8 +57,18 @@ fn t(key: &str) -> &'static str {
             "設定、狩猟記録、テーマ、プラグインも削除",
             "Also delete settings, hunt records, themes and plugins",
         ],
-        "running" => ["请先退出 RustyHunt", "請先結束 RustyHunt", "RustyHunt を終了してください", "Quit RustyHunt first"],
-        "empty" => ["安装包里没有程序文件", "安裝包裡沒有程式檔案", "インストーラーにプログラムが含まれていません", "This installer has no program files"],
+        "running" => [
+            "请先退出 RustyHunt",
+            "請先結束 RustyHunt",
+            "RustyHunt を終了してください",
+            "Quit RustyHunt first",
+        ],
+        "empty" => [
+            "安装包里没有程序文件",
+            "安裝包裡沒有程式檔案",
+            "インストーラーにプログラムが含まれていません",
+            "This installer has no program files",
+        ],
         "failed" => ["安装失败", "安裝失敗", "インストールに失敗しました", "Installation failed"],
         _ => ["", "", "", ""],
     };
@@ -259,7 +269,10 @@ fn remove_autostart() {
 }
 
 fn uninstall() {
-    let dir = std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)).unwrap_or_else(install_dir);
+    let dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(Path::to_path_buf))
+        .unwrap_or_else(install_dir);
     if message(t("uninstall"), MB_YESNO | MB_ICONQUESTION) != IDYES {
         return;
     }
@@ -306,7 +319,11 @@ mod tests {
         {
             let mut w = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
             let o = zip::write::SimpleFileOptions::default();
-            for (name, data) in [("RustyHunt-1.0.0/rustyhunt.exe", "exe"), ("RustyHunt-1.0.0/portable", ""), ("RustyHunt-1.0.0/locales/ui/en.toml", "x = 1")] {
+            for (name, data) in [
+                ("RustyHunt-1.0.0/rustyhunt.exe", "exe"),
+                ("RustyHunt-1.0.0/portable", ""),
+                ("RustyHunt-1.0.0/locales/ui/en.toml", "x = 1"),
+            ] {
                 w.start_file(name, o).unwrap();
                 w.write_all(data.as_bytes()).unwrap();
             }

@@ -650,9 +650,7 @@ impl<M: Memory> WorldReader<M> {
     fn read_captured(&self, addr: u64) -> ReadResult<bool> {
         let action = addr + 0x61C8;
         let action_id = self.mem.read::<i32>(action + 0xB0)?;
-        let p = self
-            .mem
-            .follow_ptr(action, &[2 * 8 + 0x68, action_id.wrapping_mul(8), 0, 0x20])?;
+        let p = self.mem.follow_ptr(action, &[2 * 8 + 0x68, action_id.wrapping_mul(8), 0, 0x20])?;
         if p == 0 {
             return Ok(false);
         }
@@ -710,11 +708,7 @@ impl<M: Memory> WorldReader<M> {
         let mut sever_addr = parts_ptr + 0x1FC8;
         let mut normal_index = 0u64;
 
-        let mut cached = self
-            .monsters
-            .get(&addr)
-            .map(|c| c.part_addresses.clone())
-            .unwrap_or_default();
+        let mut cached = self.monsters.get(&addr).map(|c| c.part_addresses.clone()).unwrap_or_default();
         cached.resize(def.parts.len(), 0);
 
         let mut out = Vec::with_capacity(def.parts.len());

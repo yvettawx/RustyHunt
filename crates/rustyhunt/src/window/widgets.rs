@@ -58,7 +58,11 @@ pub fn button_key(ui: &mut Ui, pal: &Pal, text: &str, key: &str) -> Response {
     let g2 = galley(ui, key, Font::Mono, 10.0, pal.onblock);
     let (rect, resp) = ui.allocate_exact_size(vec2(g1.size().x + g2.size().x + 42.0, 34.0), Sense::click());
     let hov = resp.hovered();
-    let (bg, fg) = if hov { (pal.accent, Color32::from_rgb(0x14, 0x14, 0x14)) } else { (pal.block, pal.onblock) };
+    let (bg, fg) = if hov {
+        (pal.accent, Color32::from_rgb(0x14, 0x14, 0x14))
+    } else {
+        (pal.block, pal.onblock)
+    };
     ui.painter().rect_filled(rect, CornerRadius::ZERO, bg);
     let x = rect.min.x + 16.0;
     text_at(ui, pos2(x, rect.center().y), Align2::LEFT_CENTER, text, Font::TextBold, 13.0, fg);
@@ -81,8 +85,10 @@ pub fn link(ui: &mut Ui, pal: &Pal, text: &str) -> Response {
     let color = if ui.is_enabled() { pal.ink } else { pal.faint };
     ui.painter().galley(rect.min, g, color);
     let under = if resp.hovered() { pal.ink } else { pal.faint };
-    ui.painter()
-        .line_segment([pos2(rect.min.x, rect.max.y - 0.5), pos2(rect.max.x, rect.max.y - 0.5)], Stroke::new(1.0, under));
+    ui.painter().line_segment(
+        [pos2(rect.min.x, rect.max.y - 0.5), pos2(rect.max.x, rect.max.y - 0.5)],
+        Stroke::new(1.0, under),
+    );
     if resp.hovered() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
     }
@@ -99,7 +105,13 @@ pub fn switch(ui: &mut Ui, pal: &Pal, on: &mut bool) -> Response {
     let t = ui.ctx().animate_bool(resp.id, *on);
     let p = ui.painter();
     let stroke = Stroke::new(1.0, if ui.is_enabled() { pal.ink } else { pal.faint });
-    p.rect(rect, CornerRadius::ZERO, if *on { pal.ink } else { Color32::TRANSPARENT }, stroke, StrokeKind::Inside);
+    p.rect(
+        rect,
+        CornerRadius::ZERO,
+        if *on { pal.ink } else { Color32::TRANSPARENT },
+        stroke,
+        StrokeKind::Inside,
+    );
     let knob = Rect::from_min_size(pos2(rect.min.x + 3.0 + 14.0 * t, rect.min.y + 3.0), vec2(8.0, 8.0));
     p.rect_filled(knob, CornerRadius::ZERO, if *on { pal.paper } else { pal.ink });
     if resp.hovered() {
@@ -107,7 +119,6 @@ pub fn switch(ui: &mut Ui, pal: &Pal, on: &mut bool) -> Response {
     }
     resp
 }
-
 
 /// 分段选择：黑框，选中的一格反色。
 pub fn seg(ui: &mut Ui, pal: &Pal, options: &[String], selected: &mut usize) -> bool {
@@ -132,7 +143,8 @@ pub fn seg(ui: &mut Ui, pal: &Pal, options: &[String], selected: &mut usize) -> 
         }
         x += w;
     }
-    ui.painter().rect_stroke(rect, CornerRadius::ZERO, Stroke::new(1.0, pal.ink), StrokeKind::Inside);
+    ui.painter()
+        .rect_stroke(rect, CornerRadius::ZERO, Stroke::new(1.0, pal.ink), StrokeKind::Inside);
     changed
 }
 
@@ -147,7 +159,10 @@ pub fn tabs(ui: &mut Ui, pal: &Pal, items: &[(String, bool)], selected: usize, b
             let on = i == selected;
             let font = if on { Font::TextBold } else { Font::Text };
             let g = galley(ui, t, font, size, pal.ink);
-            let (rect, resp) = ui.allocate_exact_size(g.size() + vec2(0.0, if big { 10.0 } else { 8.0 }), if *enabled { Sense::click() } else { Sense::hover() });
+            let (rect, resp) = ui.allocate_exact_size(
+                g.size() + vec2(0.0, if big { 10.0 } else { 8.0 }),
+                if *enabled { Sense::click() } else { Sense::hover() },
+            );
             let color = if !enabled {
                 pal.faint
             } else if on || resp.hovered() {
@@ -157,11 +172,8 @@ pub fn tabs(ui: &mut Ui, pal: &Pal, items: &[(String, bool)], selected: usize, b
             };
             ui.painter().galley(rect.min, g, color);
             if on {
-                ui.painter().rect_filled(
-                    Rect::from_min_max(pos2(rect.min.x, rect.max.y - 2.0), rect.max),
-                    CornerRadius::ZERO,
-                    pal.ink,
-                );
+                ui.painter()
+                    .rect_filled(Rect::from_min_max(pos2(rect.min.x, rect.max.y - 2.0), rect.max), CornerRadius::ZERO, pal.ink);
             }
             if resp.clicked() && *enabled {
                 clicked = Some(i);
@@ -191,14 +203,21 @@ pub fn range(ui: &mut Ui, pal: &Pal, id: &str, value: &mut f32, min: f32, max: f
         }
         let t = ((*value - min) / (max - min)).clamp(0.0, 1.0);
         let p = ui.painter();
-        p.line_segment([pos2(rect.min.x, rect.center().y), pos2(rect.max.x, rect.center().y)], Stroke::new(1.0, pal.ink));
+        p.line_segment(
+            [pos2(rect.min.x, rect.center().y), pos2(rect.max.x, rect.center().y)],
+            Stroke::new(1.0, pal.ink),
+        );
         let x = rect.min.x + t * rect.width();
         p.rect_filled(Rect::from_center_size(pos2(x, rect.center().y), vec2(10.0, 10.0)), CornerRadius::ZERO, pal.ink);
         if resp.hovered() || resp.dragged() {
             ui.ctx().set_cursor_icon(egui::CursorIcon::ResizeHorizontal);
         }
         ui.add_space(14.0);
-        let txt = if step < 1.0 { format!("{:.2} {unit}", value) } else { format!("{} {unit}", value.round()) };
+        let txt = if step < 1.0 {
+            format!("{:.2} {unit}", value)
+        } else {
+            format!("{} {unit}", value.round())
+        };
         let (r, _) = ui.allocate_exact_size(vec2(52.0, 14.0), Sense::hover());
         text_at(ui, pos2(r.max.x, r.center().y), Align2::RIGHT_CENTER, txt.trim(), Font::NumBold, 12.0, pal.ink);
     });
@@ -254,8 +273,7 @@ pub fn page_header(ui: &mut Ui, pal: &Pal, title: &str, actions: impl FnOnce(&mu
             if w > 10.0 {
                 let (lr, _) = ui.allocate_exact_size(vec2(w, 40.0), Sense::hover());
                 let y = lr.center().y;
-                ui.painter()
-                    .line_segment([pos2(lr.min.x, y), pos2(lr.max.x, y)], Stroke::new(1.0, pal.line));
+                ui.painter().line_segment([pos2(lr.min.x, y), pos2(lr.max.x, y)], Stroke::new(1.0, pal.line));
                 ui.painter()
                     .rect_filled(Rect::from_min_size(pos2(lr.max.x - 5.0, y - 2.0), vec2(5.0, 5.0)), CornerRadius::ZERO, pal.ink);
             }
@@ -270,24 +288,47 @@ pub fn setting_row(ui: &mut Ui, pal: &Pal, label: &str, extra: Option<&str>, con
     let (rect, _) = ui.allocate_exact_size(vec2(w, 52.0), Sense::hover());
     let lr = text_at(ui, pos2(rect.min.x, rect.center().y), Align2::LEFT_CENTER, label, Font::Text, 14.0, pal.ink);
     if let Some(e) = extra {
-        text_at(ui, pos2(lr.max.x + 10.0, rect.center().y + 1.0), Align2::LEFT_CENTER, e, Font::Text, 11.0, pal.mute);
+        text_at(
+            ui,
+            pos2(lr.max.x + 10.0, rect.center().y + 1.0),
+            Align2::LEFT_CENTER,
+            e,
+            Font::Text,
+            11.0,
+            pal.mute,
+        );
     }
-    ui.painter()
-        .line_segment([pos2(rect.min.x, rect.max.y - 0.5), pos2(rect.max.x, rect.max.y - 0.5)], Stroke::new(1.0, pal.line));
+    ui.painter().line_segment(
+        [pos2(rect.min.x, rect.max.y - 0.5), pos2(rect.max.x, rect.max.y - 0.5)],
+        Stroke::new(1.0, pal.line),
+    );
     let ctl = Rect::from_min_max(pos2(rect.min.x + w * 0.35, rect.min.y), rect.max);
-    ui.scope_builder(egui::UiBuilder::new().max_rect(ctl).layout(egui::Layout::right_to_left(egui::Align::Center)), |ui| {
-        ui.spacing_mut().item_spacing.x = 10.0;
-        control(ui);
-    });
+    ui.scope_builder(
+        egui::UiBuilder::new().max_rect(ctl).layout(egui::Layout::right_to_left(egui::Align::Center)),
+        |ui| {
+            ui.spacing_mut().item_spacing.x = 10.0;
+            control(ui);
+        },
+    );
 }
 
 /// 紧凑的开关行（模块页的"显示内容"）。
 pub fn toggle_row(ui: &mut Ui, pal: &Pal, label: &str, on: &mut bool) -> bool {
     let w = ui.available_width();
     let (rect, _) = ui.allocate_exact_size(vec2(w, 33.0), Sense::hover());
-    text_at(ui, pos2(rect.min.x, rect.center().y), Align2::LEFT_CENTER, label, Font::Text, 13.0, if *on { pal.ink } else { pal.faint });
-    ui.painter()
-        .line_segment([pos2(rect.min.x, rect.max.y - 0.5), pos2(rect.max.x, rect.max.y - 0.5)], Stroke::new(1.0, pal.line));
+    text_at(
+        ui,
+        pos2(rect.min.x, rect.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        Font::Text,
+        13.0,
+        if *on { pal.ink } else { pal.faint },
+    );
+    ui.painter().line_segment(
+        [pos2(rect.min.x, rect.max.y - 0.5), pos2(rect.max.x, rect.max.y - 0.5)],
+        Stroke::new(1.0, pal.line),
+    );
     let sr = Rect::from_min_size(pos2(rect.max.x - 28.0, rect.center().y - 7.0), vec2(28.0, 14.0));
     let mut changed = false;
     ui.scope_builder(egui::UiBuilder::new().max_rect(sr), |ui| {

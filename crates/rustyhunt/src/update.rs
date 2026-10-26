@@ -202,12 +202,15 @@ pub fn check(shared: &Shared, quiet: bool) {
                 .iter()
                 .filter(|r| !r.prerelease)
                 .filter_map(|r| r.version().map(|v| (v, r)))
-                .max_by(|a, b| if newer(&a.0, &b.0) { std::cmp::Ordering::Greater } else { std::cmp::Ordering::Less })
+                .max_by(|a, b| {
+                    if newer(&a.0, &b.0) {
+                        std::cmp::Ordering::Greater
+                    } else {
+                        std::cmp::Ordering::Less
+                    }
+                })
                 .map(|(_, r)| r.clone());
-            let new = latest
-                .as_ref()
-                .and_then(|r| r.version())
-                .filter(|v| newer(v, rh_core::VERSION));
+            let new = latest.as_ref().and_then(|r| r.version()).filter(|v| newer(v, rh_core::VERSION));
             if let Some(v) = &new
                 && shared.settings().notify.update
                 && shared.settings().update.skipped.as_deref() != Some(v)

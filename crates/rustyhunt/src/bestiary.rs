@@ -138,10 +138,7 @@ pub fn save_path(account: Option<u32>) -> Option<PathBuf> {
     if let Some(id) = account {
         return Some(file(id));
     }
-    platform::steam::accounts(&steam)
-        .into_iter()
-        .map(|a| file(a.account_id))
-        .find(|p| p.is_file())
+    platform::steam::accounts(&steam).into_iter().map(|a| file(a.account_id)).find(|p| p.is_file())
 }
 
 /// 游戏内部编号到皇冠阈值：按术语表的键反查。
@@ -245,7 +242,10 @@ pub fn read(shared: std::sync::Arc<Shared>) {
                 let mini = after.iter().zip(&before).filter(|(a, b)| a.1 && !b.1).count();
                 if !before.is_empty() && (gold > 0 || mini > 0) && before.iter().any(|x| x.0 || x.1) {
                     shared.notify(Notification::new(
-                        Kind::SaveRead { new_gold: gold, new_mini: mini },
+                        Kind::SaveRead {
+                            new_gold: gold,
+                            new_mini: mini,
+                        },
                         rh_core::i18n::t("notify.save_read"),
                         rh_core::i18n::tf("notify.save_read_body", &[("gold", &gold.to_string()), ("mini", &mini.to_string())]),
                     ));

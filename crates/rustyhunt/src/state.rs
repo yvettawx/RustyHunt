@@ -18,7 +18,10 @@ pub enum Connection {
     Searching,
     Connected,
     /// 没有这个版本的地址表，停止读取
-    MapMismatch { version: String, latest: Option<String> },
+    MapMismatch {
+        version: String,
+        latest: Option<String>,
+    },
     /// 打不开进程（权限不够等）
     Failed(String),
     /// 没有游戏，用演示数据

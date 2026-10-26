@@ -206,12 +206,7 @@ impl Profile {
         self.modules.entry(info.id.clone()).or_insert_with(|| ModuleConfig {
             enabled: info.default_on,
             placement: modules::default_placement(game, &info.id, side),
-            off: info
-                .elements
-                .iter()
-                .filter(|e| !e.default_on)
-                .map(|e| e.key.clone())
-                .collect(),
+            off: info.elements.iter().filter(|e| !e.default_on).map(|e| e.key.clone()).collect(),
             ..Default::default()
         });
     }
@@ -482,10 +477,7 @@ impl Settings {
 
     pub fn normalize(&mut self) {
         for game in Game::ALL {
-            let layouts = self
-                .games
-                .entry(game.key().to_string())
-                .or_insert_with(|| GameLayouts::new(game));
+            let layouts = self.games.entry(game.key().to_string()).or_insert_with(|| GameLayouts::new(game));
             if layouts.profiles.is_empty() {
                 *layouts = GameLayouts::new(game);
             }
@@ -504,9 +496,7 @@ impl Settings {
     }
 
     pub fn layouts_mut(&mut self, game: Game) -> &mut GameLayouts {
-        self.games
-            .entry(game.key().to_string())
-            .or_insert_with(|| GameLayouts::new(game))
+        self.games.entry(game.key().to_string()).or_insert_with(|| GameLayouts::new(game))
     }
 
     pub fn profile(&self, game: Game) -> &Profile {

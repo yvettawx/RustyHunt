@@ -48,9 +48,18 @@ fn short_target(target: &str) -> String {
 impl Log for Logger {
     fn enabled(&self, m: &Metadata) -> bool {
         // 第三方库只记警告以上
-        let ours = ["rustyhunt", "game_world", "rh_core", "platform", "address_map", "ui_kit", "plugin_host", "plugin"]
-            .iter()
-            .any(|p| m.target().starts_with(p));
+        let ours = [
+            "rustyhunt",
+            "game_world",
+            "rh_core",
+            "platform",
+            "address_map",
+            "ui_kit",
+            "plugin_host",
+            "plugin",
+        ]
+        .iter()
+        .any(|p| m.target().starts_with(p));
         m.level() <= log::max_level() && (ours || m.level() <= Level::Warn)
     }
 
@@ -112,10 +121,7 @@ pub fn set_level(level: rh_core::settings::LogLevel) {
 }
 
 pub fn lines() -> Vec<Line> {
-    LOGGER
-        .get()
-        .map(|l| l.lines.lock().unwrap().iter().cloned().collect())
-        .unwrap_or_default()
+    LOGGER.get().map(|l| l.lines.lock().unwrap().iter().cloned().collect()).unwrap_or_default()
 }
 
 pub fn tail(n: usize) -> Vec<Line> {
@@ -127,7 +133,6 @@ pub fn tail(n: usize) -> Vec<Line> {
         })
         .unwrap_or_default()
 }
-
 
 pub fn file_path() -> PathBuf {
     LOGGER

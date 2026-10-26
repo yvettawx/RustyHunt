@@ -60,7 +60,13 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             // 默认方案的名字存的是简体中文，显示时按界面语言
             let shown: Vec<String> = names
                 .iter()
-                .map(|n| if n == rh_core::settings::DEFAULT_PROFILE { i18n::t("modules.default_profile") } else { n.clone() })
+                .map(|n| {
+                    if n == rh_core::settings::DEFAULT_PROFILE {
+                        i18n::t("modules.default_profile")
+                    } else {
+                        n.clone()
+                    }
+                })
                 .collect();
             if widgets::select(ui, pal, "profile", &shown, &mut sel, 110.0) {
                 let n = names[sel].clone();
@@ -141,13 +147,31 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 let (r, resp) = ui.allocate_exact_size(vec2(220.0, 46.0), Sense::click());
                 let on = i == w.modules.selected;
                 if on {
-                    ui.painter().rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 12.0), vec2(2.0, 22.0)), CornerRadius::ZERO, pal.ink);
+                    ui.painter()
+                        .rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 12.0), vec2(2.0, 22.0)), CornerRadius::ZERO, pal.ink);
                 }
-                text_at(ui, pos2(r.min.x + 14.0, r.center().y + 1.0), Align2::LEFT_CENTER, &format!("{:02}", i + 1), Font::Num, 10.0, if on { pal.accent } else { pal.faint });
+                text_at(
+                    ui,
+                    pos2(r.min.x + 14.0, r.center().y + 1.0),
+                    Align2::LEFT_CENTER,
+                    &format!("{:02}", i + 1),
+                    Font::Num,
+                    10.0,
+                    if on { pal.accent } else { pal.faint },
+                );
                 let name = crate::plugins::module_name(&m.id);
                 let color = if !enabled { pal.faint } else { pal.ink };
-                text_at(ui, pos2(r.min.x + 42.0, r.center().y), Align2::LEFT_CENTER, &name, if on { Font::TextBold } else { Font::Text }, 15.0, color);
-                ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+                text_at(
+                    ui,
+                    pos2(r.min.x + 42.0, r.center().y),
+                    Align2::LEFT_CENTER,
+                    &name,
+                    if on { Font::TextBold } else { Font::Text },
+                    15.0,
+                    color,
+                );
+                ui.painter()
+                    .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 let sr = Rect::from_min_size(pos2(r.max.x - 28.0, r.center().y - 7.0), vec2(28.0, 14.0));
                 let mut v = enabled;
                 let mut changed = false;
@@ -250,7 +274,12 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
             field_label(ui, pal, &i18n::t("label.target"));
             let modes = [TargetMode::Lock, TargetMode::LastHit, TargetMode::Manual];
             let mut sel = modes.iter().position(|m| *m == mo.target_mode).unwrap_or(0);
-            if widgets::seg(ui, pal, &[i18n::t("modules.lock"), i18n::t("modules.last_hit"), i18n::t("modules.manual")], &mut sel) {
+            if widgets::seg(
+                ui,
+                pal,
+                &[i18n::t("modules.lock"), i18n::t("modules.last_hit"), i18n::t("modules.manual")],
+                &mut sel,
+            ) {
                 shared.edit_settings(|s| s.profile_mut(game).monster.target_mode = modes[sel]);
             }
             ui.add_space(18.0);
@@ -284,7 +313,16 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
             field_label(ui, pal, &i18n::t("label.backing"));
             let kinds = [Backing::None, Backing::Solid, Backing::Blur];
             let mut sel = kinds.iter().position(|k| *k == po.backing).unwrap_or(2);
-            if widgets::seg(ui, pal, &[i18n::t("modules.backing_none"), i18n::t("modules.backing_solid"), i18n::t("modules.backing_blur")], &mut sel) {
+            if widgets::seg(
+                ui,
+                pal,
+                &[
+                    i18n::t("modules.backing_none"),
+                    i18n::t("modules.backing_solid"),
+                    i18n::t("modules.backing_blur"),
+                ],
+                &mut sel,
+            ) {
                 set(&|p| p.backing = kinds[sel]);
             }
             ui.add_space(18.0);
@@ -346,7 +384,15 @@ fn trays(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let mut options: Vec<(String, String)> = game_world::data::data()
         .abnormalities
         .iter()
-        .filter(|a| matches!(a.kind, rh_core::model::AbnormalityKind::Consumable | rh_core::model::AbnormalityKind::Song | rh_core::model::AbnormalityKind::Food | rh_core::model::AbnormalityKind::Skill))
+        .filter(|a| {
+            matches!(
+                a.kind,
+                rh_core::model::AbnormalityKind::Consumable
+                    | rh_core::model::AbnormalityKind::Song
+                    | rh_core::model::AbnormalityKind::Food
+                    | rh_core::model::AbnormalityKind::Skill
+            )
+        })
         .map(|a| (a.id.clone(), i18n_cur.game(&a.key)))
         .collect();
     options.dedup_by(|a, b| a.1 == b.1);
@@ -369,7 +415,12 @@ fn trays(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 let on = tray.ids.contains(id);
                 let g = widgets::galley(ui, name, Font::Text, 12.0, pal.ink);
                 let (r, resp) = ui.allocate_exact_size(g.size() + vec2(18.0, 6.0), Sense::click());
-                ui.painter().rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, if on { pal.ink } else { pal.line }), egui::StrokeKind::Inside);
+                ui.painter().rect_stroke(
+                    r,
+                    CornerRadius::ZERO,
+                    Stroke::new(1.0, if on { pal.ink } else { pal.line }),
+                    egui::StrokeKind::Inside,
+                );
                 ui.painter().galley(r.min + vec2(9.0, 3.0), g, if on { pal.ink } else { pal.mute });
                 if resp.clicked() {
                     let mut t = trays.clone();

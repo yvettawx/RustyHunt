@@ -43,7 +43,10 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             && button(ui, pal, &i18n::t("action.import"), Btn::Outline, false).clicked()
             && let Some(p) = rfd::FileDialog::new().add_filter("JSON", &["json"]).pick_file()
         {
-            match std::fs::read_to_string(&p).map_err(|e| e.to_string()).and_then(|t| crate::bestiary::import_json(&t)) {
+            match std::fs::read_to_string(&p)
+                .map_err(|e| e.to_string())
+                .and_then(|t| crate::bestiary::import_json(&t))
+            {
                 Ok(n) => log::info!("导入图鉴 {n} 条"),
                 Err(e) => log::warn!("导入图鉴失败：{e}"),
             }
@@ -172,10 +175,15 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ui.spacing_mut().item_spacing.x = 48.0;
         ui.vertical(|ui| {
             ui.set_width(280.0);
-            let tabs: Vec<(String, bool)> = [i18n::t("label.all"), i18n::t("game_short.world"), i18n::t("game_short.rise"), i18n::t("game_short.wilds")]
-                .into_iter()
-                .map(|t| (t, true))
-                .collect();
+            let tabs: Vec<(String, bool)> = [
+                i18n::t("label.all"),
+                i18n::t("game_short.world"),
+                i18n::t("game_short.rise"),
+                i18n::t("game_short.wilds"),
+            ]
+            .into_iter()
+            .map(|t| (t, true))
+            .collect();
             if let Some(f) = widgets::tabs(ui, pal, &tabs, st.filter, false) {
                 st.filter = f;
                 st.loaded = None;
@@ -188,13 +196,31 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 let (r, resp) = ui.allocate_exact_size(vec2(280.0, 62.0), Sense::click());
                 let on = Some(h.id) == st.selected;
                 if on {
-                    ui.painter().rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 13.0), vec2(2.0, 36.0)), CornerRadius::ZERO, pal.ink);
+                    ui.painter()
+                        .rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 13.0), vec2(2.0, 36.0)), CornerRadius::ZERO, pal.ink);
                 }
-                text_at(ui, pos2(r.min.x + 14.0, r.min.y + 13.0), Align2::LEFT_TOP, &i.monster(&h.monster), if on { Font::TextBold } else { Font::Text }, 15.0, pal.ink);
-                text_at(ui, pos2(r.max.x, r.min.y + 14.0), Align2::RIGHT_TOP, &mmss(h.duration), Font::NumBold, 14.0, pal.ink);
+                text_at(
+                    ui,
+                    pos2(r.min.x + 14.0, r.min.y + 13.0),
+                    Align2::LEFT_TOP,
+                    &i.monster(&h.monster),
+                    if on { Font::TextBold } else { Font::Text },
+                    15.0,
+                    pal.ink,
+                );
+                text_at(
+                    ui,
+                    pos2(r.max.x, r.min.y + 14.0),
+                    Align2::RIGHT_TOP,
+                    &mmss(h.duration),
+                    Font::NumBold,
+                    14.0,
+                    pal.ink,
+                );
                 let sub = format!("{}　{}", i18n::t(&format!("game_short.{}", h.game)), super::fmt_when(h.started_at));
                 text_at(ui, pos2(r.min.x + 14.0, r.min.y + 38.0), Align2::LEFT_TOP, &sub, Font::Text, 12.0, pal.mute);
-                ui.painter().line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
+                ui.painter()
+                    .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 if resp.clicked() {
                     st.selected = Some(h.id);
                 }
@@ -211,14 +237,19 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     });
     if let Some(h) = remove {
         let name = i18n::current().monster(&h.monster);
-        w.ask(i18n::t("records.ask_delete"), vec![format!("{name}　{}", super::fmt_when(h.started_at))], i18n::t("action.delete"), move |shared| {
-            match crate::records::open().and_then(|c| crate::records::delete(&c, h.id)) {
-                Ok(()) => log::info!("删除狩猎记录 #{}", h.id),
-                Err(e) => log::warn!("删除狩猎记录失败：{e}"),
-            }
-            RELOAD.store(true, std::sync::atomic::Ordering::Relaxed);
-            shared.repaint();
-        });
+        w.ask(
+            i18n::t("records.ask_delete"),
+            vec![format!("{name}　{}", super::fmt_when(h.started_at))],
+            i18n::t("action.delete"),
+            move |shared| {
+                match crate::records::open().and_then(|c| crate::records::delete(&c, h.id)) {
+                    Ok(()) => log::info!("删除狩猎记录 #{}", h.id),
+                    Err(e) => log::warn!("删除狩猎记录失败：{e}"),
+                }
+                RELOAD.store(true, std::sync::atomic::Ordering::Relaxed);
+                shared.repaint();
+            },
+        );
     }
 }
 
@@ -232,13 +263,27 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     let dur = widgets::galley(ui, &mmss(h.duration), Font::NumHeavy, 44.0, pal.ink);
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), (dur.size().y + 18.0).max(84.0)), Sense::hover());
     let capture = h.result == "capture";
-    text_at(ui, r.right_top(), Align2::RIGHT_TOP, &i18n::t(&format!("result.{}", h.result)), Font::Text, 12.0, if capture { pal.accent } else { pal.mute });
+    text_at(
+        ui,
+        r.right_top(),
+        Align2::RIGHT_TOP,
+        &i18n::t(&format!("result.{}", h.result)),
+        Font::Text,
+        12.0,
+        if capture { pal.accent } else { pal.mute },
+    );
     let dw = dur.size().x;
     ui.painter().galley(pos2(r.max.x - dw, r.min.y + 16.0), dur, pal.ink);
     let left = Rect::from_min_max(r.min, pos2(r.max.x - dw - 32.0, r.max.y));
     let name = i.monster(&h.monster);
-    let sub = format!("{} {}　{}", i18n::t(&format!("game_short.{}", h.game)), i18n::t(&format!("rank.{}", h.rank)), super::fmt_when(h.started_at));
-    let need = widgets::galley(ui, &name, Font::TextBold, 24.0, pal.ink).size().x + 24.0 + 18.0 + widgets::galley(ui, &sub, Font::Text, 13.0, pal.mute).size().x;
+    let sub = format!(
+        "{} {}　{}",
+        i18n::t(&format!("game_short.{}", h.game)),
+        i18n::t(&format!("rank.{}", h.rank)),
+        super::fmt_when(h.started_at)
+    );
+    let need =
+        widgets::galley(ui, &name, Font::TextBold, 24.0, pal.ink).size().x + 24.0 + 18.0 + widgets::galley(ui, &sub, Font::Text, 13.0, pal.mute).size().x;
     ui.scope_builder(egui::UiBuilder::new().max_rect(left), |ui| {
         let row = |ui: &mut Ui| {
             widgets::tag(ui, pal, &name, 24.0);
@@ -266,7 +311,13 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         let y = r.min.y + 10.0 + k as f32 * 44.0;
         p.line_segment([pos2(r.min.x, y), pos2(r.max.x, y)], Stroke::new(1.0, pal.line));
         let v = max * (1.0 - (10.0 + k as f32 * 44.0 - 10.0) / (r.height() - 20.0));
-        p.text(pos2(r.min.x, y - 4.0), Align2::LEFT_BOTTOM, format!("{}", v.round()), Font::NumBold.id(9.0), pal.mute);
+        p.text(
+            pos2(r.min.x, y - 4.0),
+            Align2::LEFT_BOTTOM,
+            format!("{}", v.round()),
+            Font::NumBold.id(9.0),
+            pal.mute,
+        );
     }
     let tmax = h.duration.max(1.0);
     for (k, player) in h.players.iter().enumerate() {
@@ -287,7 +338,11 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         ui.spacing_mut().item_spacing.x = 18.0;
         for pl in &h.players {
             let (sr, _) = ui.allocate_exact_size(vec2(12.0, 14.0), Sense::hover());
-            ui.painter().rect_filled(Rect::from_center_size(sr.center(), vec2(12.0, 2.0)), CornerRadius::ZERO, PLAYER_COLORS[pl.slot.clamp(0, 3) as usize]);
+            ui.painter().rect_filled(
+                Rect::from_center_size(sr.center(), vec2(12.0, 2.0)),
+                CornerRadius::ZERO,
+                PLAYER_COLORS[pl.slot.clamp(0, 3) as usize],
+            );
             label_mute(ui, pal, &pl.name, 12.0);
         }
     });
@@ -297,15 +352,26 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     let total: f32 = h.players.iter().map(|p| p.damage).sum::<f32>().max(1.0);
     let w = ui.available_width();
     let cols = [w - 4.0 * 90.0, 90.0, 90.0, 90.0, 90.0];
-    let header = [i18n::t("records.hunter"), i18n::t("label.dps"), i18n::t("label.total_damage"), i18n::t("label.share"), i18n::t("label.critical")];
+    let header = [
+        i18n::t("records.hunter"),
+        i18n::t("label.dps"),
+        i18n::t("label.total_damage"),
+        i18n::t("label.share"),
+        i18n::t("label.critical"),
+    ];
     let (hr, _) = ui.allocate_exact_size(vec2(w, 24.0), Sense::hover());
     let mut x = hr.min.x;
     for (i, (c, t)) in cols.iter().zip(&header).enumerate() {
-        let (pos, align) = if i == 0 { (pos2(x, hr.min.y + 4.0), Align2::LEFT_TOP) } else { (pos2(x + c, hr.min.y + 4.0), Align2::RIGHT_TOP) };
+        let (pos, align) = if i == 0 {
+            (pos2(x, hr.min.y + 4.0), Align2::LEFT_TOP)
+        } else {
+            (pos2(x + c, hr.min.y + 4.0), Align2::RIGHT_TOP)
+        };
         text_at(ui, pos, align, t, Font::Text, 12.0, pal.mute);
         x += c;
     }
-    ui.painter().line_segment([pos2(hr.min.x, hr.max.y), pos2(hr.max.x, hr.max.y)], Stroke::new(1.0, pal.ink));
+    ui.painter()
+        .line_segment([pos2(hr.min.x, hr.max.y), pos2(hr.max.x, hr.max.y)], Stroke::new(1.0, pal.ink));
     for pl in &h.players {
         let (rr, _) = ui.allocate_exact_size(vec2(w, 40.0), Sense::hover());
         let mut x = rr.min.x;
@@ -318,14 +384,27 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         ];
         for (i, (c, v)) in cols.iter().zip(&vals).enumerate() {
             if i == 0 {
-                ui.painter().rect_filled(Rect::from_min_size(pos2(x, rr.center().y - 3.0), vec2(6.0, 6.0)), CornerRadius::ZERO, PLAYER_COLORS[pl.slot.clamp(0, 3) as usize]);
-                text_at(ui, pos2(x + 16.0, rr.center().y), Align2::LEFT_CENTER, v, if pl.is_self { Font::TextBold } else { Font::Text }, 13.0, pal.ink);
+                ui.painter().rect_filled(
+                    Rect::from_min_size(pos2(x, rr.center().y - 3.0), vec2(6.0, 6.0)),
+                    CornerRadius::ZERO,
+                    PLAYER_COLORS[pl.slot.clamp(0, 3) as usize],
+                );
+                text_at(
+                    ui,
+                    pos2(x + 16.0, rr.center().y),
+                    Align2::LEFT_CENTER,
+                    v,
+                    if pl.is_self { Font::TextBold } else { Font::Text },
+                    13.0,
+                    pal.ink,
+                );
             } else {
                 text_at(ui, pos2(x + c, rr.center().y), Align2::RIGHT_CENTER, v, Font::NumBold, 12.0, pal.ink);
             }
             x += c;
         }
-        ui.painter().line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
+        ui.painter()
+            .line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
     }
     for (k, v) in &h.fields {
         let (rr, _) = ui.allocate_exact_size(vec2(w, 32.0), Sense::hover());
@@ -381,7 +460,11 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             crate::bestiary::read(shared.clone());
         }
     }
-    let tabs = [(i18n::t("game_short.world"), true), (i18n::t("game_short.rise"), false), (i18n::t("game_short.wilds"), false)];
+    let tabs = [
+        (i18n::t("game_short.world"), true),
+        (i18n::t("game_short.rise"), false),
+        (i18n::t("game_short.wilds"), false),
+    ];
     widgets::tabs(ui, pal, &tabs, 0, false);
     ui.add_space(20.0);
 
@@ -391,7 +474,10 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             b.read_at,
             b.error.clone(),
             b.reading,
-            b.save.as_ref().map(|s| s.hunters.iter().map(|h| h.name.clone()).collect::<Vec<_>>()).unwrap_or_default(),
+            b.save
+                .as_ref()
+                .map(|s| s.hunters.iter().map(|h| h.name.clone()).collect::<Vec<_>>())
+                .unwrap_or_default(),
             b.hunter,
         )
     });
@@ -399,13 +485,30 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ui.spacing_mut().item_spacing.x = 18.0;
         label_mute(ui, pal, &i18n::t("label.save_file"), 12.0);
         let fail = error.is_some();
-        label(ui, path.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "SAVEDATA1000".into()), Font::Mono, 12.0, if fail { pal.accent } else { pal.mute });
+        label(
+            ui,
+            path.as_ref()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "SAVEDATA1000".into()),
+            Font::Mono,
+            12.0,
+            if fail { pal.accent } else { pal.mute },
+        );
         let t = if reading {
             i18n::t("records.reading")
         } else if let Some(e) = &error {
             i18n::tf("records.read_failed", &[("e", e)])
         } else if let Some(t) = read_at {
-            i18n::tf("records.read_at", &[("t", &chrono::DateTime::from_timestamp(t, 0).map(|d| d.with_timezone(&chrono::Local).format("%H:%M").to_string()).unwrap_or_default())])
+            i18n::tf(
+                "records.read_at",
+                &[(
+                    "t",
+                    &chrono::DateTime::from_timestamp(t, 0)
+                        .map(|d| d.with_timezone(&chrono::Local).format("%H:%M").to_string())
+                        .unwrap_or_default(),
+                )],
+            )
         } else {
             String::new()
         };
@@ -432,7 +535,11 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let progress = [
         (i18n::t("records.big_crowns"), crownable.iter().filter(|r| r.big).count(), crownable.len()),
         (i18n::t("records.small_crowns"), crownable.iter().filter(|r| r.small).count(), crownable.len()),
-        (i18n::t("records.big_research"), rows.iter().filter(|r| r.research >= r.research_cap).count(), rows.len()),
+        (
+            i18n::t("records.big_research"),
+            rows.iter().filter(|r| r.research >= r.research_cap).count(),
+            rows.len(),
+        ),
         (i18n::t("records.completed"), rows.iter().filter(|r| r.done()).count(), rows.len()),
     ];
     ui.horizontal(|ui| {
@@ -458,10 +565,26 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     kinds.dedup();
     let mut kind_names = vec![i18n::t("records.all_kinds")];
     kind_names.extend(kinds.iter().map(|k| i.game(k)));
-    let map_list = ["ancient_forest", "wildspire_waste", "coral_highlands", "rotten_vale", "elders_recess", "hoarfrost_reach", "guiding_lands"];
+    let map_list = [
+        "ancient_forest",
+        "wildspire_waste",
+        "coral_highlands",
+        "rotten_vale",
+        "elders_recess",
+        "hoarfrost_reach",
+        "guiding_lands",
+    ];
     let mut map_names = vec![i18n::t("records.all_maps")];
     map_names.extend(map_list.iter().map(|m| i.map(m)));
-    let statuses = ["status_all", "status_open", "status_no_big", "status_no_small", "status_research", "status_done"].map(|s| i18n::t(&format!("records.{s}")));
+    let statuses = [
+        "status_all",
+        "status_open",
+        "status_no_big",
+        "status_no_small",
+        "status_research",
+        "status_done",
+    ]
+    .map(|s| i18n::t(&format!("records.{s}")));
     let st = &mut w.records;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 24.0;
@@ -479,14 +602,22 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let width = ui.available_width();
     let cols = [150.0, 34.0, 34.0, 168.0, 62.0, 0.0];
     let rest = width - cols.iter().sum::<f32>() - 14.0 * 5.0;
-    let header = [i18n::t("records.monster"), i18n::t("records.big"), i18n::t("records.small"), i18n::t("records.research"), i18n::t("records.nav"), i18n::t("records.maps")];
+    let header = [
+        i18n::t("records.monster"),
+        i18n::t("records.big"),
+        i18n::t("records.small"),
+        i18n::t("records.research"),
+        i18n::t("records.nav"),
+        i18n::t("records.maps"),
+    ];
     let (hr, _) = ui.allocate_exact_size(vec2(width, 24.0), Sense::hover());
     let mut x = hr.min.x;
     for (c, t) in cols.iter().zip(&header) {
         text_at(ui, pos2(x, hr.min.y + 4.0), Align2::LEFT_TOP, t, Font::Text, 12.0, pal.mute);
         x += if *c > 0.0 { *c } else { rest } + 14.0;
     }
-    ui.painter().line_segment([pos2(hr.min.x, hr.max.y), pos2(hr.max.x, hr.max.y)], Stroke::new(1.0, pal.ink));
+    ui.painter()
+        .line_segment([pos2(hr.min.x, hr.max.y), pos2(hr.max.x, hr.max.y)], Stroke::new(1.0, pal.ink));
 
     let q = st.query.trim().to_lowercase();
     let mut changes: Vec<(String, ManualEdit)> = Vec::new();
@@ -521,11 +652,18 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         // 大金、小金
         for (j, (on, big)) in [(r.big, true), (r.small, false)].into_iter().enumerate() {
             let cr = Rect::from_center_size(pos2(x + 13.0, cy), vec2(26.0, 22.0));
-            let resp = ui.interact(cr, egui::Id::unique(("crown", &r.key, j)), if r.fixed { Sense::hover() } else { Sense::click() });
+            let resp = ui.interact(
+                cr,
+                egui::Id::unique(("crown", &r.key, j)),
+                if r.fixed { Sense::hover() } else { Sense::click() },
+            );
             crown_icon(ui, cr.center(), if big { 22.0 } else { 15.0 }, on, r.fixed, pal);
             if resp.clicked() {
                 let v = !on;
-                changes.push((r.key.clone(), Box::new(move |m: &mut crate::bestiary::Manual| if big { m.big = Some(v) } else { m.small = Some(v) })));
+                changes.push((
+                    r.key.clone(),
+                    Box::new(move |m: &mut crate::bestiary::Manual| if big { m.big = Some(v) } else { m.small = Some(v) }),
+                ));
             }
             x += cols[1 + j] + 14.0;
         }
@@ -536,7 +674,13 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             if k >= r.research_cap {
                 dashed(ui, sr, pal.faint);
             } else {
-                ui.painter().rect(sr, CornerRadius::ZERO, if k < r.research { pal.ink } else { Color32::TRANSPARENT }, Stroke::new(1.0, pal.ink), StrokeKind::Inside);
+                ui.painter().rect(
+                    sr,
+                    CornerRadius::ZERO,
+                    if k < r.research { pal.ink } else { Color32::TRANSPARENT },
+                    Stroke::new(1.0, pal.ink),
+                    StrokeKind::Inside,
+                );
                 if resp.clicked() {
                     let v = if r.research == k + 1 { k } else { k + 1 };
                     changes.push((r.key.clone(), Box::new(move |m: &mut crate::bestiary::Manual| m.research = Some(v))));
@@ -548,7 +692,13 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         for k in 0..3u8 {
             let sr = Rect::from_min_size(pos2(x + k as f32 * 17.0, cy - 5.0), vec2(14.0, 10.0));
             let resp = ui.interact(sr.expand(1.5), egui::Id::unique(("nav", &r.key, k)), Sense::click());
-            ui.painter().rect(sr, CornerRadius::ZERO, if k < r.nav { pal.ink } else { Color32::TRANSPARENT }, Stroke::new(1.0, pal.ink), StrokeKind::Inside);
+            ui.painter().rect(
+                sr,
+                CornerRadius::ZERO,
+                if k < r.nav { pal.ink } else { Color32::TRANSPARENT },
+                Stroke::new(1.0, pal.ink),
+                StrokeKind::Inside,
+            );
             if resp.clicked() {
                 let v = if r.nav == k + 1 { k } else { k + 1 };
                 changes.push((r.key.clone(), Box::new(move |m: &mut crate::bestiary::Manual| m.nav = Some(v))));
@@ -559,7 +709,8 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         let maps = if maps.is_empty() { "—".to_string() } else { maps.join(" ") };
         let g = ui.painter().layout(maps, Font::Text.id(12.0), pal.mute, rest);
         ui.painter().galley(pos2(x, cy - g.size().y / 2.0), g, pal.mute);
-        ui.painter().line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
+        ui.painter()
+            .line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
     }
     for (k, f) in changes {
         crate::bestiary::set(&k, f);
@@ -571,19 +722,34 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         let smalls: Vec<String> = i.terms().keys("monster").into_iter().filter(|k| i.terms().is_large(k) == Some(false)).collect();
         for key in smalls {
             let (rr, _) = ui.allocate_exact_size(vec2(width, 40.0), Sense::hover());
-            text_at(ui, pos2(rr.min.x, rr.center().y), Align2::LEFT_CENTER, &i.monster(&key), Font::TextBold, 14.0, pal.ink);
+            text_at(
+                ui,
+                pos2(rr.min.x, rr.center().y),
+                Align2::LEFT_CENTER,
+                &i.monster(&key),
+                Font::TextBold,
+                14.0,
+                pal.ink,
+            );
             let research = crate::bestiary::with(|b| b.store.world.get(&key).and_then(|m| m.research).unwrap_or(0));
             let x = rr.min.x + cols[0] + cols[1] + cols[2] + 14.0 * 3.0;
             for k in 0..9u8 {
                 let sr = Rect::from_min_size(pos2(x + k as f32 * 17.0, rr.center().y - 5.0), vec2(14.0, 10.0));
                 let resp = ui.interact(sr.expand(1.5), egui::Id::unique(("sres", &key, k)), Sense::click());
-                ui.painter().rect(sr, CornerRadius::ZERO, if k < research { pal.ink } else { Color32::TRANSPARENT }, Stroke::new(1.0, pal.ink), StrokeKind::Inside);
+                ui.painter().rect(
+                    sr,
+                    CornerRadius::ZERO,
+                    if k < research { pal.ink } else { Color32::TRANSPARENT },
+                    Stroke::new(1.0, pal.ink),
+                    StrokeKind::Inside,
+                );
                 if resp.clicked() {
                     let v = if research == k + 1 { k } else { k + 1 };
                     crate::bestiary::set(&key, |m| m.research = Some(v));
                 }
             }
-            ui.painter().line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
+            ui.painter()
+                .line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
         }
     }
 }

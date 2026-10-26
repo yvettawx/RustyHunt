@@ -18,10 +18,7 @@ pub fn install() {
         let thread = std::thread::current().name().unwrap_or("?").to_string();
         let msg = info.to_string();
         log::error!("线程 {thread} 崩溃：{msg}");
-        let game = GAME_VERSION
-            .get()
-            .map(|m| m.lock().map(|g| g.clone()).unwrap_or_default())
-            .unwrap_or_default();
+        let game = GAME_VERSION.get().map(|m| m.lock().map(|g| g.clone()).unwrap_or_default()).unwrap_or_default();
         let name = format!("crash-{}.txt", chrono::Local::now().format("%Y%m%d-%H%M%S"));
         let path = rh_core::paths::crash().join(name);
         if let Ok(mut f) = std::fs::File::create(&path) {

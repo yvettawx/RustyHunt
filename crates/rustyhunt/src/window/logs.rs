@@ -76,7 +76,14 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                             };
                             col(ui, &l.level.to_string(), 46.0, lc);
                             col(ui, &l.target, 96.0, Color32::from_rgb(0x8b, 0x89, 0x83));
-                            ui.add(egui::Label::new(egui::RichText::new(&l.message).font(Font::Mono.id(12.0)).color(Color32::from_rgb(0xcf, 0xcd, 0xc6))).truncate());
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(&l.message)
+                                        .font(Font::Mono.id(12.0))
+                                        .color(Color32::from_rgb(0xcf, 0xcd, 0xc6)),
+                                )
+                                .truncate(),
+                            );
                         });
                     }
                 });
