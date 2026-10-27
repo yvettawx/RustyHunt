@@ -359,10 +359,6 @@ fn injection(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     kv(ui, "DLL", &st.dll);
     kv(ui, "IPC", &st.ipc);
     kv(ui, &i18n::t("inj.last_failure"), st.last_failure.as_deref().unwrap_or("-"));
-    if st.stracker {
-        ui.add_space(14.0);
-        label_mute(ui, pal, &i18n::t("inj.stracker"), 12.0);
-    }
 }
 
 fn notify(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {

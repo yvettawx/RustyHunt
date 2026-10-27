@@ -2,8 +2,8 @@
 //!
 //! - Integrity check patch: the game checksums its own code and crashes if it was changed (by a hook,
 //!   for example). Jumps over the two checks given in the address map, after checking the original
-//!   bytes; if they don't match nothing is touched. When Stracker's Loader is in the game folder it
-//!   already does the same, so this is skipped.
+//!   bytes; if they don't match nothing is touched. Applied even when Stracker's Loader is present;
+//!   only when the loader has already rewritten the checks (so the original bytes are gone) do we rely on it.
 //! - Damage hook: injects rustyhunt-native.dll into the game and hooks the damage function to count
 //!   the local player's damage and crits on large monsters, returned over a local port (protocol in
 //!   `rh_core::native`). Requires the integrity check patch.
@@ -47,7 +47,6 @@ pub struct Status {
     pub dll: String,
     pub ipc: String,
     pub last_failure: Option<String>,
-    pub stracker: bool,
 }
 
 impl Default for Status {
@@ -58,7 +57,6 @@ impl Default for Status {
             dll: i18n::t("inj.dll_none"),
             ipc: i18n::t("inj.ipc_none"),
             last_failure: None,
-            stracker: false,
         }
     }
 }
@@ -119,6 +117,8 @@ struct Session {
     map: AddressMap,
     process: Option<Process>,
     stracker: bool,
+    /// Our patch couldn't apply because Stracker's Loader had already changed the checks
+    loader_patched: bool,
     /// Patches applied: addresses and original bytes, written back when turned off
     patched: Vec<(u64, Vec<u8>)>,
     conn: Option<Conn>,
@@ -143,13 +143,13 @@ impl Session {
         let main = modules.iter().find(|m| m.name.eq_ignore_ascii_case(exe))?;
         // Stracker's Loader is loaded into the game as loader.dll
         let stracker = modules.iter().any(|m| m.name.eq_ignore_ascii_case("loader.dll"));
-        set_status(|s| s.stracker = stracker);
         Some(Session {
             pid,
             base: main.base,
             map,
             process: None,
             stracker,
+            loader_patched: false,
             patched: Vec::new(),
             conn: None,
             injected: false,
@@ -309,10 +309,16 @@ impl Sink for Injector {
         }
         let Some(s) = self.session.as_mut() else { return };
 
-        // Integrity check patch
-        if inj.crc_patch && s.patched.is_empty() && !s.stracker && now >= s.retry_at {
+        // Integrity check patch: always our own, even with Stracker's Loader present
+        if inj.crc_patch && s.patched.is_empty() && !s.loader_patched && now >= s.retry_at {
             match s.crc_on() {
                 Ok(()) => set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.patched"))),
+                Err(e) if s.stracker => {
+                    // The loader already rewrote the checks, so the original bytes are gone; rely on it
+                    log::info!("完整性检查已被 Stracker's Loader 改过：{e}");
+                    s.loader_patched = true;
+                    set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.handled")));
+                }
                 Err(e) => {
                     fail(&i18n::t("inj.crc"), &e);
                     set_status(|st| st.crc = ItemStatus::Failed(e));
@@ -321,15 +327,12 @@ impl Sink for Injector {
                 }
             }
         }
-        if s.stracker {
-            set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.handled")));
-        }
         // The patch can't be removed while the hook is installed, or the game crashes when it sees the change; wait for a game restart
         if !inj.crc_patch && !s.patched.is_empty() && !s.hooked {
             s.crc_off();
             set_status(|st| st.crc = ItemStatus::Off);
         }
-        let crc_ok = !s.patched.is_empty() || s.stracker;
+        let crc_ok = !s.patched.is_empty() || s.loader_patched;
 
         // Damage hook
         let want = inj.damage_hook && crc_ok && !(inj.solo_only && snap.online);
