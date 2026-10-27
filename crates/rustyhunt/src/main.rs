@@ -124,6 +124,9 @@ fn main() {
     let mut wgpu_setup = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
     wgpu_setup.instance_descriptor.backends = eframe::wgpu::Backends::DX12;
     wgpu_setup.instance_descriptor.backend_options.dx12.presentation_system = eframe::wgpu::Dx12SwapchainKind::DxgiFromVisual;
+    // All windows draw on one thread. Waiting for a frame slot blocks it for up to a second when the
+    // system throttles a background window (the game in front does that), and the overlay stalls with it
+    wgpu_setup.instance_descriptor.backend_options.dx12.latency_waitable_object = eframe::wgpu::Dx12UseFrameLatencyWaitableObject::DontWait;
     let options = eframe::NativeOptions {
         viewport,
         renderer: eframe::Renderer::Wgpu,

@@ -205,8 +205,16 @@ impl Shared {
     pub fn repaint(&self) {
         if let Some(ctx) = self.ctx.get() {
             ctx.request_repaint_of(egui::ViewportId::ROOT);
-            ctx.request_repaint_of(crate::window::main_viewport());
+            if !self.game_in_front() {
+                ctx.request_repaint_of(crate::window::main_viewport());
+            }
         }
+    }
+
+    /// While the game is in front the system throttles our other windows, and drawing the main window
+    /// then holds up the overlay, which shares its thread. The main window waits until the game is left.
+    pub fn game_in_front(&self) -> bool {
+        self.live.try_read().is_ok_and(|l| l.game_foreground && l.connected())
     }
 
     pub fn repaint_overlay(&self) {

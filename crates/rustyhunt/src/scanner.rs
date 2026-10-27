@@ -315,8 +315,9 @@ impl Scanner {
             switched
         };
         if switched {
-            // The overlay hides while the game is in the background, even if no data changed
-            self.shared.repaint_overlay();
+            // The overlay hides while the game is in the background, even if no data changed; the main
+            // window, held while the game was in front, catches up
+            self.shared.repaint();
         }
         self.publish(snap, Connection::Connected);
     }

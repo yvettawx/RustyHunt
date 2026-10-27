@@ -272,8 +272,11 @@ impl MainWindow {
         }
         self.modal(ui, &pal, Rect::from_min_max(pos2(full.min.x, title.max.y), full.max));
 
-        // Connection status, logs and the like change; refreshing the main window once a second is enough
-        ctx.request_repaint_after(std::time::Duration::from_millis(500));
+        // Connection status, logs and the like change; refreshing the main window twice a second is enough.
+        // Not while the game is in front (see Shared::game_in_front); the reader asks again when it's left.
+        if !self.shared.game_in_front() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(500));
+        }
     }
 
     fn title_bar(&mut self, ui: &mut Ui, pal: &Pal, r: Rect) {
@@ -676,7 +679,9 @@ impl MainWindow {
         if dismiss {
             self.shared.notifications.lock().unwrap().toast = None;
         }
-        ui.ctx().request_repaint_after(std::time::Duration::from_millis(30));
+        if !self.shared.game_in_front() {
+            ui.ctx().request_repaint_after(std::time::Duration::from_millis(30));
+        }
     }
 
     fn modal(&mut self, ui: &mut Ui, pal: &Pal, area: Rect) {
