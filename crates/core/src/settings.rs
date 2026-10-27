@@ -333,8 +333,8 @@ pub struct Injection {
 impl Default for Injection {
     fn default() -> Self {
         Injection {
-            crc_patch: false,
-            damage_hook: false,
+            crc_patch: true,
+            damage_hook: true,
             solo_only: true,
         }
     }
