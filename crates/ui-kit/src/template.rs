@@ -184,7 +184,7 @@ impl Parser<'_, '_> {
                 continue;
             }
             if !fields::path_exists(&self.sample, &full) {
-                return Err(self.err(node, format!("没有字段 {}", p.join(".").replace(".[]", "[]"))));
+                return Err(self.err(node, format!("no field {}", p.join(".").replace(".[]", "[]"))));
             }
         }
         Ok(())
@@ -201,16 +201,19 @@ impl Parser<'_, '_> {
     fn node(&mut self, n: roxmltree::Node) -> Result<Node, ThemeError> {
         self.nodes += 1;
         if self.nodes > MAX_NODES {
-            return Err(self.err(n, format!("模板超过 {MAX_NODES} 个节点")));
+            return Err(self.err(n, format!("template has more than {MAX_NODES} nodes")));
         }
         let name = n.tag_name().name();
-        let kind = Kind::from_name(name).ok_or_else(|| self.err(n, format!("不认识的元素 <{name}>")))?;
+        let kind = Kind::from_name(name).ok_or_else(|| self.err(n, format!("unknown element <{name}>")))?;
         let mut attrs = BTreeMap::new();
         let mut each = None;
         for a in n.attributes() {
             let an = a.name();
             if kind == Kind::For && an == "each" {
-                let (var, list) = a.value().split_once(" in ").ok_or_else(|| self.err(n, "each 的写法是 \"变量 in 列表\""))?;
+                let (var, list) = a
+                    .value()
+                    .split_once(" in ")
+                    .ok_or_else(|| self.err(n, "each is written as \"variable in list\""))?;
                 let var = var.trim().to_string();
                 let list_expr = expr::parse(list.trim()).map_err(|e| self.err(n, e))?;
                 self.check_expr(n, &list_expr)?;
@@ -218,15 +221,15 @@ impl Parser<'_, '_> {
                 continue;
             }
             if !kind.attrs().contains(&an) && !Kind::common_attrs().contains(&an) {
-                return Err(self.err(n, format!("<{name}> 没有属性 {an}")));
+                return Err(self.err(n, format!("<{name}> has no attribute {an}")));
             }
             attrs.insert(an.to_string(), self.attr_text(n, an, a.value())?);
         }
         if kind == Kind::For && each.is_none() {
-            return Err(self.err(n, "<for> 缺少 each"));
+            return Err(self.err(n, "<for> is missing each"));
         }
         if kind == Kind::If && !attrs.contains_key("when") {
-            return Err(self.err(n, "<if> 缺少 when"));
+            return Err(self.err(n, "<if> is missing when"));
         }
 
         // A for's variable is only visible to its children
@@ -254,7 +257,7 @@ impl Parser<'_, '_> {
         let mut children = Vec::new();
         for c in n.children().filter(|c| c.is_element()) {
             if c.tag_name().name() == "state" {
-                let when = c.attribute("when").ok_or_else(|| self.err(c, "<state> 缺少 when"))?;
+                let when = c.attribute("when").ok_or_else(|| self.err(c, "<state> is missing when"))?;
                 let when = expr::parse(when).map_err(|e| self.err(c, e))?;
                 self.check_expr(c, &when)?;
                 let mut sattrs = BTreeMap::new();
@@ -269,20 +272,20 @@ impl Parser<'_, '_> {
                                 "breathe" => Animation::Breathe,
                                 "pulse" => Animation::Pulse,
                                 "shift" => Animation::Shift,
-                                v => return Err(self.err(c, format!("animate=\"{v}\" 应该是 blink、breathe、pulse 或 shift"))),
+                                v => return Err(self.err(c, format!("animate=\"{v}\" should be blink, breathe, pulse or shift"))),
                             });
                             self.animations += 1;
                             if self.animations > MAX_ANIMATIONS {
-                                return Err(self.err(c, format!("动画超过 {MAX_ANIMATIONS} 个")));
+                                return Err(self.err(c, format!("more than {MAX_ANIMATIONS} animations")));
                             }
                         }
                         "period" => {
-                            let ms: f32 = a.value().parse().map_err(|_| self.err(c, "period 要写毫秒数"))?;
+                            let ms: f32 = a.value().parse().map_err(|_| self.err(c, "period must be in milliseconds"))?;
                             period = (ms / 1000.0).clamp(0.2, 10.0);
                         }
                         an => {
                             if !kind.attrs().contains(&an) && !Kind::common_attrs().contains(&an) {
-                                return Err(self.err(c, format!("<{name}> 的 state 里不能写 {an}")));
+                                return Err(self.err(c, format!("{an} is not allowed in a state of <{name}>")));
                             }
                             sattrs.insert(an.to_string(), self.attr_text(c, an, a.value())?);
                         }
@@ -296,7 +299,7 @@ impl Parser<'_, '_> {
                 });
             } else {
                 if !kind.is_container() {
-                    return Err(self.err(c, format!("<{name}> 里不能放 <{}>", c.tag_name().name())));
+                    return Err(self.err(c, format!("<{}> is not allowed inside <{name}>", c.tag_name().name())));
                 }
                 children.push(self.node(c)?);
             }
@@ -327,9 +330,9 @@ pub fn parse_module(file: &Path, doc: &roxmltree::Document, module: roxmltree::N
         vars: Vec::new(),
     };
     let mut elems = module.children().filter(|c| c.is_element());
-    let first = elems.next().ok_or_else(|| p.err(module, "<module> 里没有内容"))?;
+    let first = elems.next().ok_or_else(|| p.err(module, "<module> is empty"))?;
     if let Some(extra) = elems.next() {
-        return Err(p.err(extra, "<module> 里只能有一个根元素，用 <column> 或 <stack> 包起来"));
+        return Err(p.err(extra, "<module> must have one root element, wrap them in <column> or <stack>"));
     }
     let root = p.node(first)?;
     Ok(Template { root, nodes: p.nodes })
@@ -341,7 +344,7 @@ pub fn parse_str(text: &str, tokens: &Tokens) -> Result<Template, ThemeError> {
     let doc = roxmltree::Document::parse(text).map_err(|e| ThemeError {
         file: file.to_path_buf(),
         line: e.pos().row,
-        message: format!("XML 格式错误：{e}"),
+        message: format!("malformed XML: {e}"),
     })?;
     let root = doc.root_element();
     if root.tag_name().name() == "module" {
@@ -429,6 +432,6 @@ mod tests {
     fn node_limit() {
         let many: String = (0..MAX_NODES + 1).map(|_| "<spacer/>").collect();
         let e = parse_str(&format!("<column>{many}</column>"), &tokens()).unwrap_err();
-        assert!(e.message.contains("节点"));
+        assert!(e.message.contains("nodes"));
     }
 }

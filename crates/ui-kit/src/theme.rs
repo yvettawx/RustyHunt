@@ -29,7 +29,7 @@ impl std::fmt::Display for ThemeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let name = self.file.file_name().and_then(|n| n.to_str()).unwrap_or("theme.xml");
         if self.line > 0 {
-            write!(f, "{name} 第 {} 行：{}", self.line, self.message)
+            write!(f, "{name} line {}: {}", self.line, self.message)
         } else {
             write!(f, "{name}：{}", self.message)
         }
@@ -390,7 +390,10 @@ impl Ctx<'_> {
     fn attr_f32(&self, node: roxmltree::Node, name: &str, default: f32) -> Result<f32, ThemeError> {
         match node.attribute(name) {
             None => Ok(default),
-            Some(v) => v.trim_end_matches("px").parse().map_err(|_| self.err(node, format!("{name}=\"{v}\" 不是数字"))),
+            Some(v) => v
+                .trim_end_matches("px")
+                .parse()
+                .map_err(|_| self.err(node, format!("{name}=\"{v}\" is not a number"))),
         }
     }
 
@@ -399,7 +402,7 @@ impl Ctx<'_> {
             None => Ok(default),
             Some("true" | "1" | "yes") => Ok(true),
             Some("false" | "0" | "no") => Ok(false),
-            Some(v) => Err(self.err(node, format!("{name}=\"{v}\" 应该是 true 或 false"))),
+            Some(v) => Err(self.err(node, format!("{name}=\"{v}\" should be true or false"))),
         }
     }
 
@@ -408,7 +411,7 @@ impl Ctx<'_> {
             None => Ok(None),
             Some(v) => resolve_color(v, tokens)
                 .map(Some)
-                .ok_or_else(|| self.err(node, format!("{name}=\"{v}\" 不是颜色，也不是已有的令牌"))),
+                .ok_or_else(|| self.err(node, format!("{name}=\"{v}\" is neither a color nor a known token"))),
         }
     }
 }
@@ -423,30 +426,30 @@ pub fn parse(text: &str, file: &Path, dir: Option<&Path>) -> Result<Theme, Theme
     let doc = roxmltree::Document::parse(text).map_err(|e| ThemeError {
         file: file.to_path_buf(),
         line: e.pos().row,
-        message: format!("XML 格式错误：{e}"),
+        message: format!("malformed XML: {e}"),
     })?;
     let cx = Ctx { file, doc: &doc };
     let root = doc.root_element();
     if root.tag_name().name() != "theme" {
-        return Err(cx.err(root, "根元素必须是 <theme>"));
+        return Err(cx.err(root, "the root element must be <theme>"));
     }
     match root.tag_name().namespace() {
         Some(NAMESPACE) => {}
         Some(other) => {
-            return Err(cx.err(root, format!("不支持的命名空间 {other}，当前程序支持 {NAMESPACE}")));
+            return Err(cx.err(root, format!("unsupported namespace {other}, this version supports {NAMESPACE}")));
         }
-        None => return Err(cx.err(root, format!("缺少 xmlns=\"{NAMESPACE}\""))),
+        None => return Err(cx.err(root, format!("missing xmlns=\"{NAMESPACE}\""))),
     }
 
     let need = |name: &str| {
         root.attribute(name)
             .map(str::to_string)
-            .ok_or_else(|| cx.err(root, format!("<theme> 缺少 {name} 属性")))
+            .ok_or_else(|| cx.err(root, format!("<theme> is missing the {name} attribute")))
     };
     let dark = match root.attribute("base") {
         None | Some("dark") => true,
         Some("light") => false,
-        Some(v) => return Err(cx.err(root, format!("base=\"{v}\" 应该是 light 或 dark"))),
+        Some(v) => return Err(cx.err(root, format!("base=\"{v}\" should be light or dark"))),
     };
     let manifest = Manifest {
         id: need("id")?,
@@ -463,7 +466,7 @@ pub fn parse(text: &str, file: &Path, dir: Option<&Path>) -> Result<Theme, Theme
         dark,
     };
     if !manifest.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
-        return Err(cx.err(root, "id 只能用字母、数字、- 和 _"));
+        return Err(cx.err(root, "id may only use letters, digits, - and _"));
     }
 
     let mut theme = Theme {
@@ -486,25 +489,25 @@ pub fn parse(text: &str, file: &Path, dir: Option<&Path>) -> Result<Theme, Theme
             "module" => parse_module(&cx, child, &mut theme),
             "include" => {
                 let Some(src) = child.attribute("src") else {
-                    return Err(cx.err(child, "<include> 缺少 src"));
+                    return Err(cx.err(child, "<include> is missing src"));
                 };
                 let Some(dir) = dir else { continue };
                 let path = dir.join(src);
                 if !path.starts_with(dir) || src.contains("..") {
-                    return Err(cx.err(child, "include 只能引用主题包里的文件"));
+                    return Err(cx.err(child, "include may only refer to files in the theme pack"));
                 }
-                let inc = std::fs::read_to_string(&path).map_err(|e| cx.err(child, format!("读不到 {src}：{e}")))?;
+                let inc = std::fs::read_to_string(&path).map_err(|e| cx.err(child, format!("cannot read {src}: {e}")))?;
                 let idoc = roxmltree::Document::parse(&inc).map_err(|e| ThemeError {
                     file: path.clone(),
                     line: e.pos().row,
-                    message: format!("XML 格式错误：{e}"),
+                    message: format!("malformed XML: {e}"),
                 })?;
                 let icx = Ctx { file: &path, doc: &idoc };
                 for m in idoc.root_element().descendants().filter(|n| n.has_tag_name("module")) {
                     parse_module(&icx, m, &mut theme);
                 }
             }
-            other => return Err(cx.err(child, format!("不认识的元素 <{other}>"))),
+            other => return Err(cx.err(child, format!("unknown element <{other}>"))),
         }
     }
     Ok(theme)
@@ -514,12 +517,12 @@ fn parse_tokens(cx: &Ctx, node: roxmltree::Node, tokens: &mut Tokens, dir: Optio
     for t in node.children().filter(|n| n.is_element()) {
         let name = t
             .attribute("name")
-            .ok_or_else(|| cx.err(t, format!("<{}> 缺少 name", t.tag_name().name())))?
+            .ok_or_else(|| cx.err(t, format!("<{}> is missing name", t.tag_name().name())))?
             .to_string();
         match t.tag_name().name() {
             "color" => {
-                let v = t.attribute("value").ok_or_else(|| cx.err(t, "<color> 缺少 value"))?;
-                let c = resolve_color(v, tokens).ok_or_else(|| cx.err(t, format!("value=\"{v}\" 不是颜色")))?;
+                let v = t.attribute("value").ok_or_else(|| cx.err(t, "<color> is missing value"))?;
+                let c = resolve_color(v, tokens).ok_or_else(|| cx.err(t, format!("value=\"{v}\" is not a color")))?;
                 tokens.colors.insert(name, c);
             }
             "font" => {
@@ -528,7 +531,7 @@ fn parse_tokens(cx: &Ctx, node: roxmltree::Node, tokens: &mut Tokens, dir: Optio
                 if let (Some(src), Some(dir)) = (&src, dir)
                     && !dir.join(src).is_file()
                 {
-                    return Err(cx.err(t, format!("字体文件 {} 不存在", src.display())));
+                    return Err(cx.err(t, format!("font file {} does not exist", src.display())));
                 }
                 tokens.fonts.insert(
                     name,
@@ -547,7 +550,7 @@ fn parse_tokens(cx: &Ctx, node: roxmltree::Node, tokens: &mut Tokens, dir: Optio
                 let v = cx.attr_f32(t, "value", 1.0)?;
                 tokens.sizes.insert(name, v);
             }
-            other => return Err(cx.err(t, format!("<tokens> 里不认识 <{other}>"))),
+            other => return Err(cx.err(t, format!("unknown element <{other}> in <tokens>"))),
         }
     }
     Ok(())
@@ -559,7 +562,7 @@ fn parse_pattern(cx: &Ctx, node: roxmltree::Node, v: Option<&str>) -> Result<Pat
         Some("hatch") => Pattern::Hatch,
         Some("dots") => Pattern::Dots,
         Some("grid") => Pattern::Grid,
-        Some(v) => return Err(cx.err(node, format!("empty=\"{v}\" 应该是 none、hatch、dots 或 grid"))),
+        Some(v) => return Err(cx.err(node, format!("empty=\"{v}\" should be none, hatch, dots or grid"))),
     })
 }
 
@@ -569,7 +572,7 @@ fn bar_style(cx: &Ctx, node: roxmltree::Node, base: &BarStyle) -> Result<BarStyl
         Some("rect") => BarShape::Rect,
         Some("round") => BarShape::Round,
         Some("parallelogram") => BarShape::Parallelogram,
-        Some(v) => return Err(cx.err(node, format!("shape=\"{v}\" 应该是 rect、round 或 parallelogram"))),
+        Some(v) => return Err(cx.err(node, format!("shape=\"{v}\" should be rect, round or parallelogram"))),
     };
     Ok(BarStyle {
         shape,
@@ -609,7 +612,7 @@ fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<()
                     Some("rect") => TagShape::Rect,
                     Some("cut") => TagShape::Cut,
                     Some("round") => TagShape::Round,
-                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" 应该是 rect、cut 或 round"))),
+                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" should be rect, cut or round"))),
                 };
                 t.cut = cx.attr_f32(s, "cut", t.cut)?;
                 t.radius = cx.attr_f32(s, "radius", t.radius)?;
@@ -619,14 +622,14 @@ fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<()
                     None | Some("square") => PipShape::Square,
                     Some("diamond") => PipShape::Diamond,
                     Some("circle") => PipShape::Circle,
-                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" 应该是 square、diamond 或 circle"))),
+                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" should be square, diamond or circle"))),
                 };
             }
             "switch" => {
                 theme.styles.switch = match s.attribute("shape") {
                     None | Some("square") => SwitchShape::Square,
                     Some("round") => SwitchShape::Round,
-                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" 应该是 square 或 round"))),
+                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" should be square or round"))),
                 };
             }
             "panel" => {
@@ -638,7 +641,7 @@ fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<()
                     Some("rect") => PanelShape::Rect,
                     Some("cut") => PanelShape::Cut,
                     Some("round") => PanelShape::Round,
-                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" 应该是 none、rect、cut 或 round"))),
+                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" should be none, rect, cut or round"))),
                 };
                 if let Some(c) = cx.attr_color(s, "fill", &tokens)? {
                     p.fill = c;
@@ -653,7 +656,7 @@ fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<()
             "text" => {
                 theme.styles.text_shadow = cx.attr_f32(s, "shadow", theme.styles.text_shadow)?.clamp(0.0, 3.0);
             }
-            other => return Err(cx.err(s, format!("<styles> 里不认识 <{other}>"))),
+            other => return Err(cx.err(s, format!("unknown element <{other}> in <styles>"))),
         }
     }
     Ok(())
@@ -661,7 +664,7 @@ fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<()
 
 fn parse_module(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) {
     let Some(id) = node.attribute("id") else {
-        theme.module_errors.push(cx.err(node, "<module> 缺少 id"));
+        theme.module_errors.push(cx.err(node, "<module> is missing id"));
         return;
     };
     match template::parse_module(cx.file, cx.doc, node, &theme.tokens) {
@@ -669,7 +672,7 @@ fn parse_module(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) {
             theme.modules.insert(id.to_string(), t);
         }
         Err(e) => {
-            log::warn!("主题模块 {id} 出错，退回默认样式：{e}");
+            log::warn!("theme module {id} failed, using the default look: {e}");
             theme.module_errors.push(e);
         }
     }

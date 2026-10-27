@@ -47,8 +47,8 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 .map_err(|e| e.to_string())
                 .and_then(|t| crate::bestiary::import_json(&t))
             {
-                Ok(n) => log::info!("导入图鉴 {n} 条"),
-                Err(e) => log::warn!("导入图鉴失败：{e}"),
+                Ok(n) => log::info!("imported {n} notes entries"),
+                Err(e) => log::warn!("failed to import notes: {e}"),
             }
         }
         let r = button(ui, pal, &i18n::t("action.export"), Btn::Outline, false);
@@ -138,8 +138,8 @@ fn export_menu(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, anchor: Rect) {
 fn save_text(name: &str, text: &str) {
     if let Some(p) = rfd::FileDialog::new().set_file_name(name).save_file() {
         match std::fs::write(&p, text) {
-            Ok(()) => log::info!("已导出 {}", p.display()),
-            Err(e) => log::warn!("导出失败：{e}"),
+            Ok(()) => log::info!("exported {}", p.display()),
+            Err(e) => log::warn!("export failed: {e}"),
         }
     }
 }
@@ -243,8 +243,8 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             i18n::t("action.delete"),
             move |shared| {
                 match crate::records::open().and_then(|c| crate::records::delete(&c, h.id)) {
-                    Ok(()) => log::info!("删除狩猎记录 #{}", h.id),
-                    Err(e) => log::warn!("删除狩猎记录失败：{e}"),
+                    Ok(()) => log::info!("deleted hunt record #{}", h.id),
+                    Err(e) => log::warn!("failed to delete the hunt record: {e}"),
                 }
                 RELOAD.store(true, std::sync::atomic::Ordering::Relaxed);
                 shared.repaint();

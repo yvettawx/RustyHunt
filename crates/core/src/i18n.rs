@@ -376,7 +376,7 @@ size = "large"
             let k = keys(l);
             let missing: Vec<&String> = base.iter().filter(|x| !k.contains(x)).collect();
             let extra: Vec<&String> = k.iter().filter(|x| !base.contains(x)).collect();
-            assert!(missing.is_empty() && extra.is_empty(), "{}: 缺 {missing:?}，多 {extra:?}", l.code());
+            assert!(missing.is_empty() && extra.is_empty(), "{}: missing {missing:?}, extra {extra:?}", l.code());
         }
     }
 }

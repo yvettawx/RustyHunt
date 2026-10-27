@@ -335,7 +335,7 @@ mod tests {
         assert_eq!(n, 8);
         assert_eq!(std::fs::read_to_string(dir.join("rustyhunt.exe")).unwrap(), "exe");
         assert!(dir.join("locales/ui/en.toml").is_file());
-        assert!(!dir.join("portable").exists(), "安装版不能带便携版标记");
+        assert!(!dir.join("portable").exists(), "an installed copy must not carry the portable marker");
         let _ = std::fs::remove_dir_all(dir);
     }
 

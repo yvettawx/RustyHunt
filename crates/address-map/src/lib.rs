@@ -45,10 +45,10 @@ pub enum LineError {
 impl fmt::Display for LineError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            LineError::MissingName => write!(f, "缺少名字"),
-            LineError::MissingValue => write!(f, "缺少值"),
-            LineError::UnknownKeyword(k) => write!(f, "未知关键字 {k}"),
-            LineError::InvalidNumber(e) => write!(f, "数值无效：{e}"),
+            LineError::MissingName => write!(f, "missing name"),
+            LineError::MissingValue => write!(f, "missing value"),
+            LineError::UnknownKeyword(k) => write!(f, "unknown keyword {k}"),
+            LineError::InvalidNumber(e) => write!(f, "invalid number: {e}"),
         }
     }
 }
@@ -101,9 +101,9 @@ pub enum MapError {
 impl fmt::Display for MapError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MapError::InvalidLine { line_number, error } => write!(f, "第 {line_number} 行：{error}"),
+            MapError::InvalidLine { line_number, error } => write!(f, "line {line_number}: {error}"),
             MapError::DuplicateName { line_number, name } => {
-                write!(f, "第 {line_number} 行：名字 {name} 重复")
+                write!(f, "line {line_number}: duplicate name {name}")
             }
         }
     }
@@ -125,7 +125,7 @@ impl fmt::Display for LoadError {
             LoadError::Io { path, error } => write!(f, "{}：{error}", path.display()),
             LoadError::Parse { path, error } => write!(f, "{}：{error}", path.display()),
             LoadError::NotFound { dir, version } => {
-                write!(f, "{} 里没有版本 {version} 的地址表", dir.display())
+                write!(f, "no address map for version {version} in {}", dir.display())
             }
         }
     }

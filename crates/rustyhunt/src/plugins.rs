@@ -146,7 +146,7 @@ pub fn init(shared: Arc<Shared>) {
                 handle(&shared, &id, o);
             }
         })
-        .expect("能创建插件线程");
+        .expect("spawn the plugin thread");
     scan();
 }
 
@@ -232,7 +232,7 @@ fn start(shared: &Shared, p: &mut Plugin, out: Sender<(String, Out)>) {
             p.running = Some(r);
             p.status = Status::Running;
             p.data.clear();
-            log::info!(target: "plugin", "{} 已启动", p.label());
+            log::info!(target: "plugin", "{} started", p.label());
             // Add plugin modules to every profile
             let infos: Vec<ModuleInfo> = m.modules.iter().map(|d| module_info(&m, d)).collect();
             shared.edit_settings(|s| {
@@ -246,7 +246,7 @@ fn start(shared: &Shared, p: &mut Plugin, out: Sender<(String, Out)>) {
             });
         }
         Err(e) => {
-            log::error!(target: "plugin", "{} 启动失败：{e}", p.label());
+            log::error!(target: "plugin", "{} failed to start: {e}", p.label());
             p.status = Status::Failed(e);
         }
     }
@@ -298,7 +298,7 @@ fn handle(shared: &Arc<Shared>, id: &str, o: Out) {
         Out::Serve { port, json } => serve(id, port, json),
         Out::Failed(e) => {
             let label = name();
-            log::error!(target: "plugin", "{label} {e}，已停用");
+            log::error!(target: "plugin", "{label} {e}, disabled");
             {
                 let mut r = reg();
                 if let Some(p) = r.plugins.iter_mut().find(|p| p.manifest.id == id) {
@@ -329,7 +329,7 @@ fn serve(id: &str, port: u16, json: String) {
     let listener = match std::net::TcpListener::bind(("127.0.0.1", port)) {
         Ok(l) => l,
         Err(e) => {
-            log::warn!(target: "plugin", "{id} 端口 {port}：{e}");
+            log::warn!(target: "plugin", "{id} port {port}: {e}");
             return;
         }
     };
@@ -439,7 +439,7 @@ pub fn draw_module(id: &str, cv: &ui_kit::Canvas, f: &Frame, cfg: &ModuleConfig,
     let decl = p.manifest.modules.iter().find(|m| m.id == mid).cloned();
     let elements = decl.as_ref().map(|d| module_info(&p.manifest, d).elements).unwrap_or_default();
     let t = p.templates.entry(mid.to_string()).or_insert_with(|| {
-        let Some(d) = decl else { return Err("没有这个模块".into()) };
+        let Some(d) = decl else { return Err("no such module".into()) };
         let text = std::fs::read_to_string(dir.join(&d.template)).map_err(|e| format!("{}：{e}", d.template))?;
         ui_kit::template::parse_str(&text, &cv.theme.tokens).map_err(|e| {
             log::warn!(target: "plugin", "{pid} {}：{e}", d.template);
@@ -612,13 +612,13 @@ pub fn run_exporter(e: &ExporterInfo, hunts: &[crate::records::Hunt]) {
                 .save_file()
             {
                 match std::fs::write(&path, bytes) {
-                    Ok(()) => log::info!("导出到 {}", path.display()),
-                    Err(err) => log::warn!("导出失败：{err}"),
+                    Ok(()) => log::info!("exported to {}", path.display()),
+                    Err(err) => log::warn!("export failed: {err}"),
                 }
             }
         }
-        Ok(Err(err)) => log::warn!(target: "plugin", "{} 导出失败：{err}", e.plugin_name),
-        Err(_) => log::warn!(target: "plugin", "{} 导出超时", e.plugin_name),
+        Ok(Err(err)) => log::warn!(target: "plugin", "{} export failed: {err}", e.plugin_name),
+        Err(_) => log::warn!(target: "plugin", "{} export timed out", e.plugin_name),
     }
 }
 
@@ -675,7 +675,7 @@ pub fn set_enabled(id: &str, on: bool) {
     } else {
         stop(p);
         p.status = Status::Off;
-        log::info!(target: "plugin", "{} 已停用", p.label());
+        log::info!(target: "plugin", "{} disabled", p.label());
     }
 }
 
@@ -752,7 +752,7 @@ pub fn uninstall(id: &str) -> Result<(), String> {
             }
         }
     });
-    log::info!(target: "plugin", "已删除 {id}");
+    log::info!(target: "plugin", "removed {id}");
     last.map_err(|e| e.to_string())
 }
 
@@ -781,11 +781,11 @@ fn unzip(file: &Path, to: &Path) -> Result<(), String> {
     for i in 0..z.len() {
         let mut e = z.by_index(i).map_err(|e| e.to_string())?;
         let Some(rel) = e.enclosed_name() else {
-            return Err("压缩包里有不安全的路径".into());
+            return Err("the archive contains an unsafe path".into());
         };
         total += e.size();
         if total > 64 * 1024 * 1024 {
-            return Err("插件包超过 64 MB".into());
+            return Err("the plugin pack is larger than 64 MB".into());
         }
         let out = to.join(rel);
         if e.is_dir() {
@@ -832,14 +832,14 @@ pub fn prepare(path: &Path) -> Result<Staged, String> {
         return fail(e);
     }
     let Some(root) = manifest_root(&dir) else {
-        return fail("没有 plugin.toml".into());
+        return fail("no plugin.toml".into());
     };
     let manifest = match Manifest::load(&root) {
         Ok(m) => m,
         Err(e) => return fail(e),
     };
     if !root.join(&manifest.entry).exists() {
-        return fail(format!("没有 {}", manifest.entry));
+        return fail(format!("no {}", manifest.entry));
     }
     if let Err(e) = compatible(&manifest) {
         return fail(e);
@@ -864,7 +864,7 @@ fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
 /// manifest and enables it. An older version with the same id is replaced; its `data` folder is kept.
 pub fn install(staged: Staged) -> Result<(), String> {
     let Some(shared) = SHARED.get() else {
-        return Err("插件系统没有启动".into());
+        return Err("the plugin system is not running".into());
     };
     let m = staged.manifest.clone();
     let src = staged.root.clone();
@@ -900,7 +900,7 @@ pub fn install(staged: Staged) -> Result<(), String> {
             st.confirmed.insert(p.key().to_string());
         }
     });
-    log::info!(target: "plugin", "已安装 {} {}", m.name, m.version);
+    log::info!(target: "plugin", "installed {} {}", m.name, m.version);
     let mut p = load_dir(&dest);
     let mut r = reg();
     if p.status == Status::Off
@@ -958,7 +958,7 @@ mod tests {
         assert!(s.root.join("split.xml").is_file());
         let staging = s.dir.clone();
         drop(s);
-        assert!(!staging.exists(), "临时文件夹要删掉");
+        assert!(!staging.exists(), "the staging folder is removed");
 
         let no_wasm = tmp.join("no-wasm.zip");
         std::fs::write(&no_wasm, zip_of(&[("plugin.toml", &manifest)])).unwrap();

@@ -17,17 +17,17 @@ pub fn install() {
     std::panic::set_hook(Box::new(move |info| {
         let thread = std::thread::current().name().unwrap_or("?").to_string();
         let msg = info.to_string();
-        log::error!("线程 {thread} 崩溃：{msg}");
+        log::error!("thread {thread} panicked: {msg}");
         let game = GAME_VERSION.get().map(|m| m.lock().map(|g| g.clone()).unwrap_or_default()).unwrap_or_default();
         let name = format!("crash-{}.txt", chrono::Local::now().format("%Y%m%d-%H%M%S"));
         let path = rh_core::paths::crash().join(name);
         if let Ok(mut f) = std::fs::File::create(&path) {
             let _ = writeln!(f, "RustyHunt {}", rh_core::VERSION);
-            let _ = writeln!(f, "游戏版本 {}", if game.is_empty() { "-" } else { &game });
-            let _ = writeln!(f, "线程 {thread}");
+            let _ = writeln!(f, "game version {}", if game.is_empty() { "-" } else { &game });
+            let _ = writeln!(f, "thread {thread}");
             let _ = writeln!(f, "{msg}");
             let _ = writeln!(f, "\n{}", std::backtrace::Backtrace::force_capture());
-            let _ = writeln!(f, "\n最后 200 行日志：");
+            let _ = writeln!(f, "\nlast 200 log lines:");
             for l in crate::logging::tail(200) {
                 let _ = writeln!(f, "{}", l.format());
             }

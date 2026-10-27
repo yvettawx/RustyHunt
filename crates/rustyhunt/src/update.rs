@@ -222,7 +222,7 @@ pub fn check(shared: &Shared, quiet: bool) {
                 ));
             }
             log::info!(
-                "检查更新：当前 {}，最新 {}",
+                "update check: current {}, latest {}",
                 rh_core::VERSION,
                 latest.as_ref().map(|r| r.tag_name.as_str()).unwrap_or("-")
             );
@@ -236,9 +236,9 @@ pub fn check(shared: &Shared, quiet: bool) {
         }
         Err(e) => {
             if !quiet {
-                log::warn!("检查更新失败：{e}");
+                log::warn!("update check failed: {e}");
             } else {
-                log::info!("检查更新失败：{e}");
+                log::info!("update check failed: {e}");
             }
             with_state(|s| {
                 s.checked = true;
@@ -265,17 +265,17 @@ pub fn update_maps(shared: &Shared, releases: &[Release]) {
         }
         let dest = dir.join(&a.name);
         if let Err(e) = download(&a.browser_download_url, &dest, |_, _| {}) {
-            log::warn!("下载地址表 {} 失败：{e}", a.name);
+            log::warn!("failed to download address map {}: {e}", a.name);
             continue;
         }
         let ok = expected_hash(&sums, &a.name).is_some_and(|h| sha256(&dest).is_ok_and(|got| got == h));
         if !ok {
-            log::warn!("地址表 {} 校验失败，已删除", a.name);
+            log::warn!("address map {} failed verification, deleted", a.name);
             let _ = std::fs::remove_file(&dest);
             continue;
         }
         let version = a.name.trim_start_matches("MonsterHunterWorld.").trim_end_matches(".map").to_string();
-        log::info!("已更新地址表 {version}");
+        log::info!("updated address map {version}");
         shared.notify(Notification::new(
             Kind::MapUpdated { version: version.clone() },
             rh_core::i18n::tf("notify.map_updated", &[("version", &version)]),
@@ -304,11 +304,11 @@ pub fn start_download(shared: Arc<Shared>, release: Release) {
         .name("update-download".into())
         .spawn(move || {
             let result = (|| -> Result<String, String> {
-                let version = release.version().ok_or("tag 不是版本号")?;
-                let pkg = release.package().ok_or("没有程序包")?;
-                let sums = release.asset("SHA256SUMS").ok_or("没有 SHA256SUMS")?;
+                let version = release.version().ok_or("the tag is not a version")?;
+                let pkg = release.package().ok_or("no package")?;
+                let sums = release.asset("SHA256SUMS").ok_or("no SHA256SUMS")?;
                 let sums = fetch_text(&sums.browser_download_url)?;
-                let want = expected_hash(&sums, &pkg.name).ok_or("SHA256SUMS 里没有程序包")?;
+                let want = expected_hash(&sums, &pkg.name).ok_or("the package is not in SHA256SUMS")?;
                 let dir = rh_core::paths::updates();
                 let zip_path = dir.join(&pkg.name);
                 let s2 = shared.clone();
@@ -335,14 +335,14 @@ pub fn start_download(shared: Arc<Shared>, release: Release) {
                     backup: None,
                 };
                 std::fs::write(pending_file(), serde_json::to_string_pretty(&pending).unwrap()).map_err(|e| e.to_string())?;
-                log::info!("新版本 {version} 已下载并校验，下次启动时安装");
+                log::info!("version {version} downloaded and verified, installing on next start");
                 Ok(version)
             })();
             with_state(|s| {
                 s.download = match result {
                     Ok(v) => Download::Ready { version: v },
                     Err(e) => {
-                        log::warn!("下载更新失败：{e}");
+                        log::warn!("failed to download the update: {e}");
                         Download::Failed(e)
                     }
                 }
@@ -395,7 +395,7 @@ pub fn apply_pending() -> bool {
             let old = exe.with_extension("old.exe");
             let _ = std::fs::remove_file(&old);
             if std::fs::rename(&exe, &old).is_err() {
-                log::warn!("无法替换程序文件，跳过这次更新");
+                log::warn!("cannot replace the program files, update skipped");
                 let _ = std::fs::remove_file(&path);
                 return false;
             }
@@ -406,7 +406,7 @@ pub fn apply_pending() -> bool {
             let dll = rh_core::native::DLL_NAME;
             let _ = std::fs::copy(install.join(dll), backup.join(dll));
             if let Err(e) = copy_tree(&root, &install) {
-                log::error!("复制新版本失败，回退：{e}");
+                log::error!("failed to copy the new version, rolling back: {e}");
                 let _ = std::fs::rename(&old, &exe);
                 let _ = std::fs::remove_file(&path);
                 return false;
@@ -415,7 +415,7 @@ pub fn apply_pending() -> bool {
             p.attempts = 0;
             p.backup = Some(backup);
             let _ = std::fs::write(&path, serde_json::to_string_pretty(&p).unwrap());
-            log::info!("已安装 {}，重新启动", p.version);
+            log::info!("installed {}, restarting", p.version);
             let _ = std::process::Command::new(&exe).args(std::env::args().skip(1)).spawn();
             true
         }
@@ -440,7 +440,7 @@ pub fn apply_pending() -> bool {
 }
 
 fn rollback(p: &Pending, exe: &Path) {
-    log::error!("新版本 {} 连续启动失败，回退到旧版本", p.version);
+    log::error!("version {} failed to start repeatedly, rolled back", p.version);
     if let Some(b) = &p.backup {
         let _ = copy_tree(b, &rh_core::paths::exe_dir());
     }
@@ -461,7 +461,7 @@ pub fn confirm_started() {
         }
         let exe = std::env::current_exe().unwrap_or_default();
         let _ = std::fs::remove_file(exe.with_extension("old.exe"));
-        log::info!("更新到 {} 完成", rh_core::VERSION);
+        log::info!("updated to {}", rh_core::VERSION);
     }
 }
 

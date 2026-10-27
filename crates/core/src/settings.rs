@@ -250,7 +250,7 @@ impl GameLayouts {
         self.profiles
             .get(&self.active)
             .or_else(|| self.profiles.values().next())
-            .expect("至少有一个方案")
+            .expect("at least one profile")
     }
 
     pub fn active_mut(&mut self) -> &mut Profile {
@@ -456,7 +456,7 @@ impl Settings {
             .and_then(|t| match toml::from_str(&t) {
                 Ok(s) => Some(s),
                 Err(e) => {
-                    log::warn!("settings.toml 解析失败，使用默认设置：{e}");
+                    log::warn!("failed to parse settings.toml, using defaults: {e}");
                     None
                 }
             })
@@ -493,7 +493,7 @@ impl Settings {
     }
 
     pub fn layouts(&self, game: Game) -> &GameLayouts {
-        self.games.get(game.key()).expect("normalize 之后每个游戏都有布局")
+        self.games.get(game.key()).expect("every game has a layout after normalize")
     }
 
     pub fn layouts_mut(&mut self, game: Game) -> &mut GameLayouts {

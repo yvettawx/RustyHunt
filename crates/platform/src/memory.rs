@@ -13,7 +13,7 @@ pub struct ReadError {
 
 impl fmt::Display for ReadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "读取 0x{:X} 处 {} 字节失败", self.address, self.len)
+        write!(f, "failed to read {1} bytes at 0x{0:X}", self.address, self.len)
     }
 }
 

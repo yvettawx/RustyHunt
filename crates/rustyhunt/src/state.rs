@@ -175,7 +175,7 @@ impl Shared {
 
     pub fn save_settings(&self) {
         if let Err(e) = self.settings().save(&rh_core::paths::settings_file()) {
-            log::warn!("保存设置失败：{e}");
+            log::warn!("failed to save settings: {e}");
         }
     }
 

@@ -71,5 +71,5 @@ pub fn spawn(shared: Arc<Shared>) {
                 }
             }
         })
-        .expect("能创建热键线程");
+        .expect("spawn the hotkey thread");
 }

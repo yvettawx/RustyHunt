@@ -76,7 +76,7 @@ impl eframe::App for Shot {
                 target,
                 egui::ViewportCommand::Screenshot(egui::ScreenshotCallback::new(move |img| {
                     save(&img, &path);
-                    log::info!("截图已保存 {}", path.display());
+                    log::info!("screenshot saved {}", path.display());
                     done.store(true, std::sync::atomic::Ordering::Relaxed);
                     shared.repaint();
                 })),

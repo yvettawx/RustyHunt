@@ -72,7 +72,7 @@ impl Data {
 
 pub fn data() -> &'static Data {
     static DATA: OnceLock<Data> = OnceLock::new();
-    DATA.get_or_init(|| parse().expect("内置的世界数据文件格式正确"))
+    DATA.get_or_init(|| parse().expect("built-in World data is valid"))
 }
 
 fn element(name: &str) -> Option<Element> {

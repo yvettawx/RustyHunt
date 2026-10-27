@@ -182,7 +182,7 @@ impl<M: Memory> WorldReader<M> {
     }
 
     fn warn(&mut self, what: &str, e: impl std::fmt::Display) {
-        self.warnings.push(format!("{what}：{e}"));
+        self.warnings.push(format!("{what}: {e}"));
     }
 
     /// Reads one frame. `prev` is the previous frame; parts that fail to read keep its values.
@@ -202,52 +202,52 @@ impl<M: Memory> WorldReader<M> {
                 s.in_hunt_zone = id != 0 && !s.in_town;
                 s.stage_key = stage_key(id).to_string();
             }
-            Err(e) => self.warn("地点", e),
+            Err(e) => self.warn("stage", e),
         }
 
         if let Err(e) = self.read_skills() {
-            self.warn("技能", e);
+            self.warn("skills", e);
         }
         match self.read_basic(&mut s) {
             Ok(()) => {}
-            Err(e) => self.warn("猎人", e),
+            Err(e) => self.warn("hunter", e),
         }
         match self.read_hud(&mut s.player) {
             Ok(()) => {}
-            Err(e) => self.warn("生命", e),
+            Err(e) => self.warn("health", e),
         }
         match self.read_weapon(&mut s) {
             Ok(()) => {}
-            Err(e) => self.warn("武器", e),
+            Err(e) => self.warn("weapon", e),
         }
         match self.read_quest(&mut s) {
             Ok(()) => {}
-            Err(e) => self.warn("任务", e),
+            Err(e) => self.warn("quest", e),
         }
         self.quest_id = s.quest.as_ref().filter(|_| s.in_quest()).map_or(0, |q| q.id);
         match self.read_monsters(&prev.monsters) {
             Ok(m) => s.monsters = m,
-            Err(e) => self.warn("怪物", e),
+            Err(e) => self.warn("monsters", e),
         }
         match self.read_party(&mut s) {
             Ok(()) => {}
-            Err(e) => self.warn("队伍", e),
+            Err(e) => self.warn("party", e),
         }
         match self.read_abnormalities(&s) {
             Ok(a) => s.player.abnormalities = a,
-            Err(e) => self.warn("增益", e),
+            Err(e) => self.warn("buffs", e),
         }
         match self.read_tools() {
             Ok(t) => s.player.tools = t,
-            Err(e) => self.warn("专用装备", e),
+            Err(e) => self.warn("specialized tools", e),
         }
         match self.read_misc(&mut s) {
             Ok(()) => {}
-            Err(e) => self.warn("菜单", e),
+            Err(e) => self.warn("menu", e),
         }
         match self.read_base() {
             Ok(b) => s.base = b,
-            Err(e) => self.warn("据点", e),
+            Err(e) => self.warn("base", e),
         }
         s
     }
@@ -368,7 +368,7 @@ impl<M: Memory> WorldReader<M> {
             match self.read_sharpness() {
                 Ok(v) => v.or(s.player.sharpness.take()),
                 Err(e) => {
-                    self.warn("斩味", e);
+                    self.warn("sharpness", e);
                     s.player.sharpness.take()
                 }
             }
@@ -377,7 +377,7 @@ impl<M: Memory> WorldReader<M> {
         };
         match self.read_weapon_state(weapon) {
             Ok(w) => s.player.weapon_state = w,
-            Err(e) => self.warn("武器专用槽", e),
+            Err(e) => self.warn("weapon gauge", e),
         }
         Ok(())
     }
@@ -602,7 +602,7 @@ impl<M: Memory> WorldReader<M> {
                     if let Some(o) = old {
                         out.push(o.clone());
                     }
-                    self.warn("怪物", e);
+                    self.warn("monsters", e);
                 }
             }
         }
@@ -667,7 +667,7 @@ impl<M: Memory> WorldReader<M> {
                 m.target = t;
                 m.manual_target = manual;
             }
-            Err(e) => self.warn("目标", e),
+            Err(e) => self.warn("target", e),
         }
         match self.read_parts(addr, id, &def) {
             Ok(mut parts) => {
@@ -675,15 +675,15 @@ impl<M: Memory> WorldReader<M> {
                 self.monsters.entry(addr).or_default().breaks.hold(hunt, &def.parts, &mut parts);
                 m.parts = parts;
             }
-            Err(e) => self.warn("部位", e),
+            Err(e) => self.warn("parts", e),
         }
         match self.read_tenderize(addr, &def, &mut m.parts) {
             Ok(()) => {}
-            Err(e) => self.warn("弱点特效", e),
+            Err(e) => self.warn("weakness exploit", e),
         }
         match self.read_ailments(addr) {
             Ok(a) => m.ailments = a,
-            Err(e) => self.warn("怪物异常", e),
+            Err(e) => self.warn("monster ailments", e),
         }
         Ok(m)
     }

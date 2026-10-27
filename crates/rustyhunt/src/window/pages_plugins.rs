@@ -261,7 +261,7 @@ fn detail(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, v: &View) {
                 yes: i18n::t("action.delete"),
                 on_yes: Box::new(move |_| {
                     if let Err(e) = plugins::uninstall(&id) {
-                        log::warn!(target: "plugin", "删除 {id}：{e}");
+                        log::warn!(target: "plugin", "removing {id}: {e}");
                     }
                 }),
             });
@@ -289,7 +289,7 @@ fn ask_install(w: &mut MainWindow, path: &std::path::Path) {
                 yes: i18n::t("action.install_yes"),
                 on_yes: Box::new(move |_| {
                     if let Err(e) = plugins::install(staged) {
-                        log::warn!(target: "plugin", "安装失败：{e}");
+                        log::warn!(target: "plugin", "install failed: {e}");
                     }
                 }),
             });

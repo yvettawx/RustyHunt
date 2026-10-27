@@ -110,7 +110,7 @@ fn answer(line: &str) -> String {
                 Ok(()) => "OK".into(),
                 Err(e) => format!("ERR {e}"),
             },
-            _ => "ERR 地址不对".into(),
+            _ => "ERR bad address".into(),
         },
         "UNHOOK" => {
             unhook();
@@ -121,7 +121,7 @@ fn answer(line: &str) -> String {
             *STATS.lock().unwrap_or_else(|e| e.into_inner()) = Stats::default();
             "OK".into()
         }
-        _ => "ERR 不认识的请求".into(),
+        _ => "ERR unknown request".into(),
     }
 }
 
@@ -180,7 +180,7 @@ mod tests {
             f(monster.as_mut_ptr(), 120, std::ptr::null_mut(), 0, 1, 0, 0, 0, 0);
             f(monster.as_mut_ptr(), 80, std::ptr::null_mut(), 0, 0, 0, 0, 0, 0);
         }
-        assert_eq!(CALLS.load(Ordering::SeqCst), 2, "原函数照常执行");
+        assert_eq!(CALLS.load(Ordering::SeqCst), 2, "the original function still runs");
         let s = Stats::parse(&answer("STATS")).unwrap();
         assert_eq!(
             s,
@@ -193,7 +193,7 @@ mod tests {
         );
         unhook();
         unsafe { f(monster.as_mut_ptr(), 50, std::ptr::null_mut(), 0, 0, 0, 0, 0, 0) };
-        assert_eq!(Stats::parse(&answer("STATS")).unwrap().hits, 2, "取消 hook 后不再计数");
+        assert_eq!(Stats::parse(&answer("STATS")).unwrap().hits, 2, "no counting after unhooking");
         assert_eq!(CALLS.load(Ordering::SeqCst), 3);
     }
 

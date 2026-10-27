@@ -9,7 +9,7 @@ use std::process::ExitCode;
 fn main() -> ExitCode {
     let dirs: Vec<String> = std::env::args().skip(1).collect();
     if dirs.is_empty() || dirs.iter().any(|d| d == "-h" || d == "--help") {
-        eprintln!("用法：theme-check <主题文件夹> [更多文件夹...]");
+        eprintln!("usage: theme-check <theme folder> [more folders...]");
         return ExitCode::from(2);
     }
     let mut failed = false;
@@ -17,7 +17,7 @@ fn main() -> ExitCode {
         let r = ui_kit::check::check(Path::new(d));
         match &r.theme {
             Some(t) => println!(
-                "{d}：{} {}（{} 个文件，{:.1} KB，{} 个模块模板）",
+                "{d}: {} {} ({} files, {:.1} KB, {} module templates)",
                 t.manifest.name,
                 t.manifest.version,
                 r.files,
@@ -27,13 +27,13 @@ fn main() -> ExitCode {
             None => println!("{d}"),
         }
         for e in &r.errors {
-            println!("  错误  {e}");
+            println!("  error    {e}");
         }
         for w in &r.warnings {
-            println!("  提醒  {w}");
+            println!("  warning  {w}");
         }
         if r.ok() {
-            println!("  通过");
+            println!("  ok");
         }
         failed |= !r.ok();
     }

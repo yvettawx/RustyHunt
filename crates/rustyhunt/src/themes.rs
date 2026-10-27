@@ -97,13 +97,13 @@ pub fn load_active(settings: &Settings) -> Theme {
             match load_checked(&dir) {
                 Ok(t) => {
                     for e in &t.module_errors {
-                        log::warn!("主题 {other}：{e}");
+                        log::warn!("theme {other}: {e}");
                     }
                     *LAST_ERROR.lock().unwrap() = t.module_errors.first().map(|e| e.to_string());
                     t
                 }
                 Err(e) => {
-                    log::error!("主题 {other} 载入失败，改用浅色：{e}");
+                    log::error!("failed to load theme {other}, using light: {e}");
                     *LAST_ERROR.lock().unwrap() = Some(e);
                     Theme::builtin(false)
                 }
@@ -129,7 +129,7 @@ pub fn install_fonts(ctx: &egui::Context, theme: &Theme) {
 pub fn apply(shared: &Shared, id: &str) {
     shared.edit_settings(|s| s.theme = id.to_string());
     reload(shared);
-    log::info!("应用主题 {id}");
+    log::info!("applying theme {id}");
 }
 
 /// Reloads the current theme according to settings.
@@ -195,7 +195,7 @@ pub fn watch(shared: Arc<Shared>) {
                 match &last {
                     Some((lid, lm)) if *lid == id && *lm == m => continue,
                     Some((lid, _)) if *lid == id => {
-                        log::info!("主题 {id} 的文件有改动，重新载入");
+                        log::info!("theme {id} changed on disk, reloading");
                         reload(&shared);
                     }
                     _ => {}
@@ -203,7 +203,7 @@ pub fn watch(shared: Arc<Shared>) {
                 last = Some((id, m));
             }
         })
-        .expect("能创建主题监视线程");
+        .expect("spawn the theme watcher thread");
 }
 
 fn dir_size(dir: &Path) -> u64 {
@@ -249,13 +249,13 @@ pub fn import(src: &Path) -> Result<String, String> {
     let theme = Theme::load_dir(&root).map_err(|e: ThemeError| e.to_string())?;
     let id = theme.manifest.id.clone();
     if id.is_empty() || !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
-        return Err(format!("主题 id \"{id}\" 只能用字母、数字、- 和 _"));
+        return Err(format!("theme id \"{id}\" may only use letters, digits, - and _"));
     }
     let dest = rh_core::paths::themes().join(&id);
     let _ = std::fs::remove_dir_all(&dest);
     copy_dir(&root, &dest)?;
     let _ = std::fs::remove_dir_all(&tmp);
-    log::info!("导入主题 {id}（{}）", theme.manifest.name);
+    log::info!("imported theme {id} ({})", theme.manifest.name);
     Ok(id)
 }
 

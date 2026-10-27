@@ -235,11 +235,11 @@ impl Process {
         }
         free(remote);
         if wait != WAIT_OBJECT_0 {
-            return Err(io::Error::new(io::ErrorKind::TimedOut, "LoadLibraryW 超时"));
+            return Err(io::Error::new(io::ErrorKind::TimedOut, "LoadLibraryW timed out"));
         }
         // The thread's exit code is the low 32 bits of the module handle; 0 means the load failed
         if code == 0 {
-            return Err(io::Error::other("LoadLibraryW 返回 0"));
+            return Err(io::Error::other("LoadLibraryW returned 0"));
         }
         Ok(())
     }
@@ -248,7 +248,7 @@ impl Process {
         if self.writable {
             Ok(())
         } else {
-            Err(io::Error::new(io::ErrorKind::PermissionDenied, "进程是只读打开的"))
+            Err(io::Error::new(io::ErrorKind::PermissionDenied, "the process was opened read-only"))
         }
     }
 }

@@ -6,7 +6,7 @@ fn main() {
     match std::env::var("RH_PAYLOAD") {
         Ok(p) => {
             println!("cargo:rerun-if-changed={p}");
-            std::fs::copy(&p, &out).expect("RH_PAYLOAD 指向的文件读不到");
+            std::fs::copy(&p, &out).expect("cannot read the file RH_PAYLOAD points to");
         }
         Err(_) => std::fs::write(&out, b"").unwrap(),
     }
@@ -17,7 +17,7 @@ fn main() {
             .set("ProductName", "RustyHunt")
             .set("FileDescription", "RustyHunt Setup");
         if let Err(e) = res.compile() {
-            println!("cargo:warning=没有嵌入图标：{e}");
+            println!("cargo:warning=icon not embedded: {e}");
         }
     }
 }

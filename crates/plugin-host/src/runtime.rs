@@ -74,7 +74,7 @@ pub fn engine() -> &'static Engine {
     E.get_or_init(|| {
         let mut c = Config::new();
         c.epoch_interruption(true);
-        let e = Engine::new(&c).expect("wasmtime 引擎");
+        let e = Engine::new(&c).expect("wasmtime engine");
         let ticker = e.clone();
         std::thread::Builder::new()
             .name("wasm-epoch".into())
@@ -84,7 +84,7 @@ pub fn engine() -> &'static Engine {
                     ticker.increment_epoch();
                 }
             })
-            .expect("能创建计时线程");
+            .expect("spawn the timer thread");
         e
     })
 }
@@ -270,7 +270,7 @@ impl Guest {
         let mem = self
             .instance
             .get_memory(&mut self.store, "memory")
-            .ok_or_else(|| wasmtime::Error::msg("没有导出 memory"))?;
+            .ok_or_else(|| wasmtime::Error::msg("memory is not exported"))?;
         mem.write(&mut self.store, ptr as usize, s)?;
         Ok((ptr, s.len() as i32))
     }
@@ -291,17 +291,17 @@ impl Guest {
         self.store.set_epoch_deadline(deadline_ticks());
         let packed = f.call(&mut self.store, (p, l))?;
         if packed < 0 {
-            return Err(wasmtime::Error::msg("导出器返回错误"));
+            return Err(wasmtime::Error::msg("the exporter returned an error"));
         }
         let (ptr, len) = ((packed >> 32) as usize, (packed & 0xFFFF_FFFF) as usize);
         let mem = self
             .instance
             .get_memory(&mut self.store, "memory")
-            .ok_or_else(|| wasmtime::Error::msg("没有导出 memory"))?;
+            .ok_or_else(|| wasmtime::Error::msg("memory is not exported"))?;
         mem.data(&self.store)
             .get(ptr..ptr + len)
             .map(<[u8]>::to_vec)
-            .ok_or_else(|| wasmtime::Error::msg("返回的范围不对"))
+            .ok_or_else(|| wasmtime::Error::msg("returned range is out of bounds"))
     }
 }
 
@@ -309,7 +309,7 @@ fn describe(e: &wasmtime::Error) -> String {
     if let Some(t) = e.downcast_ref::<wasmtime::Trap>()
         && *t == wasmtime::Trap::Interrupt
     {
-        return format!("超时 {} ms", CALL_TIMEOUT.as_millis());
+        return format!("timed out after {} ms", CALL_TIMEOUT.as_millis());
     }
     let s = e.to_string();
     s.lines().next().unwrap_or(&s).to_string()
@@ -379,7 +379,7 @@ pub fn spawn(
                         let failed = r.as_ref().err().map(describe);
                         let _ = reply.send(r.map_err(|e| describe(&e)));
                         match failed {
-                            Some(f) if f.starts_with("超时") => Err(wasmtime::Error::msg(f)),
+                            Some(f) if f.starts_with("timed out") => Err(wasmtime::Error::msg(f)),
                             _ => Ok(()),
                         }
                     }
@@ -395,7 +395,7 @@ pub fn spawn(
     match ready_rx.recv_timeout(Duration::from_secs(10)) {
         Ok(Ok(())) => Ok(Running { tx, handle }),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err("启动超时".into()),
+        Err(_) => Err("timed out while starting".into()),
     }
 }
 
@@ -467,7 +467,7 @@ mod tests {
         let r = spawn(&m, &dir, &dir.join("data"), HashSet::new(), "{}".into(), otx).unwrap();
         r.tx.send(Msg::Event("{}".into())).unwrap();
         let (_, o) = orx.recv_timeout(Duration::from_secs(5)).unwrap();
-        assert!(matches!(o, Out::Failed(ref s) if s.contains("超时")), "{o:?}");
+        assert!(matches!(o, Out::Failed(ref s) if s.contains("timed out")), "{o:?}");
         r.handle.join().unwrap();
         let _ = std::fs::remove_dir_all(dir);
     }

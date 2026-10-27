@@ -263,7 +263,7 @@ impl State {
                                 });
                                 self.games[i].path = Some(dir);
                             } else {
-                                log::warn!("{} 里没有 {}", dir.display(), g.exe());
+                                log::warn!("{1} not found in {0}", dir.display(), g.exe());
                             }
                         }
                     }

@@ -41,7 +41,7 @@ impl Tray {
             .with_menu(Box::new(menu))
             .with_menu_on_left_click(false)
             .build()
-            .map_err(|e| log::warn!("创建托盘图标失败：{e}"))
+            .map_err(|e| log::warn!("failed to create the tray icon: {e}"))
             .ok()?;
 
         let s = shared.clone();

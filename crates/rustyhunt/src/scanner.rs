@@ -75,11 +75,11 @@ impl Scanner {
         std::thread::Builder::new()
             .name("scanner".into())
             .spawn(move || self.run())
-            .expect("能创建读取线程")
+            .expect("spawn the reader thread")
     }
 
     fn run(&mut self) {
-        log::info!("读取线程启动");
+        log::info!("reader thread started");
         while !self.shared.quit.load(std::sync::atomic::Ordering::Relaxed) {
             let start = Instant::now();
             let hz = self.shared.settings().perf.read_hz.clamp(5, 60);
@@ -115,11 +115,11 @@ impl Scanner {
             Phase::Mismatch { pid, version, since } => {
                 let (pid, version) = (*pid, version.clone());
                 if !platform::process::find_process(Game::World.exe()).is_some_and(|p| p == pid) {
-                    self.detach("游戏已退出");
+                    self.detach("game exited");
                 } else if since.elapsed() > Duration::from_secs(10) {
                     // The map may have just been updated separately; try again
                     if game_world::attach::load_map(&map_dirs(), &version).is_ok() {
-                        log::info!("找到版本 {version} 的地址表，重新连接");
+                        log::info!("found the address map for {version}, reconnecting");
                         self.phase = Phase::Idle;
                         self.last_search = None;
                     } else if let Phase::Mismatch { since, .. } = &mut self.phase {
@@ -160,7 +160,7 @@ impl Scanner {
         let title = win.title();
         let Some(version) = game_world::attach::version_from_title(&title) else {
             // Right after launch the title has no version yet
-            log::debug!("窗口标题 {title} 里没有版本号，稍后再试");
+            log::debug!("no version in window title {title}, retrying later");
             return;
         };
         self.demo = None;
@@ -170,7 +170,7 @@ impl Scanner {
             Err(address_map::LoadError::NotFound { .. }) => {
                 let dirs = map_dirs();
                 let known = game_world::attach::known_versions(&dirs.iter().map(|d| d.as_path()).collect::<Vec<_>>());
-                log::warn!("没有游戏版本 {version} 的地址表，已停止读取");
+                log::warn!("no address map for game version {version}, reading stopped");
                 {
                     let mut live = self.shared.live.write().unwrap();
                     *live = Live::default();
@@ -199,7 +199,7 @@ impl Scanner {
                 return;
             }
             Err(e) => {
-                log::error!("读取地址表失败：{e}");
+                log::error!("failed to read the address map: {e}");
                 self.shared.live.write().unwrap().connection = Connection::Failed(e.to_string());
                 return;
             }
@@ -208,23 +208,23 @@ impl Scanner {
         let process = match Process::open(pid) {
             Ok(p) => p,
             Err(e) => {
-                log::error!("打开进程 {pid} 失败：{e}");
+                log::error!("failed to open process {pid}: {e}");
                 self.shared.live.write().unwrap().connection = Connection::Failed(e.to_string());
                 return;
             }
         };
         let Some(module) = process.module(Game::World.exe()) else {
-            log::warn!("还没找到主模块，稍后再试");
+            log::warn!("main module not found yet, retrying later");
             return;
         };
         let reader = WorldReader::new(process, map, module.base);
         if let Err(missing) = reader.check_map() {
-            log::error!("地址表 {} 缺少 {}", map_path.display(), missing.0);
-            self.shared.live.write().unwrap().connection = Connection::Failed(format!("地址表缺少 {}", missing.0));
+            log::error!("address map {} is missing {}", map_path.display(), missing.0);
+            self.shared.live.write().unwrap().connection = Connection::Failed(format!("address map is missing {}", missing.0));
             return;
         }
         log::info!(
-            "连接 {}，PID {pid}，版本 {version}，地址表 {}（{} 项），基址 0x{:X}",
+            "attached to {}, PID {pid}, version {version}, address map {} ({} entries), base 0x{:X}",
             Game::World.exe(),
             map_path.file_name().and_then(|n| n.to_str()).unwrap_or_default(),
             reader.map().len(),
@@ -255,7 +255,7 @@ impl Scanner {
     }
 
     fn detach(&mut self, why: &str) {
-        log::info!("断开连接：{why}");
+        log::info!("detached: {why}");
         let was_attached = matches!(self.phase, Phase::Attached { .. });
         self.phase = Phase::Idle;
         self.mismatch_notified = None;
@@ -279,7 +279,7 @@ impl Scanner {
         let Phase::Attached { reader, window, pid } = &mut self.phase else { return };
         let pid = *pid;
         if !window.is_valid() || !reader.memory().is_alive() {
-            self.detach("游戏已退出");
+            self.detach("game exited");
             return;
         }
         let rect = window.client_rect();
@@ -296,7 +296,7 @@ impl Scanner {
         for w in warnings {
             let key = w.split('：').next().unwrap_or(&w).to_string();
             if self.warned.get(&key).is_none_or(|t| t.elapsed() > Duration::from_secs(60)) {
-                log::warn!("{w}，跳过这一帧");
+                log::warn!("{w}, frame skipped");
                 self.warned.insert(key, Instant::now());
             }
             self.shared.live.write().unwrap().errors += 1;
@@ -354,7 +354,7 @@ impl Scanner {
             let mut log = self.shared.events.lock().unwrap();
             for e in &events {
                 log.push(now, e.clone());
-                log::debug!("事件 {e:?}");
+                log::debug!("event {e:?}");
             }
         }
 

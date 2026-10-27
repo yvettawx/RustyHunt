@@ -29,7 +29,7 @@ pub struct Info {
 
 pub fn info() -> &'static BTreeMap<String, Info> {
     static I: OnceLock<BTreeMap<String, Info>> = OnceLock::new();
-    I.get_or_init(|| toml::from_str(DATA).expect("内置图鉴数据格式正确"))
+    I.get_or_init(|| toml::from_str(DATA).expect("built-in bestiary data is valid"))
 }
 
 const CROWN_QUESTS: &str = include_str!("../../../data/world/crown_quests.toml");
@@ -387,19 +387,19 @@ pub fn read(shared: std::sync::Arc<Shared>) {
                             .position(|h| !player.is_empty() && h.name == player)
                             .or_else(|| save.hunters.iter().enumerate().max_by_key(|(_, h)| h.playtime).map(|(i, _)| i))
                             .unwrap_or(0);
-                        log::info!("读取存档 {}：{} 个角色", path.display(), save.hunters.len());
+                        log::info!("read save {}: {} hunters", path.display(), save.hunters.len());
                         b.save = Some(save);
                         b.saved_at = saved_at;
                         b.error = None;
                         true
                     }
                     Ok(Err(e)) => {
-                        log::warn!("存档格式不对：{e}");
+                        log::warn!("unexpected save format: {e}");
                         b.error = Some(e.to_string());
                         false
                     }
                     Err(e) => {
-                        log::warn!("读取存档失败：{e}");
+                        log::warn!("failed to read the save: {e}");
                         b.error = Some(e.to_string());
                         false
                     }
@@ -452,7 +452,7 @@ pub fn on_hunt_finished(shared: &Shared, key: &str, crown: Crown, _size: f32) {
         }
     });
     let name = rh_core::i18n::current().monster(key);
-    log::info!("{name} 达到{}，已在图鉴里点亮", if gold { "大金" } else { "小金" });
+    log::info!("{name} reached a {} crown, marked in the notes", if gold { "gold" } else { "silver" });
     if shared.settings().notify.crown {
         shared.notify(Notification::new(
             Kind::Crown {

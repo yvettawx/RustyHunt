@@ -99,7 +99,7 @@ impl App {
         if was && !on {
             // Save when leaving layout mode
             self.shared.save_settings();
-            log::info!("布局已保存");
+            log::info!("layout saved");
         }
         self.shared.repaint();
     }
@@ -145,7 +145,7 @@ impl eframe::App for App {
         self.shared.quit.store(true, std::sync::atomic::Ordering::Relaxed);
         self.shared.save_settings();
         self.shared.notifications.lock().unwrap().save();
-        log::info!("退出");
+        log::info!("exit");
     }
 
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {

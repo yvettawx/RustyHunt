@@ -11,6 +11,6 @@ fn main() {
         .set("LegalCopyright", "Apache License 2.0");
     if let Err(e) = res.compile() {
         // Still builds without a resource compiler, just without the icon
-        println!("cargo:warning=没有嵌入图标：{e}");
+        println!("cargo:warning=icon not embedded: {e}");
     }
 }

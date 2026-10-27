@@ -105,7 +105,7 @@ impl Conn {
         self.out.write_all(b"\n")?;
         let mut line = String::new();
         if self.reader.read_line(&mut line)? == 0 {
-            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "连接已关闭"));
+            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "connection closed"));
         }
         Ok(line.trim().to_string())
     }
@@ -167,15 +167,18 @@ impl Session {
     }
 
     fn abs(&self, name: &str) -> Result<u64, String> {
-        self.map.address(name).map(|a| self.base + a).ok_or_else(|| format!("地址表里没有 {name}"))
+        self.map
+            .address(name)
+            .map(|a| self.base + a)
+            .ok_or_else(|| format!("{name} is not in the address map"))
     }
 
     fn crc_on(&mut self) -> Result<(), String> {
         let mut plan = Vec::new();
         for (a, b, orig_a, orig_b) in CRC_PAIRS {
             let (pa, pb) = (self.abs(a)?, self.abs(b)?);
-            let want_a = self.map.bytes(orig_a).ok_or_else(|| format!("地址表里没有 {orig_a}"))?;
-            let want_b = self.map.bytes(orig_b).ok_or_else(|| format!("地址表里没有 {orig_b}"))?;
+            let want_a = self.map.bytes(orig_a).ok_or_else(|| format!("{orig_a} is not in the address map"))?;
+            let want_b = self.map.bytes(orig_b).ok_or_else(|| format!("{orig_b} is not in the address map"))?;
             let p = self.process()?;
             let mut have_a = vec![0u8; want_a.len()];
             let mut have_b = vec![0u8; want_b.len()];
@@ -198,7 +201,7 @@ impl Session {
             }
             self.patched.push((addr, orig));
         }
-        log::info!("完整性检查补丁已生效");
+        log::info!("integrity check patched");
         Ok(())
     }
 
@@ -207,11 +210,11 @@ impl Session {
         if let Ok(p) = self.process() {
             for (addr, orig) in patched {
                 if let Err(e) = p.patch_code(addr, &orig) {
-                    log::warn!("恢复 0x{addr:X} 失败：{e}");
+                    log::warn!("failed to restore 0x{addr:X}: {e}");
                 }
             }
         }
-        log::info!("已恢复完整性检查");
+        log::info!("integrity check restored");
     }
 
     fn connect(&mut self) -> Result<(), String> {
@@ -230,8 +233,8 @@ impl Session {
         }
         // Inject only once; if it can't connect afterwards, retry next time
         self.injected = true;
-        let dll = dll_path().ok_or_else(|| format!("找不到 {DLL_NAME}"))?;
-        log::info!("注入 {}", dll.display());
+        let dll = dll_path().ok_or_else(|| format!("cannot find {DLL_NAME}"))?;
+        log::info!("injecting {}", dll.display());
         self.process()?.inject_dll(&dll).map_err(|e| e.to_string())?;
         for _ in 0..20 {
             std::thread::sleep(Duration::from_millis(100));
@@ -250,7 +253,7 @@ impl Session {
         if reply != "OK" {
             return Err(reply.trim_start_matches("ERR ").to_string());
         }
-        log::info!("伤害 hook 已挂上 0x{addr:X}");
+        log::info!("damage hook installed at 0x{addr:X}");
         self.hooked = true;
         Ok(())
     }
@@ -260,7 +263,7 @@ impl Session {
         match c.ask(req) {
             Ok(r) => Some(r),
             Err(e) => {
-                log::warn!("和 {DLL_NAME} 的连接断开：{e}");
+                log::warn!("lost the connection to {DLL_NAME}: {e}");
                 self.conn = None;
                 self.hooked = false;
                 set_status(|s| s.ipc = i18n::t("inj.ipc_none"));
@@ -287,7 +290,7 @@ impl Default for Injector {
 }
 
 fn fail(what: &str, e: &str) {
-    log::warn!("{what}失败：{e}");
+    log::warn!("{what} failed: {e}");
     let e = e.to_string();
     set_status(|s| s.last_failure = Some(format!("{} {e}", chrono::Local::now().format("%H:%M:%S"))));
 }
@@ -320,7 +323,7 @@ impl Sink for Injector {
                 Ok(()) => set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.patched"))),
                 Err(e) if s.stracker => {
                     // The loader already rewrote the checks, so the original bytes are gone; rely on it
-                    log::info!("完整性检查已被 Stracker's Loader 改过：{e}");
+                    log::info!("integrity check already patched by Stracker's Loader: {e}");
                     s.loader_patched = true;
                     set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.handled")));
                 }

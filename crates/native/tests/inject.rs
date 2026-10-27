@@ -16,7 +16,7 @@ fn injects_into_child_process() {
         .parent()
         .unwrap()
         .join("rustyhunt_native.dll");
-    assert!(dll.is_file(), "先编译 DLL：{}", dll.display());
+    assert!(dll.is_file(), "build the DLL first: {}", dll.display());
     let mut child = std::process::Command::new("ping")
         .args(["-n", "30", "127.0.0.1"])
         .stdout(std::process::Stdio::null())
@@ -33,7 +33,7 @@ fn injects_into_child_process() {
         }
         std::thread::sleep(Duration::from_millis(100));
     }
-    let s = s.expect("连不上 DLL 开的端口");
+    let s = s.expect("cannot connect to the DLL's port");
     let mut r = BufReader::new(s.try_clone().unwrap());
     let mut ask = |q: &str| {
         (&s).write_all(format!("{q}\n").as_bytes()).unwrap();

@@ -159,7 +159,7 @@ fn card(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, e: &Entry, width: f32, on: b
                     yes: i18n::t("action.delete"),
                     on_yes: Box::new(move |shared| {
                         if let Err(err) = themes::delete(&dir) {
-                            log::warn!("删除主题 {id}：{err}");
+                            log::warn!("removing theme {id}: {err}");
                         }
                         if current {
                             themes::apply(shared, "light");

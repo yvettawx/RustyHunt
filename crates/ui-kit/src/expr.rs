@@ -68,7 +68,7 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
                 i += 1;
             }
             let t: String = cs[start..i].iter().collect();
-            out.push(Tok::Num(t.parse().map_err(|_| format!("数字 {t} 无效"))?));
+            out.push(Tok::Num(t.parse().map_err(|_| format!("invalid number {t}"))?));
         } else if c == '\'' || c == '"' {
             let q = c;
             i += 1;
@@ -77,7 +77,7 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
                 i += 1;
             }
             if i >= cs.len() {
-                return Err("字符串没有结束引号".into());
+                return Err("string has no closing quote".into());
             }
             out.push(Tok::Str(cs[start..i].iter().collect()));
             i += 1;
@@ -111,7 +111,7 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
             i += 1;
         } else {
             let rest: String = cs[i..(i + 2).min(cs.len())].iter().collect();
-            let sym = SYMS.iter().find(|s| rest.starts_with(**s)).ok_or_else(|| format!("不认识的符号 {c}"))?;
+            let sym = SYMS.iter().find(|s| rest.starts_with(**s)).ok_or_else(|| format!("unknown symbol {c}"))?;
             out.push(Tok::Sym(sym));
             i += sym.chars().count();
         }
@@ -142,11 +142,11 @@ impl P {
         let mut e = self.or()?;
         while self.eat("|") {
             let Some(Tok::Ident(name)) = self.peek().cloned() else {
-                return Err("| 后面要写过滤器名".into());
+                return Err("expected a filter name after |".into());
             };
             self.i += 1;
             if !FILTERS.contains(&name.as_str()) {
-                return Err(format!("没有过滤器 {name}"));
+                return Err(format!("no filter named {name}"));
             }
             let arg = if self.eat(":") {
                 Some(match self.peek().cloned() {
@@ -158,7 +158,7 @@ impl P {
                         self.i += 1;
                         Value::String(s)
                     }
-                    _ => return Err(format!("过滤器 {name} 的参数要是数字或字符串")),
+                    _ => return Err(format!("arguments of filter {name} must be numbers or strings")),
                 })
             } else {
                 None
@@ -263,12 +263,12 @@ impl P {
                                 self.i += 1;
                                 segs.push(Seg::Index(Box::new(Expr::Lit(num(n)))));
                             }
-                            _ => return Err(". 后面要写字段名".into()),
+                            _ => return Err("expected a field name after .".into()),
                         }
                     } else if self.eat("[") {
                         let e = self.or()?;
                         if !self.eat("]") {
-                            return Err("缺少 ]".into());
+                            return Err("missing ]".into());
                         }
                         segs.push(Seg::Index(Box::new(e)));
                     } else {
@@ -281,12 +281,12 @@ impl P {
                 self.i += 1;
                 let e = self.or()?;
                 if !self.eat(")") {
-                    return Err("缺少 )".into());
+                    return Err("missing )".into());
                 }
                 Ok(e)
             }
-            Some(t) => Err(format!("这里不能出现 {t:?}")),
-            None => Err("表达式不完整".into()),
+            Some(t) => Err(format!("unexpected {t:?}")),
+            None => Err("incomplete expression".into()),
         }
     }
 }
@@ -299,7 +299,7 @@ pub fn parse(s: &str) -> Result<Expr, String> {
     let mut p = P { t: lex(s)?, i: 0 };
     let e = p.pipeline()?;
     if p.i != p.t.len() {
-        return Err(format!("表达式 {s} 后面多了内容"));
+        return Err(format!("extra content after expression {s}"));
     }
     Ok(e)
 }
@@ -533,7 +533,7 @@ pub fn parse_text(s: &str) -> Result<Text, String> {
                     inner.push(c);
                 }
                 if !closed {
-                    return Err(format!("{s} 里的 {{ 没有对应的 }}"));
+                    return Err(format!("{{ in {s} has no matching }}"));
                 }
                 if !lit.is_empty() {
                     pieces.push(Piece::Lit(std::mem::take(&mut lit)));

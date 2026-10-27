@@ -68,7 +68,7 @@ fn load_image(ctx: &egui::Context, path: &Path, w: u32, h: u32) -> Option<Textur
     } else {
         let img = image::load_from_memory(&bytes).ok()?.to_rgba8();
         if img.width() > crate::theme::MAX_IMAGE_SIDE || img.height() > crate::theme::MAX_IMAGE_SIDE {
-            log::warn!("{} 超过 {} 像素，跳过", path.display(), crate::theme::MAX_IMAGE_SIDE);
+            log::warn!("{} is larger than {} pixels, skipped", path.display(), crate::theme::MAX_IMAGE_SIDE);
             return None;
         }
         egui::ColorImage::from_rgba_unmultiplied([img.width() as usize, img.height() as usize], img.as_raw())
@@ -212,7 +212,7 @@ impl Renderer<'_, '_> {
                 stack_size(n.kind, &sizes, e.num("gap", 0.0), e.num("padding", 0.0))
             }
             Kind::For => {
-                let (var, list) = n.each.as_ref().expect("for 有 each");
+                let (var, list) = n.each.as_ref().expect("<for> has each");
                 let limit = (e.num("limit", crate::template::MAX_ITEMS as f32) as usize).min(crate::template::MAX_ITEMS);
                 let items = self.items(list, env, limit);
                 let mut sizes = Vec::new();
@@ -334,7 +334,7 @@ impl Renderer<'_, '_> {
                 }
             }
             Kind::For => {
-                let (var, list) = n.each.as_ref().expect("for 有 each");
+                let (var, list) = n.each.as_ref().expect("<for> has each");
                 let limit = (e.num("limit", crate::template::MAX_ITEMS as f32) as usize).min(crate::template::MAX_ITEMS);
                 let items = self.items(list, env, limit);
                 let row = e.text("direction") == "row";

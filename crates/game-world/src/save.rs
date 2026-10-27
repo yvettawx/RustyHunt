@@ -46,9 +46,9 @@ pub enum SaveError {
 impl fmt::Display for SaveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SaveError::Size(n) => write!(f, "文件大小 {n} 字节，不是冰原的存档"),
-            SaveError::Magic => write!(f, "解密后的文件头不对"),
-            SaveError::NoHunters => write!(f, "存档里没有角色"),
+            SaveError::Size(n) => write!(f, "file is {n} bytes, not an Iceborne save"),
+            SaveError::Magic => write!(f, "bad header after decryption"),
+            SaveError::NoHunters => write!(f, "no hunters in the save"),
         }
     }
 }
@@ -105,7 +105,7 @@ pub struct SaveFile {
 
 /// Layer one: the whole file in Blowfish ECB (each 32-bit word read and written little-endian).
 pub fn decrypt(mut data: Vec<u8>) -> Vec<u8> {
-    let cipher = BlowfishLE::new_from_slice(KEY).expect("密钥长度合法");
+    let cipher = BlowfishLE::new_from_slice(KEY).expect("valid key length");
     for chunk in data.as_chunks_mut::<8>().0 {
         cipher.decrypt_block(chunk.into());
     }
@@ -181,7 +181,7 @@ pub fn decrypt_region(data: &mut [u8], offset: usize, length: usize) {
 
     let mut pos = offset;
     for (key, &end) in keys.iter().zip(lengths.iter()) {
-        let aes = Aes128::new_from_slice(key).expect("16 字节密钥");
+        let aes = Aes128::new_from_slice(key).expect("16-byte key");
         let mut s = 0usize;
         while pos < end + offset && pos + 16 <= offset + length {
             let branch: isize = if salt[s & 0x1FF] & 1 == 0 { 4 } else { 0 };
@@ -202,7 +202,7 @@ pub fn decrypt_region(data: &mut [u8], offset: usize, length: usize) {
 fn guildcard_keys() -> &'static HashMap<usize, String> {
     static KEYS: OnceLock<HashMap<usize, String>> = OnceLock::new();
     KEYS.get_or_init(|| {
-        let t: toml::Table = toml::from_str(GUILDCARD_MONSTERS).expect("内置对照表格式正确");
+        let t: toml::Table = toml::from_str(GUILDCARD_MONSTERS).expect("built-in index table is valid");
         t.iter().filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str()?.to_string()))).collect()
     })
 }

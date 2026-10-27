@@ -65,14 +65,14 @@ fn main() {
     let mut settings = Settings::load(&paths::settings_file());
     logging::init(settings.log_level);
     crash::install();
-    log::info!("启动 RustyHunt {}，数据目录 {}", rh_core::VERSION, paths::root().display());
+    log::info!("starting RustyHunt {}, data folder {}", rh_core::VERSION, paths::root().display());
 
     if args.screenshot.is_none() && !win::single_instance() {
         // One is already running: ask it to open its main window
         if let Some(h) = win::own_window_any(window::TITLE) {
             win::focus_window(h);
         }
-        log::info!("已经有一个实例在运行，退出");
+        log::info!("another instance is running, exiting");
         return;
     }
     if update::apply_pending() {
@@ -144,7 +144,7 @@ fn main() {
         }),
     );
     if let Err(e) = result {
-        log::error!("窗口创建失败：{e}");
+        log::error!("failed to create the window: {e}");
         win::error_box("RustyHunt", &format!("{e}"));
     }
 }

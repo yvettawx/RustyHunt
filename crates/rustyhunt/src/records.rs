@@ -278,7 +278,7 @@ impl Recorder {
         let conn = match open() {
             Ok(c) => Some(c),
             Err(e) => {
-                log::error!("打开 records.db 失败：{e}");
+                log::error!("failed to open records.db: {e}");
                 None
             }
         };
@@ -299,7 +299,7 @@ impl Recorder {
             })
             .cloned();
         let Some(main) = main else {
-            log::info!("这场任务没有大型怪物，不记录");
+            log::info!("no large monsters in this quest, not recorded");
             return;
         };
         let result = match status {
@@ -352,8 +352,8 @@ impl Recorder {
         };
         if let Some(conn) = self.conn.as_mut() {
             match insert(conn, &hunt) {
-                Ok(id) => log::info!("任务结束 {}，已保存记录 #{id}", crate::overlay::mmss(elapsed)),
-                Err(e) => log::error!("保存狩猎记录失败：{e}"),
+                Ok(id) => log::info!("quest ended {}, saved record #{id}", crate::overlay::mmss(elapsed)),
+                Err(e) => log::error!("failed to save the hunt record: {e}"),
             }
         }
         if matches!(result, "slay" | "capture") {
@@ -392,7 +392,7 @@ impl Sink for Recorder {
                         last: None,
                     });
                     PENDING_FIELDS.lock().unwrap().clear();
-                    log::info!("进入任务 {quest_id}");
+                    log::info!("entered quest {quest_id}");
                 }
                 Event::QuestEnd { status, elapsed, .. } => {
                     let status = *status;

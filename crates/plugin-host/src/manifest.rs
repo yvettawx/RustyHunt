@@ -156,24 +156,24 @@ impl Manifest {
     pub fn validate(&self) -> Result<(), String> {
         let ok_id = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
         if !ok_id(&self.id) {
-            return Err(format!("id \"{}\" 只能用字母、数字、- 和 _", self.id));
+            return Err(format!("id \"{}\" may only use letters, digits, - and _", self.id));
         }
         for m in &self.modules {
             if !ok_id(&m.id) {
-                return Err(format!("模块 id \"{}\" 只能用字母、数字、- 和 _", m.id));
+                return Err(format!("module id \"{}\" may only use letters, digits, - and _", m.id));
             }
         }
         for a in &self.actions {
             if !ok_id(&a.id) {
-                return Err(format!("动作 id \"{}\" 只能用字母、数字、- 和 _", a.id));
+                return Err(format!("action id \"{}\" may only use letters, digits, - and _", a.id));
             }
         }
         if self.entry.contains("..") || self.modules.iter().any(|m| m.template.contains("..")) {
-            return Err("文件路径不能包含 ..".into());
+            return Err("file paths may not contain ..".into());
         }
         for e in &self.events {
             if !rh_core::Event::NAMES.contains(&e.as_str()) {
-                return Err(format!("没有事件 {e}"));
+                return Err(format!("no event {e}"));
             }
         }
         Ok(())

@@ -58,19 +58,22 @@ pub fn check(dir: &Path) -> Report {
         if matches!(ext.as_str(), "png" | "svg") {
             match image_size(f) {
                 Some((w, h)) if w > MAX_IMAGE_SIDE || h > MAX_IMAGE_SIDE => {
-                    r.errors.push(format!("{}：{w}×{h}，单边不能超过 {MAX_IMAGE_SIDE} 像素", rel(dir, f)));
+                    r.errors.push(format!("{}: {w}x{h}, no side may exceed {MAX_IMAGE_SIDE} pixels", rel(dir, f)));
                 }
                 Some(_) => {}
-                None => r.errors.push(format!("{}：读不出图片", rel(dir, f))),
+                None => r.errors.push(format!("{}: cannot read the image", rel(dir, f))),
             }
         }
         if matches!(ext.as_str(), "exe" | "dll" | "js" | "ps1" | "bat" | "cmd") {
-            r.warnings.push(format!("{}：主题只含数据，这个文件不会被用到", rel(dir, f)));
+            r.warnings.push(format!("{}: themes hold data only, this file is never used", rel(dir, f)));
         }
     }
     if r.bytes > MAX_PACK_BYTES {
-        r.errors
-            .push(format!("整个包 {:.1} MB，不能超过 {} MB", r.bytes as f64 / 1048576.0, MAX_PACK_BYTES / 1048576));
+        r.errors.push(format!(
+            "the pack is {:.1} MB, it may not exceed {} MB",
+            r.bytes as f64 / 1048576.0,
+            MAX_PACK_BYTES / 1048576
+        ));
     }
     match Theme::load_dir(dir) {
         Ok(t) => {
@@ -79,13 +82,13 @@ pub fn check(dir: &Path) -> Report {
             }
             for id in t.modules.keys() {
                 if !id.contains('.') && !MODULES.contains(&id.as_str()) {
-                    r.warnings.push(format!("没有模块 {id}，这个模板不会被用到"));
+                    r.warnings.push(format!("there is no module {id}, this template is never used"));
                 }
             }
             if let Some(p) = &t.manifest.preview
                 && !dir.join(p).is_file()
             {
-                r.errors.push(format!("预览图 {} 不存在", p.display()));
+                r.errors.push(format!("preview image {} does not exist", p.display()));
             }
             r.theme = Some(t);
         }

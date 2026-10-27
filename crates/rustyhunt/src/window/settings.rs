@@ -250,16 +250,16 @@ fn files(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     s.normalize();
                     *shared.settings.write().unwrap() = s;
                     shared.edit_settings(|_| {});
-                    log::info!("已导入设置 {}", p.display());
+                    log::info!("imported settings {}", p.display());
                 }
-                Err(e) => log::warn!("导入设置失败：{e}"),
+                Err(e) => log::warn!("failed to import settings: {e}"),
             }
         }
         if link(ui, pal, &i18n::t("action.export")).clicked()
             && let Some(p) = rfd::FileDialog::new().set_file_name("rustyhunt-settings.toml").save_file()
             && let Err(e) = shared.settings().save(&p)
         {
-            log::warn!("导出设置失败：{e}");
+            log::warn!("failed to export settings: {e}");
         }
     });
 }
