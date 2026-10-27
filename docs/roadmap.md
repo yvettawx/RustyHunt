@@ -1,33 +1,41 @@
-# 路线图
+# Roadmap
 
 ## 1.0.0
 
-已发布。还没在真实游戏里测过的部分：
+Released. Fixed since the release:
 
-- 连游戏读数据（只用演示数据和测试验证过）
-- 完整性检查补丁、伤害 hook 在游戏进程里的效果（DLL 注入只在测试进程里验证过）
-- 安装版的完整安装和卸载流程（解压逻辑有测试）
+- On a multi-monitor setup with different scaling (for example a 150% primary screen and the game on a 100% screen), the overlay window shrank to 1280x720 and drew in the wrong place.
+- The integrity patch and the damage hook are now on by default.
 
-## 1.1.0：不需要注入或逆向的问题
+Still not tested in the real game:
 
-**图鉴**
+- Integrity patch and damage hook inside the game process: the hook attached in one session, but the first attempt in an earlier session timed out on the IPC connection.
+- Full install and uninstall of the installer build (the extraction logic has tests).
 
-- 存档序号 59、66、67、70 以后还没对上怪物：激昂金狮子、猛爆碎龙、黑龙、战痕黑狼鸟不会出现在图鉴里。需要在游戏的猎人笔记里逐只核对。
-- 研究等级上限按社区规则填写（下位登场 9、上位登场 7、冰原新增 4，熔山龙、冥灯龙 4），以下几只还没核对：麒麟、爆鳞龙、灭尽龙、冥灯龙、绚辉龙、贝希摩斯、鹿首精、古代鹿首精。
-- 金冠任务一列没做：需要整理一张保证出金冠的任务表。
+## 1.1.0: issues that need no injection or reverse engineering
 
-**联机**
+**Hunter's notes**
 
-- 当客人时游戏不同步部位耐久，部位破坏按硬直次数推算，可能不准。已做到：同一场任务里同一只怪已经破坏的部位不再变回未破坏，任务结束或换怪后重新计。
+- Save slots 59, 66, 67 and 70+ are not mapped to monsters yet, so Furious Rajang, Raging Brachydios, Fatalis and Scarred Yian Garuga don't appear in the notes. Each one needs checking in the in-game Hunter's Notes.
+- Research level caps follow the community rule (introduced in Low Rank 9, High Rank 7, new in Iceborne 4; Zorah Magdaros and Xeno'jiiva 4). Not verified yet: Kirin, Bazelgeuse, Nergigante, Xeno'jiiva, Kulve Taroth, Behemoth, Leshen, Ancient Leshen.
+- The crown quest column is missing: it needs a table of quests that guarantee a gold crown.
 
-**其他**
+**Multiplayer**
 
-- 只开 overlay 时内存约 128 MB，目标 80 MB；空白的 eframe glow 窗口在测试机上就有 135 MB，要试换渲染后端。
-- 底板模糊的强度是近似效果。
+- As a guest the game doesn't sync part durability, so part breaks are estimated from flinch counts and may be wrong. Done so far: within one quest, a part of the same monster that has broken stays broken; the record resets when the quest ends or the monster changes.
 
-## 1.2.0：需要注入、反汇编或内存扫描的功能
+**Other**
 
-- 伤害拆分出物理和属性：现在 hook 的伤害函数只拿到总伤害，要另找计算伤害的函数。
-- 队友当前血量：游戏队伍栏有显示，但地址没找到，需要联机实测扫描。
-- 判断自己是不是任务主机，客人时不显示部位耐久条。
-- 单人不开 hook 时的伤害：现在按怪物掉血估算，随从、怪物互斗和环境伤害也算在里面。
+- With only the overlay open, memory use is about 128 MB against an 80 MB target. Measured on an RTX 4060 Ti with empty windows: glow 125 MB, wgpu DX12 185 MB, wgpu Vulkan 161 MB, so switching to wgpu doesn't help.
+- The backing blur strength is an approximation.
+
+## 1.1.1: UI and copy
+
+- Polish the UI and the wording, and make the app easier to use.
+
+## 1.2.0: needs injection, disassembly or memory scanning
+
+- Split damage into raw and elemental: the hooked damage function only sees the total, so the function that computes damage has to be found.
+- Party members' current HP: the in-game party list shows it, but the address hasn't been found; needs scanning in a live multiplayer session.
+- Detect whether we are the quest host, and hide part durability bars as a guest.
+- Solo damage without the hook: currently estimated from the monster's HP loss, which also counts the Palico, turf wars and environmental damage.
