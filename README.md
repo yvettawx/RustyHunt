@@ -30,6 +30,7 @@
 - [docs/plugins.md](docs/plugins.md)：写插件
 - [docs/fields.md](docs/fields.md)：数据字段
 - [docs/events.md](docs/events.md)：事件
+- [docs/roadmap.md](docs/roadmap.md)：路线图和已知问题
 - 示例：[examples/themes](examples/themes)、[examples/plugins/split-timer](examples/plugins/split-timer)
 
 ## 从源码编译
