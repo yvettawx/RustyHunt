@@ -83,10 +83,10 @@ fn main() {
         settings.demo = true;
     }
     if let Some((what, _)) = &args.screenshot {
+        // Screenshots always show demo data, even with the game running
         settings.first_run_done = true;
-        if let Some(scene) = what.strip_prefix("overlay:") {
-            let _ = scanner::DEMO_SCENE.set(scene.to_string());
-        }
+        settings.demo = true;
+        let _ = scanner::DEMO_SCENE.set(what.strip_prefix("overlay:").unwrap_or_default().to_string());
     }
     let i = i18n::load_bundled(&paths::bundled("locales"), settings.language, settings.term_language);
     i18n::install(i);

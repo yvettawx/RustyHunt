@@ -104,7 +104,7 @@ impl Scanner {
     fn tick(&mut self) {
         match &mut self.phase {
             Phase::Idle => {
-                if self.last_search.is_none_or(|t| t.elapsed() > Duration::from_secs(1)) {
+                if DEMO_SCENE.get().is_none() && self.last_search.is_none_or(|t| t.elapsed() > Duration::from_secs(1)) {
                     self.last_search = Some(Instant::now());
                     self.search();
                 }
@@ -408,7 +408,8 @@ impl Scanner {
     }
 }
 
-/// For screenshots: run a fixed demo scene instead of the random hunt (`--screenshot overlay:<scene>`).
+/// Set for screenshots: demo data only, never the game; a named scene (`--screenshot overlay:<scene>`)
+/// instead of the random hunt.
 pub static DEMO_SCENE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 /// Picks the target monster by target mode. No monster is picked until the player selects one

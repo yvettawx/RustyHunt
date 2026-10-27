@@ -543,6 +543,11 @@ impl Demo {
                 for (i, m) in s.monsters.iter_mut().enumerate() {
                     m.target = if i == 1 { Target::Own } else { Target::Other };
                 }
+                // One of each crown for the monster list
+                let crowns = [Crown::Gold, Crown::Silver, Crown::Mini];
+                for (m, c) in s.monsters.iter_mut().filter(|m| m.large).zip(crowns) {
+                    m.crown = c;
+                }
                 s.monsters[1].enraged = true;
                 s.monsters[1].enrage_timer = 15.0;
                 s.monsters[1].enrage_timer_max = 24.0;
