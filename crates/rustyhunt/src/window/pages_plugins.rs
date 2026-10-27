@@ -39,7 +39,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         }
     });
     if let Some(e) = &w.plugins.error {
-        label(ui, e, Font::Text, 13.0, pal.accent);
+        label(ui, e, Font::Text, widgets::T_BODY, pal.accent);
         ui.add_space(14.0);
     }
     let list = plugins::views();
@@ -97,7 +97,7 @@ fn list_item(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, i: usize, v: &View) {
         Align2::LEFT_CENTER,
         &sub,
         Font::Text,
-        12.0,
+        widgets::T_SMALL,
         if err { pal.accent } else { pal.mute },
     );
     ui.painter()
@@ -119,7 +119,7 @@ fn list_item(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, i: usize, v: &View) {
 fn row(ui: &mut Ui, pal: &Pal, text: &str, right: impl FnOnce(&mut Ui)) {
     let width = ui.available_width();
     let (r, _) = ui.allocate_exact_size(vec2(width, 40.0), Sense::hover());
-    text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, text, Font::Text, 13.0, pal.ink);
+    text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, text, Font::Text, widgets::T_BODY, pal.ink);
     ui.painter()
         .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
     let cr = Rect::from_min_max(pos2(r.min.x + r.width() * 0.4, r.min.y), r.max);
@@ -137,18 +137,18 @@ fn group(ui: &mut Ui, pal: &Pal, title: &str) {
 
 fn detail(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, v: &View) {
     let m = &v.manifest;
-    label(ui, &m.name, Font::TextBold, 24.0, pal.ink);
+    label(ui, &m.name, Font::TextBold, widgets::T_TITLE, pal.ink);
     ui.add_space(4.0);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 14.0;
         if !m.author.is_empty() {
             label_mute(ui, pal, &m.author, 12.0);
         }
-        label(ui, &m.version, Font::NumBold, 12.0, pal.mute);
+        label(ui, &m.version, Font::NumBold, widgets::T_SMALL, pal.mute);
     });
     if !m.description.is_empty() {
         ui.add_space(16.0);
-        ui.add(egui::Label::new(widgets::rich(&m.description, Font::Text, 13.0, pal.ink)).wrap());
+        ui.add(egui::Label::new(widgets::rich(&m.description, Font::Text, widgets::T_BODY, pal.ink)).wrap());
     }
     let err = match &v.status {
         Status::Failed(_) => Some(i18n::t("plugin.errored")),
@@ -159,7 +159,7 @@ fn detail(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, v: &View) {
         ui.add_space(16.0);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 14.0;
-            label(ui, &e, Font::Text, 13.0, pal.accent);
+            label(ui, &e, Font::Text, widgets::T_BODY, pal.accent);
             if matches!(v.status, Status::Failed(_)) && link(ui, pal, &i18n::t("action.view_logs")).clicked() {
                 w.page = Page::Logs;
             }

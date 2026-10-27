@@ -224,7 +224,7 @@ fn files(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             if link(ui, pal, &i18n::t("action.open")).clicked() {
                 crate::win::open(&path);
             }
-            ui.add(egui::Label::new(widgets::rich(short_path(&path), Font::Mono, 12.0, pal.mute)).truncate());
+            ui.add(egui::Label::new(widgets::rich(short_path(&path), Font::Mono, widgets::T_SMALL, pal.mute)).truncate());
         });
     };
     path_row(ui, &i18n::t("settings.maps"), rh_core::paths::maps());
@@ -286,7 +286,7 @@ fn injection(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         let g = widgets::galley(ui, &text, if ok { Font::TextBold } else { Font::Text }, 12.0, pal.ink);
         let (r, _) = ui.allocate_exact_size(vec2(g.size().x + if ok { 13.0 } else { 0.0 }, 16.0), Sense::hover());
         if ok {
-            ui.painter().circle_filled(pos2(r.min.x + 3.0, r.center().y), 3.0, pal.accent);
+            ui.painter().circle_filled(pos2(r.min.x + 3.0, r.center().y), 3.0, pal.ok);
         }
         let color = if ok {
             pal.ink
@@ -348,8 +348,8 @@ fn injection(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     ui.add_space(34.0);
     let kv = |ui: &mut Ui, k: &str, v: &str| {
         let (r, _) = ui.allocate_exact_size(vec2(ui.available_width().min(640.0), 38.0), Sense::hover());
-        text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, k, Font::Text, 13.0, pal.mute);
-        text_at(ui, pos2(r.max.x, r.center().y), Align2::RIGHT_CENTER, v, Font::Mono, 12.0, pal.ink);
+        text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, k, Font::Text, widgets::T_BODY, pal.mute);
+        text_at(ui, pos2(r.max.x, r.center().y), Align2::RIGHT_CENTER, v, Font::Mono, widgets::T_SMALL, pal.ink);
         ui.painter()
             .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], egui::Stroke::new(1.0, pal.line));
     };
@@ -433,7 +433,13 @@ fn language(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let cur = i18n::current();
     for l in Lang::ALL {
         setting_row(ui, pal, l.native_name(), None, |ui| {
-            label(ui, format!("{}%", (cur.ui_coverage(l) * 100.0).round()), Font::NumBold, 12.0, pal.ink);
+            label(
+                ui,
+                format!("{}%", (cur.ui_coverage(l) * 100.0).round()),
+                Font::NumBold,
+                widgets::T_SMALL,
+                pal.ink,
+            );
             label_mute(ui, pal, &i18n::t("lang.builtin"), 12.0);
         });
     }
@@ -493,8 +499,8 @@ pub fn reload_i18n(shared: &Shared) {
 }
 
 fn about(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
-    label(ui, "RustyHunt", Font::NumHeavy, 28.0, pal.ink);
-    label(ui, rh_core::VERSION, Font::NumBold, 13.0, pal.ink);
+    label(ui, "RustyHunt", Font::NumHeavy, widgets::T_TITLE, pal.ink);
+    label(ui, rh_core::VERSION, Font::NumBold, widgets::T_BODY, pal.ink);
     ui.add_space(22.0);
     for k in ["about.based_on", "about.unaffiliated", "about.capcom"] {
         label_mute(ui, pal, &i18n::t(k), 13.0);

@@ -163,7 +163,7 @@ impl State {
             for (i, k) in STEP_KEYS.iter().enumerate() {
                 let on = i == self.step;
                 let (num_c, c) = if on {
-                    (pal.accent, pal.ink)
+                    (pal.hue, pal.ink)
                 } else if i < self.step {
                     (pal.mute, pal.mute)
                 } else {
@@ -178,7 +178,7 @@ impl State {
                     Align2::LEFT_CENTER,
                     &format!("{:02}", i + 1),
                     Font::Num,
-                    11.0,
+                    widgets::T_SMALL,
                     num_c,
                 );
                 ui.painter().galley(pos2(rr.min.x + 22.0, rr.center().y - g.size().y / 2.0), g, c);
@@ -208,7 +208,15 @@ impl State {
             c,
         );
         if !desc.is_empty() {
-            text_at(ui, pos2(r.max.x, r.center().y), Align2::RIGHT_CENTER, desc, Font::Text, 12.0, pal.mute);
+            text_at(
+                ui,
+                pos2(r.max.x, r.center().y),
+                Align2::RIGHT_CENTER,
+                desc,
+                Font::Text,
+                widgets::T_SMALL,
+                pal.mute,
+            );
         }
         ui.painter()
             .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
@@ -219,7 +227,13 @@ impl State {
     }
 
     fn pane(&mut self, ui: &mut Ui, pal: &Pal, shared: &Arc<Shared>) -> bool {
-        widgets::label(ui, i18n::t(&format!("onboarding.{}", STEP_KEYS[self.step])), Font::TextBold, 30.0, pal.ink);
+        widgets::label(
+            ui,
+            i18n::t(&format!("onboarding.{}", STEP_KEYS[self.step])),
+            Font::TextBold,
+            widgets::T_TITLE,
+            pal.ink,
+        );
         ui.add_space(22.0);
         ui.spacing_mut().item_spacing.y = 0.0;
         match self.step {
@@ -521,7 +535,7 @@ impl State {
             if scan >= 1.0 && !ok {
                 text = format!("{text}　{}", i18n::t("onboarding.not_found"));
             }
-            let gal = p.layout_no_wrap(text, Font::Mono.id(10.0 * u.max(0.8)), HUD);
+            let gal = p.layout_no_wrap(text, Font::Mono.id(widgets::T_MICRO * u.max(0.8)), HUD);
             let br = Rect::from_min_size(
                 pos2(r.min.x + r.width() * 0.03, r.max.y - r.height() * 0.05 - gal.size().y - 10.0),
                 gal.size() + vec2(32.0, 10.0),
@@ -540,7 +554,7 @@ impl State {
         if let Some((key, name, chip, down)) = caption {
             let p = ui.painter();
             let y = r.max.y + 24.0;
-            let kg = p.layout_no_wrap(key, Font::Mono.id(12.0), if down { pal.paper } else { pal.ink });
+            let kg = p.layout_no_wrap(key, Font::Mono.id(widgets::T_SMALL), if down { pal.paper } else { pal.ink });
             let kr = Rect::from_min_size(pos2(r.min.x, y - 13.0), kg.size() + vec2(16.0, 8.0));
             p.rect(
                 kr,
@@ -550,9 +564,21 @@ impl State {
                 StrokeKind::Inside,
             );
             p.galley(kr.min + vec2(8.0, 4.0), kg, pal.ink);
-            let nr = p.text(pos2(kr.max.x + 12.0, kr.center().y), Align2::LEFT_CENTER, name, Font::Text.id(13.0), pal.ink);
+            let nr = p.text(
+                pos2(kr.max.x + 12.0, kr.center().y),
+                Align2::LEFT_CENTER,
+                name,
+                Font::Text.id(widgets::T_BODY),
+                pal.ink,
+            );
             if !chip.is_empty() {
-                p.text(pos2(nr.max.x + 12.0, kr.center().y), Align2::LEFT_CENTER, chip, Font::Text.id(12.0), pal.mute);
+                p.text(
+                    pos2(nr.max.x + 12.0, kr.center().y),
+                    Align2::LEFT_CENTER,
+                    chip,
+                    Font::Text.id(widgets::T_SMALL),
+                    pal.mute,
+                );
             }
             for i in 0..5 {
                 let c = pos2(r.max.x - 4.0 - (4 - i) as f32 * 14.0, kr.center().y);
@@ -788,7 +814,7 @@ fn draw_book(p: &egui::Painter, pal: &Pal, r: Rect, t: f32, u: f32) {
             cell.min + vec2(8.0, 10.0),
             Align2::LEFT_TOP,
             i.monster(key),
-            Font::Text.id(10.0 * u.max(0.8)),
+            Font::Text.id(widgets::T_MICRO * u.max(0.8)),
             if on { pal.ink } else { pal.faint },
         );
         for (j, (has, fill, edge)) in [

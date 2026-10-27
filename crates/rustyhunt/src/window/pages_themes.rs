@@ -67,7 +67,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     });
     ui.add_space(26.0);
     if let Some(e) = &w.themes.error {
-        label(ui, e, Font::Text, 13.0, pal.accent);
+        label(ui, e, Font::Text, widgets::T_BODY, pal.accent);
         ui.add_space(14.0);
     }
 
@@ -120,28 +120,44 @@ fn card(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, e: &Entry, width: f32, on: b
         None => (String::new(), String::new()),
     };
     let (mr, _) = ui.allocate_exact_size(vec2(width, 36.0), Sense::hover());
-    text_at(ui, mr.left_top(), Align2::LEFT_TOP, &name_of(e), Font::TextBold, 15.0, pal.ink);
-    text_at(ui, pos2(mr.min.x, mr.min.y + 22.0), Align2::LEFT_TOP, &author, Font::Text, 12.0, pal.mute);
-    text_at(ui, pos2(mr.max.x, mr.min.y + 4.0), Align2::RIGHT_TOP, &version, Font::NumBold, 11.0, pal.mute);
+    text_at(ui, mr.left_top(), Align2::LEFT_TOP, &name_of(e), Font::TextBold, widgets::T_BODY, pal.ink);
+    text_at(
+        ui,
+        pos2(mr.min.x, mr.min.y + 22.0),
+        Align2::LEFT_TOP,
+        &author,
+        Font::Text,
+        widgets::T_SMALL,
+        pal.mute,
+    );
+    text_at(
+        ui,
+        pos2(mr.max.x, mr.min.y + 4.0),
+        Align2::RIGHT_TOP,
+        &version,
+        Font::NumBold,
+        widgets::T_SMALL,
+        pal.mute,
+    );
     if let Some(err) = &e.error {
         ui.add_space(6.0);
-        ui.add(egui::Label::new(widgets::rich(err, Font::Text, 12.0, pal.accent)).wrap());
+        ui.add(egui::Label::new(widgets::rich(err, Font::Text, widgets::T_SMALL, pal.accent)).wrap());
     }
     ui.add_space(10.0);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 16.0;
         if on {
             let text = i18n::t("state.in_use");
-            let g = widgets::galley(ui, &text, Font::TextBold, 12.0, pal.ink);
+            let g = widgets::galley(ui, &text, Font::TextBold, widgets::T_SMALL, pal.ink);
             let (r, _) = ui.allocate_exact_size(vec2(g.size().x + 14.0, 18.0), Sense::hover());
-            widgets::diamond(ui, pos2(r.min.x + 3.0, r.center().y), 7.0, pal.accent);
+            widgets::diamond(ui, pos2(r.min.x + 3.0, r.center().y), 7.0, pal.hue);
             text_at(
                 ui,
                 pos2(r.min.x + 14.0, r.center().y),
                 Align2::LEFT_CENTER,
                 &text,
                 Font::TextBold,
-                12.0,
+                widgets::T_SMALL,
                 pal.ink,
             );
         } else if !broken && link(ui, pal, &i18n::t("action.apply")).clicked() {
@@ -181,48 +197,53 @@ fn apply(w: &mut MainWindow, id: &str) {
 /// Swatch on a theme card: a bit of sidebar, a name tag, an HP bar and a status line in this theme's own window colors.
 fn preview(ui: &Ui, r: Rect, e: &Entry, broken: bool) {
     let fallback = ui_kit::Theme::builtin(false);
-    let c = Pal::of(e.theme.as_ref().unwrap_or(&fallback));
+    let theme = e.theme.as_ref().unwrap_or(&fallback);
+    let c = Pal::of(theme);
     let fade = |col: egui::Color32| if broken { col.gamma_multiply(0.45) } else { col };
     let p = ui.painter_at(r);
-    p.rect_filled(r, CornerRadius::ZERO, fade(c.paper));
+    // Left: the main window's paper and current-page block
     let side = Rect::from_min_size(r.min, vec2(44.0, r.height()));
-    p.line_segment([pos2(side.max.x, r.min.y), pos2(side.max.x, r.max.y)], Stroke::new(1.0, fade(c.line)));
-    let x = r.min.x + 60.0;
-    let right = r.max.x - 16.0;
+    p.rect_filled(side, CornerRadius::ZERO, fade(c.nav));
     p.rect_filled(
-        Rect::from_min_max(pos2(x, r.min.y + 22.0), pos2(right, r.min.y + 28.0)),
+        Rect::from_min_size(side.min + vec2(8.0, 18.0), vec2(28.0, 10.0)),
         CornerRadius::ZERO,
-        fade(c.line),
+        fade(c.hue),
     );
-    let tag = p.layout_no_wrap(i18n::current().monster("raging_brachydios"), Font::TextBold.id(13.0), fade(c.onblock));
-    let tr = Rect::from_min_size(pos2(x, r.min.y + 46.0), tag.size() + vec2(16.0, 5.0));
-    p.rect_filled(tr, CornerRadius::ZERO, fade(c.block));
-    p.galley(tr.min + vec2(8.0, 3.0), tag, fade(c.onblock));
-    // HP bar: hatch the remaining part
-    let hp = Rect::from_min_max(pos2(x, r.min.y + 84.0), pos2(right, r.min.y + 91.0));
-    let mut sx = hp.min.x;
-    while sx < hp.max.x + hp.height() {
-        let a = pos2(sx, hp.max.y);
-        let b = pos2(sx + hp.height(), hp.min.y);
-        p.with_clip_rect(hp).line_segment([a, b], Stroke::new(1.0, fade(c.mute)));
-        sx += 5.0;
+    for i in 0..3 {
+        p.rect_filled(
+            Rect::from_min_size(side.min + vec2(8.0, 38.0 + i as f32 * 14.0), vec2(20.0, 3.0)),
+            CornerRadius::ZERO,
+            fade(c.faint),
+        );
     }
-    p.rect_filled(
-        Rect::from_min_size(hp.min, vec2(hp.width() * 0.62, hp.height())),
-        CornerRadius::ZERO,
-        fade(c.ink),
-    );
-    let ay = r.min.y + 114.0;
-    p.add(egui::Shape::convex_polygon(
-        vec![pos2(x + 4.0, ay - 4.0), pos2(x + 8.0, ay), pos2(x + 4.0, ay + 4.0), pos2(x, ay)],
-        fade(c.accent),
-        Stroke::NONE,
-    ));
-    p.text(
-        pos2(x + 16.0, ay),
-        Align2::LEFT_CENTER,
-        format!("{} 0:21", i18n::t("state.enraged")),
-        Font::Text.id(11.0),
-        fade(c.mute),
+    // Right: a bit of the overlay drawn with this theme, over a dark game-like backdrop
+    let game = Rect::from_min_max(pos2(side.max.x, r.min.y), r.max);
+    p.rect_filled(game, CornerRadius::ZERO, fade(egui::Color32::from_rgb(0x3a, 0x3c, 0x40)));
+    let cv = ui_kit::Canvas {
+        painter: p.clone(),
+        origin: game.min + vec2(22.0, 26.0),
+        scale: 1.0,
+        opacity: if broken { 0.45 } else { 1.0 },
+        theme,
+    };
+    let w = game.width() - 44.0;
+    cv.panel(0.0, 0.0, w, 104.0);
+    let name = i18n::current().monster("raging_brachydios");
+    cv.tag(0.0, 0.0, &name, Font::TextBold, 12.0, (6.0, 2.0, 6.0, 2.0), cv.tok("ink"), cv.tok("text"));
+    let mhp = [ui_kit::Layer::fill(0.62, cv.tok("monster-hp"))];
+    cv.bar_ex("monster-hp", 0.0, 26.0, w, 6.0, &mhp, true, false);
+    let hp = [ui_kit::Layer::fill(0.74, cv.tok("hp"))];
+    cv.bar_ex("player-hp", 0.0, 58.0, w * 0.7, 10.0, &hp, false, false);
+    cv.bar("stamina", 0.0, 74.0, w * 0.7, 4.0, &[ui_kit::Layer::fill(0.9, cv.tok("stamina"))], false);
+    let ay = 96.0;
+    cv.dot(4.0, ay, 3.0, cv.tok("enrage"), false);
+    cv.text(
+        14.0,
+        ay - 8.0,
+        &format!("{} 0:21", i18n::t("state.enraged")),
+        Font::TextBold,
+        11.0,
+        cv.tok("enrage"),
+        Align2::LEFT_TOP,
     );
 }

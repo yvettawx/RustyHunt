@@ -95,9 +95,25 @@ fn export_menu(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, anchor: Rect) {
                         if resp.hovered() {
                             ui.painter().rect_filled(r, CornerRadius::ZERO, pal.line);
                         }
-                        text_at(ui, pos2(r.min.x + 16.0, r.center().y), Align2::LEFT_CENTER, text, Font::Text, 13.0, pal.ink);
+                        text_at(
+                            ui,
+                            pos2(r.min.x + 16.0, r.center().y),
+                            Align2::LEFT_CENTER,
+                            text,
+                            Font::Text,
+                            widgets::T_BODY,
+                            pal.ink,
+                        );
                         if !sub.is_empty() {
-                            text_at(ui, pos2(r.max.x - 16.0, r.center().y), Align2::RIGHT_CENTER, sub, Font::Text, 11.0, pal.mute);
+                            text_at(
+                                ui,
+                                pos2(r.max.x - 16.0, r.center().y),
+                                Align2::RIGHT_CENTER,
+                                sub,
+                                Font::Text,
+                                widgets::T_SMALL,
+                                pal.mute,
+                            );
                         }
                         resp.clicked()
                     };
@@ -214,11 +230,19 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::RIGHT_TOP,
                     &mmss(h.duration),
                     Font::NumBold,
-                    14.0,
+                    widgets::T_BODY,
                     pal.ink,
                 );
                 let sub = format!("{}　{}", i18n::t(&format!("game_short.{}", h.game)), super::fmt_when(h.started_at));
-                text_at(ui, pos2(r.min.x + 14.0, r.min.y + 38.0), Align2::LEFT_TOP, &sub, Font::Text, 12.0, pal.mute);
+                text_at(
+                    ui,
+                    pos2(r.min.x + 14.0, r.min.y + 38.0),
+                    Align2::LEFT_TOP,
+                    &sub,
+                    Font::Text,
+                    widgets::T_SMALL,
+                    pal.mute,
+                );
                 ui.painter()
                     .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 if resp.clicked() {
@@ -260,7 +284,7 @@ static RELOAD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::ne
 fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     let i = i18n::current();
     // Result and time on the right, name tag and subtitle on the left; the subtitle wraps to the next line when the name is long
-    let dur = widgets::galley(ui, &mmss(h.duration), Font::NumHeavy, 44.0, pal.ink);
+    let dur = widgets::galley(ui, &mmss(h.duration), Font::NumHeavy, widgets::T_DISPLAY, pal.ink);
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), (dur.size().y + 18.0).max(84.0)), Sense::hover());
     let capture = h.result == "capture";
     text_at(
@@ -269,8 +293,8 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         Align2::RIGHT_TOP,
         &i18n::t(&format!("result.{}", h.result)),
         Font::Text,
-        12.0,
-        if capture { pal.accent } else { pal.mute },
+        widgets::T_SMALL,
+        if capture { pal.ok } else { pal.mute },
     );
     let dw = dur.size().x;
     ui.painter().galley(pos2(r.max.x - dw, r.min.y + 16.0), dur, pal.ink);
@@ -282,8 +306,10 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         i18n::t(&format!("rank.{}", h.rank)),
         super::fmt_when(h.started_at)
     );
-    let need =
-        widgets::galley(ui, &name, Font::TextBold, 24.0, pal.ink).size().x + 24.0 + 18.0 + widgets::galley(ui, &sub, Font::Text, 13.0, pal.mute).size().x;
+    let need = widgets::galley(ui, &name, Font::TextBold, widgets::T_TITLE, pal.ink).size().x
+        + 24.0
+        + 18.0
+        + widgets::galley(ui, &sub, Font::Text, widgets::T_BODY, pal.mute).size().x;
     ui.scope_builder(egui::UiBuilder::new().max_rect(left), |ui| {
         let row = |ui: &mut Ui| {
             widgets::tag(ui, pal, &name, 24.0);
@@ -315,7 +341,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
             pos2(r.min.x, y - 4.0),
             Align2::LEFT_BOTTOM,
             format!("{}", v.round()),
-            Font::NumBold.id(9.0),
+            Font::NumBold.id(widgets::T_MICRO),
             pal.mute,
         );
     }
@@ -367,7 +393,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         } else {
             (pos2(x + c, hr.min.y + 4.0), Align2::RIGHT_TOP)
         };
-        text_at(ui, pos, align, t, Font::Text, 12.0, pal.mute);
+        text_at(ui, pos, align, t, Font::Text, widgets::T_SMALL, pal.mute);
         x += c;
     }
     ui.painter()
@@ -399,7 +425,15 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
                     pal.ink,
                 );
             } else {
-                text_at(ui, pos2(x + c, rr.center().y), Align2::RIGHT_CENTER, v, Font::NumBold, 12.0, pal.ink);
+                text_at(
+                    ui,
+                    pos2(x + c, rr.center().y),
+                    Align2::RIGHT_CENTER,
+                    v,
+                    Font::NumBold,
+                    widgets::T_SMALL,
+                    pal.ink,
+                );
             }
             x += c;
         }
@@ -408,8 +442,24 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     }
     for (k, v) in &h.fields {
         let (rr, _) = ui.allocate_exact_size(vec2(w, 32.0), Sense::hover());
-        text_at(ui, pos2(rr.min.x, rr.center().y), Align2::LEFT_CENTER, k, Font::Text, 12.0, pal.mute);
-        text_at(ui, pos2(rr.max.x, rr.center().y), Align2::RIGHT_CENTER, v, Font::Mono, 12.0, pal.ink);
+        text_at(
+            ui,
+            pos2(rr.min.x, rr.center().y),
+            Align2::LEFT_CENTER,
+            k,
+            Font::Text,
+            widgets::T_SMALL,
+            pal.mute,
+        );
+        text_at(
+            ui,
+            pos2(rr.max.x, rr.center().y),
+            Align2::RIGHT_CENTER,
+            v,
+            Font::Mono,
+            widgets::T_SMALL,
+            pal.ink,
+        );
     }
 
     // Timeline
@@ -424,11 +474,27 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         let c = if e.accent { pal.accent } else { pal.ink };
         widgets::diamond(ui, pos2(x, ay), 7.0, c);
         // Only draw the diamond when the text doesn't fit
-        let half = widgets::galley(ui, &label, Font::Text, 11.0, pal.ink).size().x.max(30.0) / 2.0;
+        let half = widgets::galley(ui, &label, Font::Text, widgets::T_SMALL, pal.ink).size().x.max(30.0) / 2.0;
         let cx = x.clamp(tr.min.x + half, tr.max.x - half);
         if cx - half > last_right + 10.0 {
-            text_at(ui, pos2(cx, tr.min.y + 8.0), Align2::CENTER_CENTER, &label, Font::Text, 11.0, pal.ink);
-            text_at(ui, pos2(cx, ay + 16.0), Align2::CENTER_CENTER, &mmss(e.t), Font::NumBold, 10.0, pal.mute);
+            text_at(
+                ui,
+                pos2(cx, tr.min.y + 8.0),
+                Align2::CENTER_CENTER,
+                &label,
+                Font::Text,
+                widgets::T_SMALL,
+                pal.ink,
+            );
+            text_at(
+                ui,
+                pos2(cx, ay + 16.0),
+                Align2::CENTER_CENTER,
+                &mmss(e.t),
+                Font::NumBold,
+                widgets::T_MICRO,
+                pal.mute,
+            );
             last_right = cx + half;
         }
     }
@@ -493,7 +559,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_else(|| "SAVEDATA1000".into()),
             Font::Mono,
-            12.0,
+            widgets::T_SMALL,
             if fail { pal.accent } else { pal.mute },
         );
         let t = if reading {
@@ -508,7 +574,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         } else {
             String::new()
         };
-        label(ui, t, Font::Text, 12.0, if fail { pal.accent } else { pal.mute });
+        label(ui, t, Font::Text, widgets::T_SMALL, if fail { pal.accent } else { pal.mute });
         if !reading && link(ui, pal, &i18n::t("action.reread")).clicked() {
             crate::bestiary::read(shared.clone());
         }
@@ -546,8 +612,8 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 label_mute(ui, pal, l, 12.0);
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 3.0;
-                    label(ui, a.to_string(), Font::Num, 26.0, pal.ink);
-                    label(ui, format!("/{b}"), Font::NumBold, 13.0, pal.mute);
+                    label(ui, a.to_string(), Font::Num, widgets::T_TITLE, pal.ink);
+                    label(ui, format!("/{b}"), Font::NumBold, widgets::T_BODY, pal.mute);
                 });
                 widgets::thin_bar(ui, pal.ink, pal.line, *a as f32 / (*b).max(1) as f32, vec2(92.0, 2.0));
             });
@@ -611,7 +677,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let (hr, _) = ui.allocate_exact_size(vec2(width, 24.0), Sense::hover());
     let mut x = hr.min.x;
     for (c, t) in cols.iter().zip(&header) {
-        text_at(ui, pos2(x, hr.min.y + 4.0), Align2::LEFT_TOP, t, Font::Text, 12.0, pal.mute);
+        text_at(ui, pos2(x, hr.min.y + 4.0), Align2::LEFT_TOP, t, Font::Text, widgets::T_SMALL, pal.mute);
         x += if *c > 0.0 { *c } else { rest } + 14.0;
     }
     ui.painter()
@@ -644,11 +710,19 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         // Name and type
         let mut nx = x;
         if r.done() {
-            widgets::diamond(ui, pos2(nx + 2.5, cy - 7.0), 5.0, pal.accent);
+            widgets::diamond(ui, pos2(nx + 2.5, cy - 7.0), 5.0, pal.ok);
             nx += 12.0;
         }
-        text_at(ui, pos2(nx, cy - 7.0), Align2::LEFT_CENTER, &name, Font::TextBold, 14.0, pal.ink);
-        text_at(ui, pos2(x, cy + 9.0), Align2::LEFT_CENTER, &i.game(&r.species), Font::Text, 11.0, pal.mute);
+        text_at(ui, pos2(nx, cy - 7.0), Align2::LEFT_CENTER, &name, Font::TextBold, widgets::T_BODY, pal.ink);
+        text_at(
+            ui,
+            pos2(x, cy + 9.0),
+            Align2::LEFT_CENTER,
+            &i.game(&r.species),
+            Font::Text,
+            widgets::T_SMALL,
+            pal.mute,
+        );
         x += cols[0] + 14.0;
         // Large and small crowns
         for (j, (on, big)) in [(r.big, true), (r.small, false)].into_iter().enumerate() {
@@ -731,24 +805,24 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             let tail_w = if tail.is_empty() {
                 0.0
             } else {
-                ui.painter().layout_no_wrap(tail.clone(), Font::Text.id(11.0), pal.mute).size().x
+                ui.painter().layout_no_wrap(tail.clone(), Font::Text.id(widgets::T_SMALL), pal.mute).size().x
             };
-            let mut job = egui::text::LayoutJob::simple_singleline(line.name.to_string(), Font::Text.id(12.0), ink);
+            let mut job = egui::text::LayoutJob::simple_singleline(line.name.to_string(), Font::Text.id(widgets::T_SMALL), ink);
             job.wrap = egui::text::TextWrapping::truncate_at_width(x + cols[5] - nx - tail_w);
             let g = ui.painter().layout_job(job);
             let gw = g.size().x;
             ui.painter().galley(pos2(nx, ly - g.size().y / 2.0), g, ink);
             if !tail.is_empty() {
-                text_at(ui, pos2(nx + gw, ly), Align2::LEFT_CENTER, &tail, Font::Text, 11.0, pal.mute);
+                text_at(ui, pos2(nx + gw, ly), Align2::LEFT_CENTER, &tail, Font::Text, widgets::T_SMALL, pal.mute);
             }
         }
         if lines.is_empty() {
-            text_at(ui, pos2(x, cy), Align2::LEFT_CENTER, "—", Font::Text, 12.0, pal.mute);
+            text_at(ui, pos2(x, cy), Align2::LEFT_CENTER, "—", Font::Text, widgets::T_SMALL, pal.mute);
         }
         x += cols[5] + 14.0;
         let maps: Vec<String> = r.maps.iter().map(|m| i.map(m)).collect();
         let maps = if maps.is_empty() { "—".to_string() } else { maps.join(" ") };
-        let g = ui.painter().layout(maps, Font::Text.id(12.0), pal.mute, rest);
+        let g = ui.painter().layout(maps, Font::Text.id(widgets::T_SMALL), pal.mute, rest);
         ui.painter().galley(pos2(x, cy - g.size().y / 2.0), g, pal.mute);
         ui.painter()
             .line_segment([pos2(rr.min.x, rr.max.y - 0.5), pos2(rr.max.x, rr.max.y - 0.5)], Stroke::new(1.0, pal.line));
@@ -769,7 +843,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 Align2::LEFT_CENTER,
                 &i.monster(&key),
                 Font::TextBold,
-                14.0,
+                widgets::T_BODY,
                 pal.ink,
             );
             let research = crate::bestiary::with(|b| b.store.world.get(&key).and_then(|m| m.research).unwrap_or(0));

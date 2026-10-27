@@ -110,10 +110,11 @@ pub fn apply(ctx: &egui::Context, theme: &Theme) {
         s.spacing.scroll.bar_width = 6.0;
         s.spacing.scroll.floating = true;
         s.interaction.selectable_labels = false;
-        s.text_styles.insert(egui::TextStyle::Body, ui_kit::Font::Text.id(13.0));
-        s.text_styles.insert(egui::TextStyle::Button, ui_kit::Font::Text.id(13.0));
-        s.text_styles.insert(egui::TextStyle::Small, ui_kit::Font::Text.id(11.0));
-        s.text_styles.insert(egui::TextStyle::Monospace, ui_kit::Font::Mono.id(12.0));
-        s.text_styles.insert(egui::TextStyle::Heading, ui_kit::Font::TextBold.id(30.0));
+        s.text_styles.insert(egui::TextStyle::Body, ui_kit::Font::Text.id(super::widgets::T_BODY));
+        s.text_styles.insert(egui::TextStyle::Button, ui_kit::Font::Text.id(super::widgets::T_BODY));
+        s.text_styles.insert(egui::TextStyle::Small, ui_kit::Font::Text.id(super::widgets::T_SMALL));
+        s.text_styles.insert(egui::TextStyle::Monospace, ui_kit::Font::Mono.id(super::widgets::T_SMALL));
+        s.text_styles
+            .insert(egui::TextStyle::Heading, ui_kit::Font::TextBold.id(super::widgets::T_TITLE));
     });
 }

@@ -11,7 +11,9 @@ pub const T_DISPLAY: f32 = 44.0;
 pub const T_TITLE: f32 = 28.0;
 pub const T_HEAD: f32 = 16.0;
 pub const T_BODY: f32 = 13.0;
-pub const T_SMALL: f32 = 11.0;
+pub const T_SMALL: f32 = 12.0;
+/// Only for small numbers such as list indices
+pub const T_MICRO: f32 = 10.0;
 
 /// How long hover and press transitions take.
 const EASE_SECS: f32 = 0.12;
@@ -76,7 +78,7 @@ pub enum Btn {
 }
 
 pub fn button(ui: &mut Ui, pal: &Pal, text: &str, kind: Btn, small: bool) -> Response {
-    let size = if small { T_SMALL + 1.0 } else { T_BODY };
+    let size = if small { T_SMALL } else { T_BODY };
     let font = if kind == Btn::Primary { Font::TextBold } else { Font::Text };
     let g = galley(ui, text, font, size, pal.ink);
     let h = if small { 28.0 } else { 36.0 };
@@ -116,7 +118,7 @@ pub fn button(ui: &mut Ui, pal: &Pal, text: &str, kind: Btn, small: bool) -> Res
 /// Primary button followed by a hotkey hint.
 pub fn button_key(ui: &mut Ui, pal: &Pal, text: &str, key: &str) -> Response {
     let g1 = galley(ui, text, Font::TextBold, T_BODY, pal.onhue);
-    let g2 = galley(ui, key, Font::Mono, T_SMALL - 1.0, pal.onhue);
+    let g2 = galley(ui, key, Font::Mono, T_MICRO, pal.onhue);
     let (rect, resp) = ui.allocate_exact_size(vec2(g1.size().x + g2.size().x + 42.0, 36.0), Sense::click());
     let t = hover_level(ui, &resp);
     let bg = pal.hue.lerp_to_gamma(pal.paper, 0.16 * t.min(1.0));
@@ -130,7 +132,7 @@ pub fn button_key(ui: &mut Ui, pal: &Pal, text: &str, key: &str) -> Response {
         Align2::LEFT_CENTER,
         key,
         Font::Mono,
-        T_SMALL - 1.0,
+        T_MICRO,
         pal.onhue.gamma_multiply(0.55),
     );
     focus_ring(ui, pal, rect, &resp);
@@ -216,7 +218,7 @@ pub fn seg(ui: &mut Ui, pal: &Pal, options: &[String], selected: &mut usize) -> 
 
 /// Tabs: the selected one is bold with a 2px underline in the interaction colour. Returns the index clicked.
 pub fn tabs(ui: &mut Ui, pal: &Pal, items: &[(String, bool)], selected: usize, big: bool) -> Option<usize> {
-    let size = if big { T_HEAD } else { T_BODY + 1.0 };
+    let size = if big { T_HEAD } else { T_BODY };
     let gap = if big { 32.0 } else { 24.0 };
     let mut clicked = None;
     ui.horizontal(|ui| {
@@ -323,7 +325,7 @@ pub fn range(ui: &mut Ui, pal: &Pal, id: &str, value: &mut f32, min: f32, max: f
             Align2::RIGHT_CENTER,
             txt.trim(),
             Font::NumBold,
-            T_SMALL + 1.0,
+            T_SMALL,
             pal.ink,
         );
     });
@@ -374,7 +376,7 @@ pub fn section(ui: &mut Ui, pal: &Pal, text: &str, right: Option<&str>) {
             Align2::RIGHT_CENTER,
             right,
             Font::Text,
-            T_SMALL + 1.0,
+            T_SMALL,
             pal.mute,
         );
         end = rr.min.x - 16.0;
@@ -413,15 +415,7 @@ pub fn setting_row(ui: &mut Ui, pal: &Pal, label: &str, extra: Option<&str>, con
     let (rect, resp) = ui.allocate_exact_size(vec2(w, 52.0), Sense::hover());
     let t = ease(ui, resp.id.with("hover"), resp.contains_pointer());
     ui.painter().rect_filled(rect.expand2(vec2(8.0, 0.0)), CornerRadius::ZERO, pal.tint(t * 0.6));
-    let lr = text_at(
-        ui,
-        pos2(rect.min.x, rect.center().y),
-        Align2::LEFT_CENTER,
-        label,
-        Font::Text,
-        T_BODY + 1.0,
-        pal.ink,
-    );
+    let lr = text_at(ui, pos2(rect.min.x, rect.center().y), Align2::LEFT_CENTER, label, Font::Text, T_BODY, pal.ink);
     if let Some(e) = extra {
         text_at(
             ui,
@@ -481,7 +475,7 @@ pub fn toggle_row(ui: &mut Ui, pal: &Pal, label: &str, on: &mut bool) -> bool {
 
 /// Hotkey box: monospace text, thin frame.
 pub fn key_box(ui: &mut Ui, pal: &Pal, text: &str, active: bool) -> Response {
-    let g = galley(ui, text, Font::Mono, T_SMALL + 1.0, pal.ink);
+    let g = galley(ui, text, Font::Mono, T_SMALL, pal.ink);
     let (rect, resp) = ui.allocate_exact_size(vec2((g.size().x + 20.0).max(128.0), 28.0), Sense::click());
     let t = ease(ui, resp.id.with("hover"), resp.hovered());
     let border = if active { pal.hue } else { pal.line.lerp_to_gamma(pal.ink, t) };
@@ -540,7 +534,7 @@ pub fn diamond(ui: &Ui, center: Pos2, size: f32, color: Color32) {
 pub fn fact(ui: &mut Ui, pal: &Pal, label: &str, value: &str, big: f32, accent: bool) {
     ui.vertical(|ui| {
         ui.spacing_mut().item_spacing.y = 4.0;
-        label_mute(ui, pal, label, T_SMALL + 1.0);
+        label_mute(ui, pal, label, T_SMALL);
         let font = if big >= 20.0 { Font::Num } else { Font::NumBold };
         self::label(ui, value, font, big, if accent { pal.hue } else { pal.ink });
     });

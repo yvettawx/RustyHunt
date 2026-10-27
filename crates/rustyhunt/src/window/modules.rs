@@ -162,7 +162,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_CENTER,
                     &format!("{:02}", i + 1),
                     Font::Num,
-                    widgets::T_SMALL - 1.0,
+                    widgets::T_MICRO,
                     if on { pal.hue } else { pal.faint },
                 );
                 let name = crate::plugins::module_name(&m.id);
@@ -173,7 +173,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_CENTER,
                     &name,
                     if on { Font::TextBold } else { Font::Text },
-                    widgets::T_BODY + 1.0,
+                    widgets::T_BODY,
                     color,
                 );
                 ui.painter()
@@ -421,7 +421,13 @@ fn trays(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let mut changed: Option<Vec<Tray>> = None;
     for (ti, tray) in trays.iter().enumerate() {
         ui.horizontal(|ui| {
-            widgets::label(ui, i18n::tf("label.tray_n", &[("n", &(ti + 1).to_string())]), Font::TextBold, 13.0, pal.ink);
+            widgets::label(
+                ui,
+                i18n::tf("label.tray_n", &[("n", &(ti + 1).to_string())]),
+                Font::TextBold,
+                widgets::T_BODY,
+                pal.ink,
+            );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if trays.len() > 1 && link(ui, pal, &i18n::t("action.delete")).clicked() {
                     let mut t = trays.clone();
@@ -435,7 +441,7 @@ fn trays(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
             for (id, name) in &options {
                 let on = tray.ids.contains(id);
-                let g = widgets::galley(ui, name, Font::Text, 12.0, pal.ink);
+                let g = widgets::galley(ui, name, Font::Text, widgets::T_SMALL, pal.ink);
                 let (r, resp) = ui.allocate_exact_size(g.size() + vec2(18.0, 6.0), Sense::click());
                 ui.painter().rect_stroke(
                     r,

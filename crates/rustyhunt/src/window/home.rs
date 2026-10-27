@@ -46,7 +46,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 _ => i18n::t("game.world"),
             };
             ui.add_space(4.0);
-            label(ui, game, Font::TextBold, widgets::T_TITLE + 4.0, pal.ink);
+            label(ui, game, Font::TextBold, widgets::T_TITLE, pal.ink);
             ui.add_space(16.0);
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 32.0;
@@ -65,13 +65,13 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     ui,
                     i18n::tf("home.mismatch", &[("game", version), ("map", latest.as_deref().unwrap_or("-"))]),
                     Font::Text,
-                    13.0,
+                    widgets::T_BODY,
                     pal.accent,
                 );
             }
             if let Connection::Failed(e) = &live.connection {
                 ui.add_space(12.0);
-                label(ui, e, Font::Text, 13.0, pal.accent);
+                label(ui, e, Font::Text, widgets::T_BODY, pal.accent);
             }
         });
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Max), |ui| {
@@ -219,7 +219,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_TOP,
                     &ds,
                     Font::Text,
-                    widgets::T_SMALL + 1.0,
+                    widgets::T_SMALL,
                     if running { pal.ok } else { pal.mute },
                 );
                 ui.painter()
@@ -273,7 +273,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_CENTER,
                     &name,
                     Font::TextBold,
-                    widgets::T_BODY + 1.0,
+                    widgets::T_BODY,
                     pal.ink,
                 );
                 if resp.hovered() {
@@ -286,7 +286,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_CENTER,
                     &super::fmt_when(h.started_at),
                     Font::Text,
-                    12.0,
+                    widgets::T_SMALL,
                     pal.mute,
                 );
                 let res_x = r.max.x;
@@ -297,7 +297,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::RIGHT_CENTER,
                     &i18n::t(&format!("result.{}", h.result)),
                     Font::Text,
-                    12.0,
+                    widgets::T_SMALL,
                     if capture { pal.ok } else { pal.mute },
                 );
                 text_at(
@@ -306,7 +306,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::RIGHT_CENTER,
                     &format!("{} DPS", h.self_dps().round()),
                     Font::NumBold,
-                    13.0,
+                    widgets::T_BODY,
                     pal.ink,
                 );
                 text_at(
@@ -315,7 +315,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::RIGHT_CENTER,
                     &mmss(h.duration),
                     Font::NumBold,
-                    13.0,
+                    widgets::T_BODY,
                     pal.ink,
                 );
                 ui.painter()

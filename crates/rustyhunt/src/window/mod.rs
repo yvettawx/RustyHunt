@@ -295,7 +295,7 @@ impl MainWindow {
                 "RustyHunt",
                 0.0,
                 egui::TextFormat {
-                    font_id: Font::Num.id(11.0),
+                    font_id: Font::Num.id(widgets::T_SMALL),
                     color: pal.ink,
                     extra_letter_spacing: 2.2,
                     ..Default::default()
@@ -399,7 +399,7 @@ impl MainWindow {
             Align2::RIGHT_CENTER,
             &text,
             Font::Text,
-            widgets::T_SMALL + 1.0,
+            widgets::T_SMALL,
             pal.mute,
         );
         ui.painter().circle_filled(pos2(tr.min.x - 11.0, r.center().y), 3.0, dot);
@@ -431,7 +431,7 @@ impl MainWindow {
                 Align2::LEFT_CENTER,
                 &format!("{:02}", i + 1),
                 Font::Num,
-                widgets::T_SMALL - 1.0,
+                widgets::T_MICRO,
                 num_color,
             );
             let color = if sel > 0.5 { pal.onhue } else { pal.mute.lerp_to_gamma(pal.ink, hov) };
@@ -441,7 +441,7 @@ impl MainWindow {
                 Align2::LEFT_CENTER,
                 &i18n::t(page.key()),
                 if on { Font::TextBold } else { Font::Text },
-                widgets::T_BODY + 1.0,
+                widgets::T_BODY,
                 color,
             );
             if *page == Page::Records && new_records {
@@ -464,7 +464,7 @@ impl MainWindow {
             Align2::LEFT_CENTER,
             rh_core::VERSION,
             Font::NumBold,
-            widgets::T_SMALL - 1.0,
+            widgets::T_MICRO,
             pal.faint,
         );
         by -= 14.0 + 34.0;
@@ -524,7 +524,7 @@ impl MainWindow {
                         ui.set_width(340.0);
                         egui::Frame::new().inner_margin(egui::Margin::symmetric(18, 12)).show(ui, |ui| {
                             ui.horizontal(|ui| {
-                                widgets::label(ui, i18n::t("notify.title"), Font::TextBold, 13.0, pal.ink);
+                                widgets::label(ui, i18n::t("notify.title"), Font::TextBold, widgets::T_BODY, pal.ink);
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                     if link(ui, pal, &i18n::t("notify.mark_read")).clicked() {
                                         self.shared.notifications.lock().unwrap().mark_all_read();
@@ -548,12 +548,12 @@ impl MainWindow {
                                             let (r, _) = ui.allocate_exact_size(vec2(6.0, 14.0), Sense::hover());
                                             ui.painter().circle_filled(r.center(), 2.5, pal.accent);
                                         }
-                                        widgets::label(ui, &n.title, Font::TextBold, 13.0, pal.ink);
+                                        widgets::label(ui, &n.title, Font::TextBold, widgets::T_BODY, pal.ink);
                                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                             let t = chrono::DateTime::from_timestamp(n.time, 0)
                                                 .map(|d| d.with_timezone(&chrono::Local).format("%m-%d %H:%M").to_string())
                                                 .unwrap_or_default();
-                                            widgets::label(ui, t, Font::NumBold, 10.0, pal.mute);
+                                            widgets::label(ui, t, Font::NumBold, widgets::T_MICRO, pal.mute);
                                         });
                                     });
                                     if !n.body.is_empty() {
@@ -644,9 +644,9 @@ impl MainWindow {
                     })
                     .show(ui, |ui| {
                         ui.set_width(264.0);
-                        widgets::label(ui, &n.title, Font::TextBold, 14.0, pal.onblock);
+                        widgets::label(ui, &n.title, Font::TextBold, widgets::T_BODY, pal.onblock);
                         if !n.body.is_empty() {
-                            widgets::label(ui, &n.body, Font::Text, 12.0, pal.onblock.gamma_multiply(0.65));
+                            widgets::label(ui, &n.body, Font::Text, widgets::T_SMALL, pal.onblock.gamma_multiply(0.65));
                         }
                         ui.add_space(8.0);
                         ui.horizontal(|ui| {
@@ -710,10 +710,10 @@ impl MainWindow {
                     })
                     .show(ui, |ui| {
                         ui.set_width(364.0);
-                        widgets::label(ui, &title, Font::TextBold, 18.0, pal.ink);
+                        widgets::label(ui, &title, Font::TextBold, widgets::T_HEAD, pal.ink);
                         ui.add_space(10.0);
                         for l in &lines {
-                            ui.add(egui::Label::new(widgets::rich(l, Font::Text, 13.0, pal.ink)).wrap());
+                            ui.add(egui::Label::new(widgets::rich(l, Font::Text, widgets::T_BODY, pal.ink)).wrap());
                         }
                         ui.add_space(20.0);
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -768,7 +768,7 @@ impl MainWindow {
                         let cur = rh_core::VERSION;
                         match &latest {
                             Some(rel) if rel.version().is_some_and(|v| crate::update::newer(&v, cur)) => {
-                                widgets::label(ui, rel.version().unwrap_or_default(), Font::NumHeavy, 40.0, pal.ink);
+                                widgets::label(ui, rel.version().unwrap_or_default(), Font::NumHeavy, widgets::T_DISPLAY, pal.ink);
                                 let size = rel.package().map(|a| format!("{:.1} MB", a.size as f32 / 1048576.0)).unwrap_or_default();
                                 widgets::label_mute(ui, pal, &i18n::tf("update.current", &[("v", cur), ("size", &size)]), 12.0);
                                 ui.add_space(20.0);
@@ -778,7 +778,7 @@ impl MainWindow {
                                             crate::update::start_download(self.shared.clone(), rel.clone());
                                         }
                                         if let crate::update::Download::Failed(e) = &dl {
-                                            widgets::label(ui, e, Font::Text, 12.0, pal.accent);
+                                            widgets::label(ui, e, Font::Text, widgets::T_SMALL, pal.accent);
                                         }
                                     }
                                     crate::update::Download::Running { done, total } => {
@@ -797,7 +797,7 @@ impl MainWindow {
                                 }
                             }
                             _ => {
-                                widgets::label(ui, cur, Font::NumHeavy, 40.0, pal.ink);
+                                widgets::label(ui, cur, Font::NumHeavy, widgets::T_DISPLAY, pal.ink);
                                 let msg = if let Some(e) = &err {
                                     i18n::tf("update.failed", &[("e", e)])
                                 } else if checked {
@@ -816,17 +816,17 @@ impl MainWindow {
                         ui.add_space(30.0);
                         for rel in releases.iter().filter(|r| r.version().is_some()).take(8) {
                             ui.horizontal(|ui| {
-                                widgets::label(ui, rel.version().unwrap_or_default(), Font::TextBold, 14.0, pal.ink);
+                                widgets::label(ui, rel.version().unwrap_or_default(), Font::TextBold, widgets::T_BODY, pal.ink);
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    widgets::label(ui, rel.date(), Font::NumBold, 11.0, pal.mute);
+                                    widgets::label(ui, rel.date(), Font::NumBold, widgets::T_SMALL, pal.mute);
                                 });
                             });
                             for n in rel.notes().iter().take(12) {
                                 let (kind, rest) = n.split_once(' ').unwrap_or(("", n));
                                 ui.horizontal(|ui| {
                                     let (r, _) = ui.allocate_exact_size(vec2(30.0, 18.0), Sense::hover());
-                                    text_at(ui, r.left_center(), Align2::LEFT_CENTER, kind, Font::Text, 11.0, pal.mute);
-                                    widgets::label(ui, rest, Font::Text, 13.0, pal.ink);
+                                    text_at(ui, r.left_center(), Align2::LEFT_CENTER, kind, Font::Text, widgets::T_SMALL, pal.mute);
+                                    widgets::label(ui, rest, Font::Text, widgets::T_BODY, pal.ink);
                                 });
                                 widgets::hline(ui, pal);
                             }

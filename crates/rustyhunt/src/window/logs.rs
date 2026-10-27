@@ -65,7 +65,8 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                             ui.spacing_mut().item_spacing.x = 12.0;
                             let col = |ui: &mut Ui, text: &str, w: f32, c: Color32| {
                                 let (r, _) = ui.allocate_exact_size(vec2(w, 18.0), egui::Sense::hover());
-                                ui.painter().text(r.left_center(), egui::Align2::LEFT_CENTER, text, Font::Mono.id(12.0), c);
+                                ui.painter()
+                                    .text(r.left_center(), egui::Align2::LEFT_CENTER, text, Font::Mono.id(widgets::T_SMALL), c);
                             };
                             col(ui, &l.time, 96.0, Color32::from_rgb(0x6a, 0x68, 0x62));
                             let lc = match l.level {
@@ -79,7 +80,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                             ui.add(
                                 egui::Label::new(
                                     egui::RichText::new(&l.message)
-                                        .font(Font::Mono.id(12.0))
+                                        .font(Font::Mono.id(widgets::T_SMALL))
                                         .color(Color32::from_rgb(0xcf, 0xcd, 0xc6)),
                                 )
                                 .truncate(),
