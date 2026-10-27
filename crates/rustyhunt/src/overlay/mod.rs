@@ -263,8 +263,10 @@ impl Overlay {
         if self.settle_until.is_some_and(|t| std::time::Instant::now() < t) {
             ctx.request_repaint();
         }
-        if self.passthrough != Some(!layout_on) {
-            ctx.send_viewport_cmd(egui::ViewportCommand::MousePassthrough(!layout_on));
+        if self.passthrough != Some(!layout_on)
+            && let Some(h) = self.hwnd
+        {
+            crate::win::set_click_through(h, !layout_on);
             if layout_on {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
             }

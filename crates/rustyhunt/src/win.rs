@@ -29,6 +29,18 @@ pub fn style_overlay(hwnd: isize) {
     }
 }
 
+/// Turns click-through on or off by toggling only WS_EX_TRANSPARENT. The window stays layered:
+/// winit's mouse passthrough also drops WS_EX_LAYERED, which breaks the DirectComposition output
+/// and leaves the overlay white.
+pub fn set_click_through(hwnd: isize, on: bool) {
+    let h = hwnd as HWND;
+    unsafe {
+        let ex = GetWindowLongPtrW(h, GWL_EXSTYLE) as u32 | WS_EX_LAYERED;
+        let ex = if on { ex | WS_EX_TRANSPARENT } else { ex & !WS_EX_TRANSPARENT };
+        SetWindowLongPtrW(h, GWL_EXSTYLE, ex as isize);
+    }
+}
+
 /// Places the overlay over the game's client area (physical pixels).
 pub fn place_overlay(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32)) {
     unsafe {
