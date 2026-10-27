@@ -409,9 +409,10 @@ impl Overlay {
                 continue;
             }
             let layer = module_layer(&id);
-            let painter = ctx
-                .layer_painter(layer)
-                .with_clip_rect(Rect::from_min_max(pos2(-8000.0, -8000.0), pos2(16000.0, 16000.0)));
+            // Modules draw at their own origin and the layer is moved into place afterwards, so the clip
+            // must not be the screen: that would cut off anything left of or above the origin
+            let mut painter = ctx.layer_painter(layer);
+            painter.set_clip_rect(Rect::from_min_max(pos2(-8000.0, -8000.0), pos2(16000.0, 16000.0)));
             let scale = s * cfg.scale.clamp(0.5, 2.0);
             let cv = Canvas {
                 painter,
