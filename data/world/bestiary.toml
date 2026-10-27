@@ -3,368 +3,445 @@
 # maps: maps where it appears in expeditions (from the "Expedition" column of each Kiranico monster page, taken 2026-10-26).
 #       A Ancient Forest, W Wildspire Waste, C Coral Highlands, R Rotten Vale, E Elder's Recess, H Hoarfrost Reach, G Guiding Lands.
 # fixed: fixed size, no crowns to record.
+# order: position in the in-game research level list (Ecological Research > Research levels), checked in game
+#        2026-10-27 for every monster the list showed; the rest follow the Hunter's Notes order on
+#        monsterhunterwiki.org, each placed after the nearest monster before it in that order.
 # research: research level cap. 9 for monsters introduced in Low Rank, 7 for High Rank, 4 for new in Iceborne; Zorah Magdaros and Xeno'jiiva 4.
+#           Checked against the in-game research list on 2026-10-27 (green stars for Low Rank, 4 yellow for monsters
+#           introduced in High Rank, 3 purple once met in Master Rank); not seen there yet: Kulve Taroth, Behemoth,
+#           Leshen's Master Rank stars, Ancient Leshen.
 
 [acidic_glavenus]
+order = 46
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = "RG"
 
 [alatreon]
+order = 67
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""
 fixed = true
 
 [ancient_leshen]
+order = 71
 species = "TYPE_RELICT"
 research = 7
 maps = ""
 fixed = true
 
 [anjanath]
+order = 8
 species = "TYPE_BRUTE_WYVERN"
 research = 9
 maps = "AG"
 
 [azure_rathalos]
+order = 21
 species = "TYPE_FLYING_WYVERN"
 research = 7
 maps = "AEG"
 
 [banbaro]
+order = 35
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = "AWCREHG"
 
 [barioth]
+order = 39
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = "HG"
 
 [barroth]
+order = 5
 species = "TYPE_BRUTE_WYVERN"
 research = 9
 maps = "WG"
 
 [bazelgeuse]
+order = 25
 species = "TYPE_FLYING_WYVERN"
-research = 9
+research = 7
 maps = "AWCRE"
 
 [behemoth]
+order = 69
 species = "TYPE_ELDER_DRAGON"
 research = 7
 maps = ""
 fixed = true
 
 [beotodus]
+order = 34
 species = "TYPE_PISCINE_WYVERN"
 research = 4
 maps = "H"
 
 [black_diablos]
+order = 22
 species = "TYPE_FLYING_WYVERN"
 research = 7
 maps = "WG"
 
 [blackveil_vaal_hazak]
+order = 50
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = "AR"
 
 [brachydios]
+order = 43
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = "EG"
 
 [brute_tigrex]
+order = 58
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = ""
 
 [coral_pukei_pukei]
+order = 38
 species = "TYPE_BIRD_WYVERN"
 research = 4
 maps = "CG"
 
 [deviljho]
+order = 26
 species = "TYPE_BRUTE_WYVERN"
 research = 7
 maps = "AWCRE"
 
 [diablos]
+order = 17
 species = "TYPE_FLYING_WYVERN"
 research = 9
 maps = "WG"
 
 [dodogama]
+order = 19
 species = "TYPE_FANGED_WYVERN"
-research = 9
+research = 7
 maps = "EG"
 
 [ebony_odogaron]
+order = 47
 species = "TYPE_FANGED_WYVERN"
 research = 4
 maps = "AWCREHG"
 
 [fatalis]
+order = 68
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""
 fixed = true
 
 [frostfang_barioth]
+order = 66
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = ""
 
 [fulgur_anjanath]
+order = 45
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = "AWCREHG"
 
 [furious_rajang]
+order = 64
 species = "TYPE_FANGED_BEAST"
 research = 4
 maps = ""
 
 [glavenus]
+order = 41
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = "AWEG"
 
 [gold_rathian]
+order = 59
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = ""
 
 [great_girros]
+order = 13
 species = "TYPE_FANGED_WYVERN"
 research = 9
 maps = "RG"
 
 [great_jagras]
+order = 2
 species = "TYPE_FANGED_WYVERN"
 research = 9
 maps = "AG"
 
 [jyuratodus]
+order = 6
 species = "TYPE_PISCINE_WYVERN"
 research = 9
 maps = "W"
 
 [kirin]
+order = 18
 species = "TYPE_ELDER_DRAGON"
 research = 9
 maps = "C"
 
 [kulu_ya_ku]
+order = 3
 species = "TYPE_BIRD_WYVERN"
 research = 9
 maps = "AWG"
 
 [kulve_taroth]
+order = 32
 species = "TYPE_ELDER_DRAGON"
 research = 7
 maps = ""
 fixed = true
 
 [kushala_daora]
+order = 28
 species = "TYPE_ELDER_DRAGON"
 research = 7
 maps = "AE"
 
 [lavasioth]
+order = 23
 species = "TYPE_PISCINE_WYVERN"
-research = 9
+research = 7
 maps = "EG"
 
 [legiana]
+order = 14
 species = "TYPE_FLYING_WYVERN"
 research = 9
 maps = "CHG"
 
 [leshen]
+order = 70
 species = "TYPE_RELICT"
 research = 7
 maps = ""
 fixed = true
 
 [lunastra]
+order = 30
 species = "TYPE_ELDER_DRAGON"
 research = 7
 maps = "WE"
 
 [namielle]
+order = 51
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = "C"
 
 [nargacuga]
+order = 40
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = "ACG"
 
 [nergigante]
+order = 27
 species = "TYPE_ELDER_DRAGON"
-research = 9
+research = 7
 maps = ""
 
 [nightshade_paolumu]
+order = 37
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = "AWG"
 
 [odogaron]
+order = 15
 species = "TYPE_FANGED_WYVERN"
 research = 9
 maps = "CRG"
 
 [paolumu]
+order = 10
 species = "TYPE_FLYING_WYVERN"
 research = 9
 maps = "CG"
 
 [pink_rathian]
+order = 20
 species = "TYPE_FLYING_WYVERN"
 research = 7
 maps = "WCG"
 
 [pukei_pukei]
+order = 4
 species = "TYPE_BIRD_WYVERN"
 research = 9
 maps = "AWG"
 
 [radobaan]
+order = 11
 species = "TYPE_BRUTE_WYVERN"
 research = 9
 maps = "RG"
 
 [raging_brachydios]
+order = 65
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = ""
 
 [rajang]
+order = 61
 species = "TYPE_FANGED_BEAST"
 research = 4
 maps = ""
 
 [rathalos]
+order = 16
 species = "TYPE_FLYING_WYVERN"
 research = 9
 maps = "AG"
 
 [rathian]
+order = 12
 species = "TYPE_FLYING_WYVERN"
 research = 9
 maps = "AWG"
 
 [ruiner_nergigante]
+order = 53
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""
 
 [safijiiva]
+order = 63
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""
 fixed = true
 
 [savage_deviljho]
+order = 52
 species = "TYPE_BRUTE_WYVERN"
 research = 4
 maps = "AWCREH"
 
 [scarred_yian_garuga]
+order = 57
 species = "TYPE_BIRD_WYVERN"
 research = 4
 maps = ""
 
 [seething_bazelgeuse]
+order = 49
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = "E"
 
 [shara_ishvalda]
+order = 54
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""
 fixed = true
 
 [shrieking_legiana]
+order = 44
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = "HG"
 
 [silver_rathalos]
+order = 60
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = ""
 
 [stygian_zinogre]
+order = 62
 species = "TYPE_FANGED_WYVERN"
 research = 4
 maps = ""
 
 [teostra]
+order = 29
 species = "TYPE_ELDER_DRAGON"
 research = 7
 maps = "WE"
 
 [tigrex]
+order = 42
 species = "TYPE_FLYING_WYVERN"
 research = 4
 maps = "AWREHG"
 
 [tobi_kadachi]
+order = 7
 species = "TYPE_FANGED_WYVERN"
 research = 9
 maps = "AG"
 
 [tzitzi_ya_ku]
+order = 9
 species = "TYPE_BIRD_WYVERN"
 research = 9
 maps = "CG"
 
 [uragaan]
+order = 24
 species = "TYPE_BRUTE_WYVERN"
-research = 9
+research = 7
 maps = "EG"
 
 [vaal_hazak]
+order = 31
 species = "TYPE_ELDER_DRAGON"
 research = 7
 maps = ""
 
 [velkhana]
+order = 48
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = "H"
 
 [viper_tobi_kadachi]
+order = 36
 species = "TYPE_FANGED_WYVERN"
 research = 4
 maps = "HG"
 
 [xenojiiva]
+order = 33
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""
 fixed = true
 
 [yian_garuga]
+order = 56
 species = "TYPE_BIRD_WYVERN"
 research = 4
 maps = ""
 
 [zinogre]
+order = 55
 species = "TYPE_FANGED_WYVERN"
 research = 4
 maps = "G"
 
 [zorah_magdaros]
+order = 1
 species = "TYPE_ELDER_DRAGON"
 research = 4
 maps = ""

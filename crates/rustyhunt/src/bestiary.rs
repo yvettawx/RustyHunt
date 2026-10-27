@@ -16,6 +16,8 @@ const DATA: &str = include_str!("../../../data/world/bestiary.toml");
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Info {
+    /// Position in the in-game research level list
+    pub order: u16,
     pub species: String,
     /// Research level cap
     pub research: u8,
@@ -260,8 +262,9 @@ pub fn rows(book: &Book) -> Vec<Row> {
     let records: HashMap<&str, &game_world::save::MonsterRecord> = hunter
         .map(|h| h.monsters.iter().filter(|m| !m.key.is_empty()).map(|m| (m.key.as_str(), m)).collect())
         .unwrap_or_default();
-    info()
-        .iter()
+    let mut keys: Vec<(&String, &Info)> = info().iter().collect();
+    keys.sort_by_key(|(_, inf)| inf.order);
+    keys.into_iter()
         .map(|(key, inf)| {
             let r = records.get(key.as_str());
             let (mini, gold) = thresholds(key);
