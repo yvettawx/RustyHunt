@@ -306,7 +306,7 @@ fn modified(path: &std::path::Path) -> Option<i64> {
 /// Rereads the save when the game has written it since the last read. Checks the file time at most every few seconds.
 pub fn reread_if_saved(shared: &std::sync::Arc<Shared>) {
     let due = with(|b| {
-        if b.reading || b.checked.is_some_and(|t| t.elapsed().as_secs() < 5) {
+        if b.reading || b.checked.is_some_and(|t| t.elapsed().as_millis() < 1000) {
             return false;
         }
         b.checked = Some(std::time::Instant::now());
