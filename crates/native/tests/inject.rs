@@ -1,5 +1,5 @@
-//! 把 DLL 注入一个临时进程，确认能载入、端口能连上、协议能用。
-//! 要先编译出 DLL：cargo build -p rustyhunt-native，然后
+//! Injects the DLL into a temporary process and checks that it loads, the port accepts connections and the protocol works.
+//! Build the DLL first with cargo build -p rustyhunt-native, then run
 //! cargo test -p rustyhunt-native --test inject -- --ignored
 
 use std::io::{BufRead, BufReader, Write};

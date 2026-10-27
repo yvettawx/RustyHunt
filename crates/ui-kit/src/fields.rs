@@ -1,8 +1,8 @@
-//! 数据字段表：主题模板和插件能读到的字段。
-//! 版本号见 `rh_core::FIELDS_VERSION`，小版本只加不删。
+//! Data field table: the fields theme templates and plugins can read.
+//! The version is `rh_core::FIELDS_VERSION`; minor versions only add, never remove.
 //!
-//! 模板里的数据是一棵 JSON：根上有 `monster`、`monsters`、`player`、`party`、
-//! `quest`、`game`、`base`、`overlay`，插件模块另外有 `data`。
+//! Template data is a JSON tree: the root has `monster`, `monsters`, `player`, `party`,
+//! `quest`, `game`, `base`, `overlay`, and plugin modules also get `data`.
 
 use std::collections::HashMap;
 
@@ -10,109 +10,109 @@ use rh_core::i18n::I18n;
 use rh_core::model::*;
 use serde_json::{Map, Value, json};
 
-/// 字段说明，用来生成 `docs/fields.md`，也用来检查模板里写的字段。
+/// Field descriptions, used to generate `docs/fields.md` and to check the fields used in templates.
 pub const FIELDS: &[(&str, &str, &str)] = &[
-    ("game.key", "字符串", "world、rise、wilds"),
-    ("game.stage", "字符串", "当前地点的名字"),
-    ("game.in_quest", "布尔", "正在任务中"),
-    ("game.in_town", "布尔", "在据点或房间里"),
-    ("game.hud_open", "布尔", "打开了游戏菜单或地图"),
-    ("game.world_time", "字符串", "游戏内时间，形如 06:40"),
-    ("game.online", "布尔", "多人任务"),
-    ("overlay.density", "字符串", "full、standard、minimal"),
-    ("overlay.time", "数字", "overlay 启动后的秒数，用来做动画"),
-    ("quest.id", "数字", "任务编号"),
-    ("quest.stars", "数字", "星级"),
-    ("quest.rank", "字符串", "low、high、master"),
-    ("quest.time_left", "数字", "剩余秒数"),
-    ("quest.time_max", "数字", "任务时限，秒"),
-    ("quest.elapsed", "数字", "已经过去的秒数"),
-    ("quest.deaths", "数字", "已经倒下的次数"),
-    ("quest.deaths_max", "数字", "最多可以倒下的次数"),
-    ("monster.name", "字符串", "目标怪物的名字（按术语语言）"),
-    ("monster.name_en", "字符串", "英文名"),
-    ("monster.key", "字符串", "术语表里的键"),
-    ("monster.hp", "数字", "当前血量"),
-    ("monster.hp_max", "数字", "最大血量"),
-    ("monster.hp_ratio", "数字", "血量比例 0 到 1"),
-    ("monster.stamina", "数字", "精力"),
-    ("monster.stamina_max", "数字", "精力上限"),
-    ("monster.stamina_ratio", "数字", "精力比例"),
-    ("monster.enraged", "布尔", "激怒中"),
-    ("monster.enrage_timer", "数字", "激怒剩余秒数"),
-    ("monster.enrage_ratio", "数字", "激怒剩余比例"),
-    ("monster.tired", "布尔", "疲劳中"),
-    ("monster.capturable", "布尔", "可以捕获"),
-    ("monster.capture_ratio", "数字", "捕获线（血量比例）"),
-    ("monster.crown", "字符串", "none、mini、silver、gold"),
-    ("monster.size", "数字", "体型倍率"),
-    ("monster.weaknesses", "列表", "弱点属性的名字"),
-    ("monster.target", "字符串", "own、other、none"),
-    ("monster.captured", "布尔", "已捕获"),
-    ("monster.dead", "布尔", "已讨伐"),
-    ("monster.damage_recent", "数字", "最近一连串攻击的伤害"),
-    ("monster.parts", "列表", "部位，每项字段见 monster.parts[].*"),
-    ("monster.parts[].name", "字符串", "部位名"),
-    ("monster.parts[].key", "字符串", "部位的本地化键"),
-    ("monster.parts[].kind", "字符串", "flinch、breakable、severable"),
-    ("monster.parts[].flinch_ratio", "数字", "硬直值比例"),
-    ("monster.parts[].durability_ratio", "数字", "距下一次破坏的耐久比例"),
-    ("monster.parts[].break_progress", "数字", "破坏进度，1 减耐久比例"),
-    ("monster.parts[].breaks", "数字", "已经破坏的次数"),
-    ("monster.parts[].breaks_max", "数字", "能破坏的次数"),
-    ("monster.parts[].broken", "布尔", "已经破坏完"),
-    ("monster.parts[].severable", "布尔", "可以切断"),
-    ("monster.parts[].tenderized", "数字", "弱点特效剩余秒数"),
-    ("monster.parts[].hot", "布尔", "最近几秒被打到"),
-    ("monster.parts[].idle", "布尔", "闲置，用来淡出"),
-    ("monster.ailments", "列表", "怪物异常，每项字段见 monster.ailments[].*"),
-    ("monster.ailments[].name", "字符串", "异常名"),
-    ("monster.ailments[].key", "字符串", "异常的本地化键"),
-    ("monster.ailments[].buildup_ratio", "数字", "累积比例"),
-    ("monster.ailments[].timer", "数字", "生效剩余秒数"),
-    ("monster.ailments[].timer_ratio", "数字", "生效剩余比例"),
-    ("monster.ailments[].count", "数字", "触发次数"),
-    ("monster.ailments[].active", "布尔", "正在生效"),
-    ("monster.ailments[].hot", "布尔", "最近几秒有变化"),
-    ("monster.ailments[].idle", "布尔", "闲置"),
-    ("monsters", "列表", "本区域所有大型怪物，每项字段和 monster 相同"),
-    ("player.name", "字符串", "猎人名"),
-    ("player.hr", "数字", "猎人等级"),
-    ("player.mr", "数字", "大师等级"),
-    ("player.hp", "数字", "生命"),
-    ("player.hp_max", "数字", "最大生命"),
-    ("player.hp_ratio", "数字", "生命比例"),
-    ("player.hp_recoverable", "数字", "红血能回到的值"),
-    ("player.hp_healing_to", "数字", "正在回复到的值"),
-    ("player.stamina", "数字", "耐力"),
-    ("player.stamina_max", "数字", "最大耐力"),
-    ("player.stamina_ratio", "数字", "耐力比例"),
-    ("player.weapon", "字符串", "武器种类的键"),
-    ("player.weapon_name", "字符串", "武器种类的名字"),
-    ("player.sharpness.level", "数字", "斩味颜色 0 红到 6 紫"),
-    ("player.sharpness.color", "字符串", "斩味颜色名"),
-    ("player.sharpness.hits_left", "数字", "当前颜色剩余击数"),
-    ("player.sharpness.ratio", "数字", "当前值占最大值的比例"),
-    ("player.buffs", "列表", "增益，每项 name、timer、timer_max、ratio、infinite"),
-    ("player.buffs[].name", "字符串", "增益名"),
-    ("player.buffs[].timer", "数字", "剩余秒数"),
-    ("player.buffs[].ratio", "数字", "剩余比例"),
-    ("player.buffs[].infinite", "布尔", "没有倒计时"),
-    ("player.debuffs", "列表", "自身异常，字段同 player.buffs"),
-    ("party", "列表", "队伍，按伤害从高到低"),
-    ("party[].name", "字符串", "猎人名"),
-    ("party[].damage", "数字", "总伤害"),
-    ("party[].dps", "数字", "每秒伤害"),
-    ("party[].share", "数字", "伤害占比"),
-    ("party[].rank", "数字", "名次，从 1 开始"),
-    ("party[].is_self", "布尔", "是自己"),
-    ("base.argosy_days", "数字", "交易船剩余天数"),
-    ("base.tailraiders_quests", "数字", "随从探险队剩余次数"),
-    ("base.harvest_items", "数字", "植生研究所的收获箱里有几样东西"),
-    ("base.steam_stored", "数字", "蒸汽机关管理所储存的燃料"),
+    ("game.key", "string", "world, rise, wilds"),
+    ("game.stage", "string", "Name of the current location"),
+    ("game.in_quest", "bool", "In a quest"),
+    ("game.in_town", "bool", "In a hub or room"),
+    ("game.hud_open", "bool", "The game menu or map is open"),
+    ("game.world_time", "string", "In-game time, like 06:40"),
+    ("game.online", "bool", "Multiplayer quest"),
+    ("overlay.density", "string", "full, standard, minimal"),
+    ("overlay.time", "number", "Seconds since the overlay started, for animations"),
+    ("quest.id", "number", "Quest ID"),
+    ("quest.stars", "number", "Star rating"),
+    ("quest.rank", "string", "low, high, master"),
+    ("quest.time_left", "number", "Seconds left"),
+    ("quest.time_max", "number", "Time limit, seconds"),
+    ("quest.elapsed", "number", "Seconds elapsed"),
+    ("quest.deaths", "number", "Faints so far"),
+    ("quest.deaths_max", "number", "Faints allowed"),
+    ("monster.name", "string", "Target monster's name (in the term language)"),
+    ("monster.name_en", "string", "English name"),
+    ("monster.key", "string", "Key in the term table"),
+    ("monster.hp", "number", "Current HP"),
+    ("monster.hp_max", "number", "Max HP"),
+    ("monster.hp_ratio", "number", "HP ratio, 0 to 1"),
+    ("monster.stamina", "number", "Stamina"),
+    ("monster.stamina_max", "number", "Max stamina"),
+    ("monster.stamina_ratio", "number", "Stamina ratio"),
+    ("monster.enraged", "bool", "Enraged"),
+    ("monster.enrage_timer", "number", "Seconds of rage left"),
+    ("monster.enrage_ratio", "number", "Ratio of rage left"),
+    ("monster.tired", "bool", "Tired"),
+    ("monster.capturable", "bool", "Can be captured"),
+    ("monster.capture_ratio", "number", "Capture threshold (HP ratio)"),
+    ("monster.crown", "string", "none, mini, silver, gold"),
+    ("monster.size", "number", "Size multiplier"),
+    ("monster.weaknesses", "list", "Names of weak elements"),
+    ("monster.target", "string", "own, other, none"),
+    ("monster.captured", "bool", "Captured"),
+    ("monster.dead", "bool", "Slain"),
+    ("monster.damage_recent", "number", "Damage of the latest attack chain"),
+    ("monster.parts", "list", "Parts; item fields under monster.parts[].*"),
+    ("monster.parts[].name", "string", "Part name"),
+    ("monster.parts[].key", "string", "Localization key of the part"),
+    ("monster.parts[].kind", "string", "flinch, breakable, severable"),
+    ("monster.parts[].flinch_ratio", "number", "Flinch ratio"),
+    ("monster.parts[].durability_ratio", "number", "Durability ratio left until the next break"),
+    ("monster.parts[].break_progress", "number", "Break progress, 1 minus the durability ratio"),
+    ("monster.parts[].breaks", "number", "Times broken"),
+    ("monster.parts[].breaks_max", "number", "Possible breaks"),
+    ("monster.parts[].broken", "bool", "Fully broken"),
+    ("monster.parts[].severable", "bool", "Severable"),
+    ("monster.parts[].tenderized", "number", "Seconds of tenderize left"),
+    ("monster.parts[].hot", "bool", "Hit in the last few seconds"),
+    ("monster.parts[].idle", "bool", "Idle, for fading out"),
+    ("monster.ailments", "list", "Monster ailments; item fields under monster.ailments[].*"),
+    ("monster.ailments[].name", "string", "Ailment name"),
+    ("monster.ailments[].key", "string", "Localization key of the ailment"),
+    ("monster.ailments[].buildup_ratio", "number", "Buildup ratio"),
+    ("monster.ailments[].timer", "number", "Seconds left while active"),
+    ("monster.ailments[].timer_ratio", "number", "Ratio left while active"),
+    ("monster.ailments[].count", "number", "Times triggered"),
+    ("monster.ailments[].active", "bool", "Active"),
+    ("monster.ailments[].hot", "bool", "Changed in the last few seconds"),
+    ("monster.ailments[].idle", "bool", "Idle"),
+    ("monsters", "list", "All large monsters in the area; item fields are the same as monster"),
+    ("player.name", "string", "Hunter name"),
+    ("player.hr", "number", "Hunter Rank"),
+    ("player.mr", "number", "Master Rank"),
+    ("player.hp", "number", "Health"),
+    ("player.hp_max", "number", "Max health"),
+    ("player.hp_ratio", "number", "Health ratio"),
+    ("player.hp_recoverable", "number", "Value red health can recover to"),
+    ("player.hp_healing_to", "number", "Value currently being healed to"),
+    ("player.stamina", "number", "Stamina"),
+    ("player.stamina_max", "number", "Max stamina"),
+    ("player.stamina_ratio", "number", "Stamina ratio"),
+    ("player.weapon", "string", "Weapon type key"),
+    ("player.weapon_name", "string", "Weapon type name"),
+    ("player.sharpness.level", "number", "Sharpness color, 0 red to 6 purple"),
+    ("player.sharpness.color", "string", "Sharpness color name"),
+    ("player.sharpness.hits_left", "number", "Hits left in the current color"),
+    ("player.sharpness.ratio", "number", "Current value as a ratio of the max"),
+    ("player.buffs", "list", "Buffs; each has name, timer, timer_max, ratio, infinite"),
+    ("player.buffs[].name", "string", "Buff name"),
+    ("player.buffs[].timer", "number", "Seconds left"),
+    ("player.buffs[].ratio", "number", "Ratio left"),
+    ("player.buffs[].infinite", "bool", "No countdown"),
+    ("player.debuffs", "list", "Status effects on the player; same fields as player.buffs"),
+    ("party", "list", "Party, by damage from high to low"),
+    ("party[].name", "string", "Hunter name"),
+    ("party[].damage", "number", "Total damage"),
+    ("party[].dps", "number", "Damage per second"),
+    ("party[].share", "number", "Share of damage"),
+    ("party[].rank", "number", "Rank, starting at 1"),
+    ("party[].is_self", "bool", "Is the local player"),
+    ("base.argosy_days", "number", "Days left for the Argosy"),
+    ("base.tailraiders_quests", "number", "Tailraider expeditions left"),
+    ("base.harvest_items", "number", "Items in the Botanical Research harvest box"),
+    ("base.steam_stored", "number", "Fuel stored at the Steamworks"),
 ];
 
-/// 部位和异常"最近有变化"的时间，overlay 维护，生成 `hot`、`idle`。
+/// When parts and ailments last changed, kept by the overlay to produce `hot` and `idle`.
 #[derive(Default, Clone)]
 pub struct Activity {
     pub last_change: HashMap<String, f64>,
@@ -132,10 +132,10 @@ pub struct ContextOptions<'a> {
     pub i18n: &'a I18n,
     pub density: &'a str,
     pub time: f64,
-    /// 部位和异常保持"热"的秒数
+    /// Seconds a part or ailment stays "hot"
     pub hot_secs: f64,
     pub activity: Option<&'a Activity>,
-    /// 目标怪物的 uid
+    /// uid of the target monster
     pub target: Option<u64>,
     pub low_hp: f32,
     pub damage_recent: f32,
@@ -250,7 +250,7 @@ pub fn party_values(s: &Snapshot) -> Vec<Value> {
         .collect()
 }
 
-/// 整棵数据树。
+/// The whole data tree.
 pub fn context(s: &Snapshot, o: &ContextOptions) -> Value {
     let target = o.target.and_then(|uid| s.monster(uid)).or_else(|| s.large_monsters().next());
     let p = &s.player;
@@ -326,7 +326,7 @@ pub fn context(s: &Snapshot, o: &ContextOptions) -> Value {
     Value::Object(root)
 }
 
-/// 用来检查模板字段的样例数据：每个列表至少有一项。
+/// Sample data for checking template fields: every list has at least one item.
 pub fn sample() -> Value {
     let i18n = I18n::default();
     let mut s = Snapshot::default();
@@ -360,8 +360,8 @@ pub fn sample() -> Value {
     v
 }
 
-/// 检查路径在样例数据里存在。`[]` 表示列表的任意一项。
-/// `data` 下面是插件自己的数据，`module` 下面是模块自己的开关，不检查。
+/// Checks that a path exists in the sample data. `[]` means any item of a list.
+/// Under `data` is the plugin's own data and under `module` the module's own switches; neither is checked.
 pub fn path_exists(sample: &Value, path: &[String]) -> bool {
     if matches!(path.first().map(String::as_str), Some("data" | "module")) {
         return true;
@@ -377,11 +377,11 @@ pub fn path_exists(sample: &Value, path: &[String]) -> bool {
                 if seg == "[]" || seg.parse::<usize>().is_ok() {
                     match a.first() {
                         Some(v) => v,
-                        // 空列表里元素的字段没法检查
+                        // Fields of items in an empty list can't be checked
                         None => return true,
                     }
                 } else {
-                    // 列表本身的属性
+                    // Properties of the list itself
                     return seg == "length";
                 }
             }
@@ -391,18 +391,18 @@ pub fn path_exists(sample: &Value, path: &[String]) -> bool {
     true
 }
 
-/// 生成 `docs/fields.md`：字段表就是文档，测试保证两边一致。
+/// Generates `docs/fields.md`: the field table is the documentation, and a test keeps the two in sync.
 pub fn markdown() -> String {
     let mut out = String::from(
-        "# 数据字段
+        "# Data fields
 
-主题模板和插件拿到的数据快照用的是同一张字段表。字段表版本 ",
+Theme templates and plugins get data snapshots built from the same field table. Field table version ",
     );
     out += rh_core::FIELDS_VERSION;
-    out += "，小版本只加不删。
+    out += "; minor versions only add fields, never remove them.
 
-`[]` 表示列表里的每一项，模板里用 `<for each=\"p in monster.parts\">` 遍历，插件拿到的是 JSON 数组。
-本文件由 `cargo test -p ui-kit fields_doc` 检查，改了字段表后用 `RH_WRITE_DOCS=1` 重新生成。
+`[]` means every item of a list. Templates iterate with `<for each=\"p in monster.parts\">`; plugins get a JSON array.
+This file is checked by `cargo test -p ui-kit fields_doc`; after changing the field table, regenerate it with `RH_WRITE_DOCS=1`.
 ";
     let mut group = "";
     for (path, kind, desc) in FIELDS {
@@ -413,7 +413,7 @@ pub fn markdown() -> String {
                 "
 ## {g}
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |---|---|---|
 "
             );
@@ -438,7 +438,10 @@ mod tests {
             std::fs::write(&path, &text).unwrap();
         }
         let on_disk = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
-        assert!(on_disk == text, "docs/fields.md 和字段表不一致，用 RH_WRITE_DOCS=1 重新生成");
+        assert!(
+            on_disk == text,
+            "docs/fields.md is out of sync with the field table; regenerate it with RH_WRITE_DOCS=1"
+        );
     }
 
     #[test]

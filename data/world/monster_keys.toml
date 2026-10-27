@@ -1,4 +1,4 @@
-# 世界的怪物内部编号对应术语表 locales/terms/world.toml 里的键。
+# World's internal monster IDs to the keys in the term table locales/terms/world.toml.
 
 0 = "anjanath"
 1 = "rathalos"

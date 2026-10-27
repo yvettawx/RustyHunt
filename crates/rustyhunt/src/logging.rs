@@ -1,4 +1,4 @@
-//! 日志：写文件，同时在内存里留最近的几千行给"日志"页和崩溃日志用。
+//! Logging: writes to a file and keeps the last few thousand lines in memory for the Log page and crash logs.
 
 use std::collections::VecDeque;
 use std::fs::{File, OpenOptions};
@@ -47,7 +47,7 @@ fn short_target(target: &str) -> String {
 
 impl Log for Logger {
     fn enabled(&self, m: &Metadata) -> bool {
-        // 第三方库只记警告以上
+        // Third-party crates log warnings and above only
         let ours = [
             "rustyhunt",
             "game_world",
@@ -97,7 +97,7 @@ impl Log for Logger {
 pub fn init(level: rh_core::settings::LogLevel) {
     let dir = rh_core::paths::logs();
     let path = dir.join("rustyhunt.log");
-    // 太大时轮换一份
+    // Rotate once it gets too big
     if std::fs::metadata(&path).is_ok_and(|m| m.len() > MAX_FILE) {
         let _ = std::fs::rename(&path, dir.join("rustyhunt.1.log"));
     }

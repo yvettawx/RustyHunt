@@ -1,5 +1,5 @@
-//! 模板里的简单表达式：字段路径、数字和字符串、比较、逻辑、四则运算、
-//! 过滤器（`| percent`、`| time` 等）。不支持循环和自定义函数。
+//! Simple expressions in templates: field paths, numbers and strings, comparisons, logic, arithmetic,
+//! filters (`| percent`, `| time` and so on). No loops or custom functions.
 
 use serde_json::Value;
 
@@ -46,7 +46,7 @@ enum Tok {
     Sym(&'static str),
 }
 
-/// 前一个符号是 `.` 时数字是下标（`parts.0.name`），不能吃掉后面的点。
+/// After a `.` a number is an index (`parts.0.name`) and must not swallow the following dot.
 fn after_dot(out: &[Tok]) -> bool {
     matches!(out.last(), Some(Tok::Sym(".")))
 }
@@ -87,7 +87,7 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
                 i += 1;
             }
             let word: String = cs[start..i].iter().collect();
-            // XML 属性里写 && 和 < 要转义，所以给逻辑和比较各配一个单词写法
+            // && and < must be escaped in XML attributes, so logic and comparisons each get a word form
             let alias = match word.as_str() {
                 _ if after_dot(&out) => None,
                 "and" => Some("&&"),
@@ -304,7 +304,7 @@ pub fn parse(s: &str) -> Result<Expr, String> {
     Ok(e)
 }
 
-/// 变量作用域：模板里的 `for` 会加一层。
+/// Variable scope: each `for` in a template adds a level.
 pub trait Scope {
     fn get(&self, name: &str) -> Option<&Value>;
 }
@@ -469,7 +469,7 @@ fn eq(a: &Value, b: &Value) -> bool {
     }
 }
 
-/// 表达式里引用到的字段路径，例如 `monster.parts`。下标部分不展开。
+/// Field paths referenced by an expression, e.g. `monster.parts`. Indices aren't expanded.
 pub fn paths(e: &Expr, out: &mut Vec<Vec<String>>) {
     match e {
         Expr::Lit(_) => {}
@@ -494,7 +494,7 @@ pub fn paths(e: &Expr, out: &mut Vec<Vec<String>>) {
     }
 }
 
-/// 属性里的文字：可以整体是 `{表达式}`，也可以是夹着表达式的字符串，`{{` 表示 `{`。
+/// Text in an attribute: either a whole `{expression}` or a string with expressions in it; `{{` means `{`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Text {
     Lit(String),

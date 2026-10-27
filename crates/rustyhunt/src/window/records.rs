@@ -1,4 +1,4 @@
-//! 03 记录：狩猎和图鉴两个页签。
+//! 03 Records: hunts and Hunter's Notes tabs.
 
 use egui::{Align2, Color32, CornerRadius, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 use rh_core::i18n;
@@ -253,13 +253,13 @@ fn hunts(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     }
 }
 
-/// 删了记录之后让列表马上重读
+/// Makes the list reload right after a record is deleted
 static RELOAD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// 画一场狩猎的详情；返回 true 表示点了删除。
+/// Draws the details of one hunt; returns true when delete was clicked.
 fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     let i = i18n::current();
-    // 右边是结果和用时，左边放名牌和副标题；名字很长时副标题换到下一行
+    // Result and time on the right, name tag and subtitle on the left; the subtitle wraps to the next line when the name is long
     let dur = widgets::galley(ui, &mmss(h.duration), Font::NumHeavy, 44.0, pal.ink);
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), (dur.size().y + 18.0).max(84.0)), Sense::hover());
     let capture = h.result == "capture";
@@ -303,7 +303,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     });
     ui.add_space(26.0);
 
-    // DPS 曲线：每人一条
+    // DPS curves: one per player
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 160.0), Sense::hover());
     let max = h.curve.iter().map(|c| c.2).fold(1.0, f32::max) * 1.12;
     let p = ui.painter();
@@ -348,7 +348,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
     });
     ui.add_space(30.0);
 
-    // 表格
+    // Table
     let total: f32 = h.players.iter().map(|p| p.damage).sum::<f32>().max(1.0);
     let w = ui.available_width();
     let cols = [w - 4.0 * 90.0, 90.0, 90.0, 90.0, 90.0];
@@ -412,7 +412,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         text_at(ui, pos2(rr.max.x, rr.center().y), Align2::RIGHT_CENTER, v, Font::Mono, 12.0, pal.ink);
     }
 
-    // 时间轴
+    // Timeline
     ui.add_space(34.0);
     let (tr, _) = ui.allocate_exact_size(vec2(w, 60.0), Sense::hover());
     let ay = tr.min.y + 24.0;
@@ -423,7 +423,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         let label = event_label(e);
         let c = if e.accent { pal.accent } else { pal.ink };
         widgets::diamond(ui, pos2(x, ay), 7.0, c);
-        // 字放不下就只画菱形
+        // Only draw the diamond when the text doesn't fit
         let half = widgets::galley(ui, &label, Font::Text, 11.0, pal.ink).size().x.max(30.0) / 2.0;
         let cx = x.clamp(tr.min.x + half, tr.max.x - half);
         if cx - half > last_right + 10.0 {
@@ -449,7 +449,7 @@ fn event_label(e: &crate::records::EventRow) -> String {
     }
 }
 
-/// 对一只怪物的手动登记做的修改
+/// A change to one monster's manual entry
 type ManualEdit = Box<dyn FnOnce(&mut crate::bestiary::Manual)>;
 
 fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
@@ -530,7 +530,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
 
     let rows = crate::bestiary::with(|b| crate::bestiary::rows(b));
     let i = i18n::current();
-    // 进度
+    // Progress
     let crownable: Vec<&crate::bestiary::Row> = rows.iter().filter(|r| !r.fixed).collect();
     let progress = [
         (i18n::t("records.big_crowns"), crownable.iter().filter(|r| r.big).count(), crownable.len()),
@@ -559,7 +559,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     });
     ui.add_space(30.0);
 
-    // 筛选
+    // Filters
     let mut kinds: Vec<String> = rows.iter().map(|r| r.species.clone()).collect();
     kinds.sort();
     kinds.dedup();
@@ -640,7 +640,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         let (rr, _) = ui.allocate_exact_size(vec2(width, 46.0), Sense::hover());
         let mut x = rr.min.x;
         let cy = rr.center().y;
-        // 名字和种类
+        // Name and type
         let mut nx = x;
         if r.done() {
             widgets::diamond(ui, pos2(nx + 2.5, cy - 7.0), 5.0, pal.accent);
@@ -649,7 +649,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         text_at(ui, pos2(nx, cy - 7.0), Align2::LEFT_CENTER, &name, Font::TextBold, 14.0, pal.ink);
         text_at(ui, pos2(x, cy + 9.0), Align2::LEFT_CENTER, &i.game(&r.species), Font::Text, 11.0, pal.mute);
         x += cols[0] + 14.0;
-        // 大金、小金
+        // Large and small crowns
         for (j, (on, big)) in [(r.big, true), (r.small, false)].into_iter().enumerate() {
             let cr = Rect::from_center_size(pos2(x + 13.0, cy), vec2(26.0, 22.0));
             let resp = ui.interact(
@@ -667,7 +667,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             }
             x += cols[1 + j] + 14.0;
         }
-        // 研究格
+        // Research cells
         for k in 0..9u8 {
             let sr = Rect::from_min_size(pos2(x + k as f32 * 17.0, cy - 5.0), vec2(14.0, 10.0));
             let resp = ui.interact(sr.expand(1.5), egui::Id::unique(("res", &r.key, k)), Sense::click());
@@ -688,7 +688,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             }
         }
         x += cols[3] + 14.0;
-        // 导航等级（手动）
+        // Navigation level (manual)
         for k in 0..3u8 {
             let sr = Rect::from_min_size(pos2(x + k as f32 * 17.0, cy - 5.0), vec2(14.0, 10.0));
             let resp = ui.interact(sr.expand(1.5), egui::Id::unique(("nav", &r.key, k)), Sense::click());

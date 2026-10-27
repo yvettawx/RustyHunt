@@ -1,11 +1,11 @@
-//! 主题包校验：格式、字段引用、资源限制。命令行工具 `theme-check` 和
-//! 主题页导入时共用。
+//! Theme package checks: format, field references, resource limits. Shared by the `theme-check`
+//! command-line tool and theme import on the Themes page.
 
 use std::path::{Path, PathBuf};
 
 use crate::theme::{MAX_IMAGE_SIDE, MAX_PACK_BYTES, Theme};
 
-/// 主题可以改写的内置模块；带 `.` 的是插件模块，不检查。
+/// Built-in modules a theme may replace; IDs with a `.` are plugin modules and aren't checked.
 pub const MODULES: [&str; 9] = ["monster", "buffs", "damage", "area", "player", "clock", "weapon", "base", "perf"];
 
 #[derive(Debug, Default)]

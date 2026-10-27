@@ -1,7 +1,7 @@
-//! 主题：令牌、组件样式、模块模板三层。
+//! Themes: three layers, tokens, component styles and module templates.
 //!
-//! 主题文件是 XML，命名空间 `urn:rustyhunt:theme:1`，格式见 `docs/theme.xsd`。
-//! 下层没写的部分继承内置默认值。
+//! Theme files are XML in the `urn:rustyhunt:theme:1` namespace; the format is in `docs/theme.xsd`.
+//! Anything a layer leaves out inherits the built-in defaults.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -14,7 +14,7 @@ use crate::template::{self, Template};
 pub const NAMESPACE: &str = "urn:rustyhunt:theme:1";
 pub const SCHEMA_VERSION: u32 = 1;
 
-/// 主题包的大小上限
+/// Size limit of a theme package
 pub const MAX_PACK_BYTES: u64 = 20 * 1024 * 1024;
 pub const MAX_IMAGE_SIDE: u32 = 4096;
 
@@ -44,14 +44,14 @@ pub struct Manifest {
     pub version: String,
     pub author: String,
     pub tags: Vec<String>,
-    /// 需要的程序版本，例如 "1.0"
+    /// Required app version, e.g. "1.0"
     pub app: String,
     pub preview: Option<PathBuf>,
-    /// 主界面的底色基于浅色还是深色
+    /// Whether the main window's base colors are light or dark
     pub dark: bool,
 }
 
-/// 第一层：令牌。颜色按名字存，模板里也能用名字引用。
+/// Layer one: tokens. Colors are stored by name and templates can refer to them by name.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tokens {
     pub colors: BTreeMap<String, Color32>,
@@ -64,7 +64,7 @@ pub struct Tokens {
 pub struct FontToken {
     pub family: String,
     pub weight: u16,
-    /// 主题包里自带的字体文件
+    /// Font files bundled in the theme package
     pub src: Option<PathBuf>,
 }
 
@@ -82,7 +82,7 @@ impl Tokens {
     }
 }
 
-/// 局内（overlay）的默认令牌。
+/// Default in-game (overlay) tokens.
 pub fn overlay_defaults() -> BTreeMap<String, Color32> {
     [
         ("text", Color32::from_rgb(0xf2, 0xf0, 0xe9)),
@@ -108,7 +108,7 @@ pub fn overlay_defaults() -> BTreeMap<String, Color32> {
     .collect()
 }
 
-/// 主界面的默认令牌：浅色和深色两套。
+/// Default main window tokens: a light set and a dark set.
 pub fn window_defaults(dark: bool) -> BTreeMap<String, Color32> {
     let hex = |s: &str| color::parse(s).unwrap();
     let pairs: [(&str, &str); 9] = if dark {
@@ -190,7 +190,7 @@ pub struct BarStyle {
     pub shape: BarShape,
     pub skew: f32,
     pub radius: f32,
-    /// 条高度的倍率；模块里每种条的基础高度不同
+    /// Bar height multiplier; each kind of bar in a module has its own base height
     pub height: f32,
     pub segments: u32,
     pub gap: f32,
@@ -263,7 +263,7 @@ pub enum SwitchShape {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PanelShape {
-    /// 不画底板（默认，"无感"）
+    /// Draw no backing (the default, unobtrusive)
     #[default]
     None,
     Rect,
@@ -294,17 +294,17 @@ impl Default for PanelStyle {
     }
 }
 
-/// 第二层：组件样式。
+/// Layer two: component styles.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Styles {
     pub bar: BarStyle,
-    /// 单独给某种条覆盖样式：monster-hp、part、ailment、player-hp、stamina、damage
+    /// Style override for one kind of bar: monster-hp, part, ailment, player-hp, stamina, damage
     pub bars: BTreeMap<String, BarStyle>,
     pub tag: TagStyle,
     pub pip: PipShape,
     pub switch: SwitchShape,
     pub panel: PanelStyle,
-    /// 文字阴影：0 关，1 默认
+    /// Text shadow: 0 off, 1 default
     pub text_shadow: f32,
 }
 
@@ -319,12 +319,12 @@ pub struct Theme {
     pub manifest: Manifest,
     pub tokens: Tokens,
     pub styles: Styles,
-    /// 第三层：替换整个模块的模板，按模块编号
+    /// Layer three: templates replacing whole modules, by module ID
     pub modules: BTreeMap<String, Template>,
-    /// 主题包目录；内置主题为 None
+    /// Theme package directory; None for built-in themes
     pub dir: Option<PathBuf>,
     pub builtin: bool,
-    /// 只影响某个模块时出错：这个模块退回默认，其他照常
+    /// Errors that affect only one module: that module falls back to the default, the rest is unaffected
     pub module_errors: Vec<ThemeError>,
 }
 
@@ -358,8 +358,8 @@ impl Theme {
         self.tokens.color(name)
     }
 
-    /// 读取主题包目录（里面有 theme.xml）。整个文件格式错误时返回错误；
-    /// 单个模块模板出错时只记在 `module_errors` 里。
+    /// Reads a theme package directory (containing theme.xml). Returns an error when the whole file is malformed;
+    /// errors in a single module template only go into `module_errors`.
     pub fn load_dir(dir: &Path) -> Result<Theme, ThemeError> {
         let file = dir.join("theme.xml");
         let text = std::fs::read_to_string(&file).map_err(|e| ThemeError {
@@ -413,12 +413,12 @@ impl Ctx<'_> {
     }
 }
 
-/// 颜色值可以直接写，也可以写令牌名。
+/// A color value can be written directly or as a token name.
 pub fn resolve_color(v: &str, tokens: &Tokens) -> Option<Color32> {
     color::parse(v).or_else(|| tokens.colors.get(v).copied())
 }
 
-/// 解析 theme.xml 文本。`dir` 是主题包目录，用来读 `<include>`。
+/// Parses theme.xml text. `dir` is the theme package directory, used to read `<include>`.
 pub fn parse(text: &str, file: &Path, dir: Option<&Path>) -> Result<Theme, ThemeError> {
     let doc = roxmltree::Document::parse(text).map_err(|e| ThemeError {
         file: file.to_path_buf(),
@@ -675,7 +675,7 @@ fn parse_module(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) {
     }
 }
 
-/// 比较版本号（只看主、次版本）：`required` 是否不高于 `current`。
+/// Compares versions (major and minor only): whether `required` is no higher than `current`.
 pub fn version_ok(required: &str, current: &str) -> bool {
     let parse = |v: &str| -> (u32, u32) {
         let mut it = v.split('.').map(|x| x.trim().parse::<u32>().unwrap_or(0));
@@ -718,7 +718,7 @@ mod tests {
         assert_eq!(t.styles.bar("part").empty, Pattern::Hatch);
         assert_eq!(t.styles.bar("monster-hp").segments, 10);
         assert_eq!(t.styles.tag.shape, TagShape::Cut);
-        // 没写的令牌继承默认
+        // Tokens left out inherit the defaults
         assert_eq!(t.tokens.color("danger"), Color32::from_rgb(0xe5, 0x48, 0x4d));
     }
 

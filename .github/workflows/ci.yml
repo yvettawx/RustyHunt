@@ -1,4 +1,4 @@
-name: 检查
+name: Check
 
 on:
   push:
@@ -17,9 +17,9 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: 格式
+      - name: Format
         run: cargo fmt --all -- --check
       - name: clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - name: 测试
+      - name: Test
         run: cargo test --workspace --locked

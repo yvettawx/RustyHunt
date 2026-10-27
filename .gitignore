@@ -1,9 +1,9 @@
 target/
 /dist
 
-# 上游 HunterPie 源码，只作参考
+# Upstream HunterPie source, for reference only
 /upstream
 
-# 编辑器
+# Editors
 /.vscode
 /.idea

@@ -1,6 +1,6 @@
-# 推 v1.2.3 这样的标签时打包，建一个草稿版本；检查无误后在网页上点发布。
+# On a tag like v1.2.3, package the app and create a draft release; publish it on the web page after checking.
 
-name: 发布
+name: Release
 
 on:
   push:
@@ -18,17 +18,17 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-      - name: 核对版本号
+      - name: Check version
         shell: pwsh
         run: |
           $v = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
-          if ("v$v" -ne $env:GITHUB_REF_NAME) { throw "标签 $env:GITHUB_REF_NAME 和 Cargo.toml 的版本 $v 不一致" }
-      - name: 测试
+          if ("v$v" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME does not match version $v in Cargo.toml" }
+      - name: Test
         run: cargo test --workspace --locked
-      - name: 打包
+      - name: Package
         shell: pwsh
         run: ./scripts/package.ps1
-      - name: 建草稿版本
+      - name: Create draft release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}

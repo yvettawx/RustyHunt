@@ -1,4 +1,4 @@
-//! 崩溃日志：写在本地，不上传。下次启动时发通知。
+//! Crash logs: written locally, never uploaded. A notification is sent on the next start.
 
 use std::io::Write;
 use std::sync::OnceLock;
@@ -36,7 +36,7 @@ pub fn install() {
     }));
 }
 
-/// 上次运行留下了没报告过的崩溃日志，就发一条通知。
+/// Sends a notification if the last run left a crash log that hasn't been reported.
 pub fn report_previous(shared: &Shared) {
     let dir = rh_core::paths::crash();
     let seen = dir.join(".seen");

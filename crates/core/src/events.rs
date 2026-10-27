@@ -1,4 +1,4 @@
-//! 比较前后两帧快照，得到事件。事件列表见 `docs/events.md`，插件可以订阅。
+//! Compares two consecutive snapshots to produce events. The event list is in `docs/events.md`; plugins can subscribe.
 
 use serde::{Deserialize, Serialize};
 
@@ -73,7 +73,7 @@ impl Event {
     ];
 }
 
-/// 事件列表的版本，加事件时升小版本。
+/// Version of the event list; bump the minor version when adding events.
 pub const EVENTS_VERSION: &str = "1.0";
 
 pub fn diff(prev: &Snapshot, cur: &Snapshot) -> Vec<Event> {

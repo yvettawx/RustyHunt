@@ -1,7 +1,7 @@
-# 推 maps-20261101 这样的标签时，把 maps 目录里的地址表单独发布。
-# 程序启动时会下载本地没有的地址表，不用升级程序。
+# On a tag like maps-20261101, publish the address maps in maps on their own.
+# The app downloads maps it doesn't have at startup, without an app upgrade.
 
-name: 地址表
+name: Address maps
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 建草稿版本
+      - name: Create draft release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -23,6 +23,6 @@ jobs:
           $maps = Get-ChildItem maps/*.map | Sort-Object Name
           $maps | ForEach-Object { "$((Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower())  $($_.Name)" } |
             Set-Content -Encoding ascii SHA256SUMS
-          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --latest=false --title "地址表 $($env:GITHUB_REF_NAME.Substring(5))" `
-            --notes "游戏版本：$(($maps | ForEach-Object { $_.BaseName.Split('.')[1] }) -join '、')" `
+          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --latest=false --title "Address maps $($env:GITHUB_REF_NAME.Substring(5))" `
+            --notes "Game versions: $(($maps | ForEach-Object { $_.BaseName.Split('.')[1] }) -join ', ')" `
             @($maps.FullName) SHA256SUMS

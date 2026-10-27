@@ -1,4 +1,4 @@
-//! 颜色解析：`#rgb`、`#rrggbb`、`#rrggbbaa`、`rgb(r,g,b)`、`rgba(r,g,b,a)`。
+//! Color parsing: `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb(r,g,b)`, `rgba(r,g,b,a)`.
 
 use egui::Color32;
 
@@ -32,7 +32,7 @@ pub fn to_hex(c: Color32) -> String {
     }
 }
 
-/// 乘上透明度。
+/// Multiplies by an opacity.
 pub fn fade(c: Color32, alpha: f32) -> Color32 {
     c.gamma_multiply(alpha.clamp(0.0, 1.0))
 }
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn hex_round_trip() {
         assert_eq!(to_hex(parse("#ff6b1a").unwrap()), "#ff6b1a");
-        // 半透明色内部是预乘的，来回转换只保证接近
+        // Translucent colors are premultiplied internally, so a round trip is only approximately equal
         let back = parse(&to_hex(parse("#80808080").unwrap())).unwrap();
         assert!((back.a() as i32 - 0x80).abs() <= 1);
     }

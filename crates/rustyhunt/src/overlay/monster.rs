@@ -1,5 +1,5 @@
-//! 怪物模块：目标血条（魂系位置）、精力、部位（每个两条）、异常、播报。
-//! 默认放在底部；也可以放在右侧。
+//! Monster module: target HP bar (Souls-style position), stamina, parts (two bars each), ailments, callouts.
+//! Placed at the bottom by default; can also go on the right.
 
 use egui::{Align2, Color32, Vec2, vec2};
 use rh_core::model::{Ailment, Crown, Monster, Part, PartKind};
@@ -12,7 +12,7 @@ use super::{Frame, State, ToastStyle, mmss, thousands};
 const BOTTOM_W: f32 = 820.0;
 const SIDE_W: f32 = 380.0;
 
-/// 部位、异常这一帧该显示成什么样。
+/// How a part or ailment should look this frame.
 struct Look {
     alpha: f32,
     hot: bool,
@@ -75,7 +75,7 @@ fn ailment_value(a: &Ailment) -> String {
     }
 }
 
-/// 名字这一行底部对齐时，字顶部的位置（按字号估的下沉量）。
+/// Where the top of the text is when the name row is bottom-aligned (sink estimated from the font size).
 fn top_for_bottom(bottom: f32, size: f32, font: Font) -> f32 {
     let line = match font {
         Font::Num | Font::NumHeavy | Font::NumBold => 1.22,
@@ -97,7 +97,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     let accent = cv.tok("accent");
     let ratio = m.hp_ratio();
 
-    // 残影：受伤后先停一下再追上
+    // Trail: pause briefly after damage, then catch up
     let ghost = st.ghost.entry(m.uid).or_insert(m.hp);
     if *ghost < m.hp {
         *ghost = m.hp;
@@ -115,7 +115,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     }
     let top_of_header = y;
 
-    // 名字这一行
+    // Name row
     let header_h = if side { 26.0 } else { 28.0 };
     let bottom = y + header_h;
     let name = f.i18n.monster(&m.key);
@@ -186,7 +186,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         }
     }
 
-    // 右侧：血量数值、连击伤害、百分比
+    // Right side: HP value, combo damage, percent
     let mut rx = w;
     if cfg.shows("m-pct") {
         let big = if side { 30.0 } else { 34.0 };
@@ -248,7 +248,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     }
     y = bottom + 7.0;
 
-    // 血条
+    // HP bar
     let capz = m.capturable() && m.alive();
     let mut layers = Vec::new();
     if cfg.shows("m-ghost") {
@@ -281,7 +281,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         y += 2.0;
     }
 
-    // 底下一行：精力数值，底部布局时异常也排在这一行
+    // Bottom row: stamina value; in the bottom layout ailments go in this row too
     y += 6.0;
     let mut row_h = 0.0f32;
     let mut fx = 0.0;
@@ -302,7 +302,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             let color = if a.active() { accent } else { text };
             let name = f.i18n.game(&a.key);
             let v = ailment_value(a);
-            // 放不下整项就不画了，不超出血条的右端
+            // Skip an item that doesn't fit whole; never go past the right end of the HP bar
             let item_w = cv.measure(&name, Font::Text, 11.0, 0.0).x + 36.0 + cv.measure(&v, Font::NumBold, 10.0, 0.0).x;
             if fx + item_w > w {
                 break;
@@ -347,12 +347,12 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         }
     }
 
-    // 十字定位标
+    // Crosshair marker
     let ry = if side { top_of_header + 26.0 } else { bottom - 2.0 };
     cv.crosshair(-20.0, ry);
     cv.crosshair(w + 11.0, ry);
 
-    // 播报，贴在模块左上方
+    // Callouts, above the module's top-left corner
     if cfg.shows("m-toast")
         && let Some(t) = st.toasts.back()
     {
@@ -377,7 +377,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     vec2(w, y)
 }
 
-/// 区块标题：一个词加一条细线；部位区块后面有图例。
+/// Section title: one word and a thin line; the parts section has a legend after it.
 fn section(cv: &Canvas, f: &Frame, x: f32, y: f32, w: f32, label: &str, legend: bool) -> f32 {
     let mute = cv.tok("text-mute");
     let sz = cv.text_ex(x, y, label, Font::TextBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);

@@ -1,4 +1,4 @@
-//! 插件宿主：WebAssembly 运行时和权限。
+//! Plugin host: WebAssembly runtime and permissions.
 
 pub mod manifest;
 pub mod runtime;

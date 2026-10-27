@@ -1,4 +1,4 @@
-//! 热键：只在游戏或本程序的窗口在前台时轮询，不占用全局按键。
+//! Hotkeys: polled only while the game or one of our windows is in the foreground, so no keys are grabbed globally.
 
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -47,7 +47,7 @@ pub fn spawn(shared: Arc<Shared>) {
                 fire(&hk.layout_mode, Action::ToggleLayout, &mut edges);
                 fire(&hk.density, Action::CycleDensity, &mut edges);
                 fire(&hk.cycle_target, Action::CycleTarget, &mut edges);
-                // 插件动作：用户改过的键优先，没改过用插件给的默认键
+                // Plugin actions: the user's key wins, otherwise the plugin's default
                 let mut plugin_keys: std::collections::BTreeMap<String, String> = crate::plugins::default_keys().into_iter().collect();
                 plugin_keys.extend(hk.plugin.clone());
                 for (id, key) in &plugin_keys {
@@ -62,7 +62,7 @@ pub fn spawn(shared: Arc<Shared>) {
                         );
                     }
                 }
-                // 按住显示全部
+                // Hold to show everything
                 let down = parse(&hk.show_all).is_some_and(|k| edges.poll(&k).0);
                 if down != held {
                     held = down;

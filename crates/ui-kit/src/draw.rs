@@ -1,5 +1,5 @@
-//! 画 overlay 用的基础零件：带阴影的字、名牌、条、破坏格、十字定位标、皇冠。
-//! 坐标都是设计单位（参考画面 1080 高），由 [`Canvas`] 换算到屏幕。
+//! Basic pieces for drawing the overlay: shadowed text, name tags, bars, break pips, the crosshair marker, crowns.
+//! Coordinates are design units (on a 1080-high reference frame), converted to the screen by [`Canvas`].
 
 use std::sync::Arc;
 
@@ -14,15 +14,15 @@ use crate::theme::{BarShape, BarStyle, PanelShape, Pattern, PipShape, TagShape, 
 #[derive(Clone)]
 pub struct Canvas<'a> {
     pub painter: Painter,
-    /// 设计坐标 (0, 0) 在屏幕上的位置
+    /// Where design coordinate (0, 0) is on screen
     pub origin: Pos2,
-    /// 每个设计单位对应多少屏幕点
+    /// Screen points per design unit
     pub scale: f32,
     pub opacity: f32,
     pub theme: &'a Theme,
 }
 
-/// 条上的一层：从 `from` 到 `to`（0 到 1）涂 `color`。
+/// One layer of a bar: paints `color` from `from` to `to` (0 to 1).
 #[derive(Debug, Clone, Copy)]
 pub struct Layer {
     pub from: f32,
@@ -59,7 +59,7 @@ impl<'a> Canvas<'a> {
         Rect::from_min_size(self.p(x, y), vec2(w, h) * self.scale)
     }
 
-    /// 屏幕矩形换回设计坐标。
+    /// Converts a screen rect back to design coordinates.
     pub fn to_design(&self, r: Rect) -> Rect {
         Rect::from_min_max(
             pos2((r.min.x - self.origin.x) / self.scale, (r.min.y - self.origin.y) / self.scale),
@@ -74,7 +74,7 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    /// 平移到 (x, y) 并按 `s` 缩放的子画布。
+    /// A sub-canvas translated to (x, y) and scaled by `s`.
     pub fn sub(&self, x: f32, y: f32, s: f32) -> Canvas<'a> {
         Canvas {
             origin: self.p(x, y),
@@ -106,7 +106,7 @@ impl<'a> Canvas<'a> {
         self.painter.layout_job(job)
     }
 
-    /// 字的大小，设计单位。
+    /// Text size, in design units.
     pub fn measure(&self, text: &str, font: Font, size: f32, spacing: f32) -> Vec2 {
         if text.is_empty() {
             return Vec2::ZERO;
@@ -114,7 +114,7 @@ impl<'a> Canvas<'a> {
         self.galley(text, font, size, Color32::WHITE, spacing).size() / self.scale
     }
 
-    /// 放不下时从后面截断，加省略号。
+    /// Truncates from the end with an ellipsis when it doesn't fit.
     pub fn fit(&self, text: &str, font: Font, size: f32, max_w: f32) -> String {
         if self.measure(text, font, size, 0.0).x <= max_w {
             return text.to_string();
@@ -129,7 +129,7 @@ impl<'a> Canvas<'a> {
         "…".into()
     }
 
-    /// 带阴影的字。返回设计单位的大小。
+    /// Shadowed text. Returns its size in design units.
     pub fn text(&self, x: f32, y: f32, text: &str, font: Font, size: f32, color: Color32, align: Align2) -> Vec2 {
         self.text_ex(x, y, text, font, size, color, align, 0.0, true)
     }
@@ -163,13 +163,13 @@ impl<'a> Canvas<'a> {
             .line_segment([self.p(a.0, a.1), self.p(b.0, b.1)], Stroke::new(width * self.scale, self.c(color)));
     }
 
-    /// 细线加一点阴影，用来画模块标题后面的线、条两端的竖线。
+    /// A thin line with a little shadow, for the line after module titles and the end caps of bars.
     pub fn rule(&self, x0: f32, x1: f32, y: f32, color: Color32) {
         self.line((x0, y + 0.5), (x1, y + 0.5), 1.0, fade(self.tok("shadow"), 0.4));
         self.line((x0, y), (x1, y), 1.0, color);
     }
 
-    /// 黑色名牌。返回大小。
+    /// Black name tag. Returns its size.
     pub fn tag(&self, x: f32, y: f32, text: &str, font: Font, size: f32, pad: (f32, f32, f32, f32), bg: Color32, fg: Color32) -> Vec2 {
         let t = self.measure(text, font, size, 0.06);
         let w = t.x + pad.0 + pad.2;
@@ -184,7 +184,7 @@ impl<'a> Canvas<'a> {
         vec2(t.x + pad.0 + pad.2, t.y + pad.1 + pad.3)
     }
 
-    /// 按主题的名牌形状填一个框。
+    /// Fills a box in the theme's name tag shape.
     pub fn shape_box(&self, x: f32, y: f32, w: f32, h: f32, color: Color32) {
         let st = &self.theme.styles.tag;
         match st.shape {
@@ -208,7 +208,7 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    /// 模块底板：默认不画（无感），主题可以加。
+    /// Module backing: not drawn by default (unobtrusive); themes can add one.
     pub fn panel(&self, x: f32, y: f32, w: f32, h: f32) {
         let p = &self.theme.styles.panel;
         let (x, y, w, h) = (x - p.padding, y - p.padding, w + p.padding * 2.0, h + p.padding * 2.0);
@@ -309,9 +309,9 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    /// 按主题样式画一根条。`kind` 选 `<bar for="...">` 的覆盖样式；
-    /// `hatch`、`caps` 是这根条的默认样子（空槽画斜线、两端加竖线），
-    /// 主题单独写了这种条的样式时以主题为准。
+    /// Draws a bar in the theme's style. `kind` picks the `<bar for="...">` override;
+    /// `hatch` and `caps` are this bar's default look (hatched track, end caps),
+    /// and a theme style written for this kind of bar takes precedence.
     pub fn bar(&self, kind: &str, x: f32, y: f32, w: f32, h: f32, layers: &[Layer], hatch: bool) {
         self.bar_ex(kind, x, y, w, h, layers, hatch, false);
     }
@@ -378,7 +378,7 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    /// 条两端的小竖线。
+    /// Small vertical caps at both ends of a bar.
     pub fn caps(&self, x: f32, y: f32, w: f32, h: f32) {
         let c = self.tok("text");
         for cx in [x - 5.0, x + w + 5.0] {
@@ -387,7 +387,7 @@ impl<'a> Canvas<'a> {
         }
     }
 
-    /// 破坏格：`n` 个，前 `filled` 个实心。从右往左排时传 `right_align`。
+    /// Break pips: `n` of them, the first `filled` solid. Pass `right_align` to lay them out right to left.
     pub fn pips(&self, x: f32, y: f32, n: i32, filled: i32, size: f32, gap: f32, color: Color32) -> f32 {
         let shape = self.theme.styles.pip;
         for i in 0..n.max(0) {
@@ -423,14 +423,14 @@ impl<'a> Canvas<'a> {
         self.painter.circle_filled(self.p(cx, cy), r * self.scale, self.c(color));
     }
 
-    /// 十字定位标（莱茵风格），半透明。
+    /// Crosshair marker (Rhine style), translucent.
     pub fn crosshair(&self, x: f32, y: f32) {
         let c = fade(self.tok("text"), 0.45);
         self.line((x + 4.5, y), (x + 4.5, y + 9.0), 1.0, c);
         self.line((x, y + 4.5), (x + 9.0, y + 4.5), 1.0, c);
     }
 
-    /// 皇冠图标，16×12 的设计尺寸。
+    /// Crown icon, 16x12 design units.
     pub fn crown(&self, x: f32, y: f32, w: f32, gold: bool) {
         let s = w / 16.0;
         let pts: Vec<(f32, f32)> = vec![(1.0, 10.0), (2.0, 3.0), (5.5, 6.5), (8.0, 1.0), (10.5, 6.5), (14.0, 3.0), (15.0, 10.0)];

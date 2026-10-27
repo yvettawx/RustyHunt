@@ -1,4 +1,4 @@
-//! 读取线程、overlay、主界面共用的状态。
+//! State shared by the reader thread, the overlay and the main window.
 
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -14,17 +14,17 @@ use crate::notify::Notifications;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Connection {
-    /// 在找游戏进程
+    /// Looking for the game process
     Searching,
     Connected,
-    /// 没有这个版本的地址表，停止读取
+    /// No address map for this version; reading stopped
     MapMismatch {
         version: String,
         latest: Option<String>,
     },
-    /// 打不开进程（权限不够等）
+    /// Can't open the process (not enough rights, for example)
     Failed(String),
-    /// 没有游戏，用演示数据
+    /// No game; using demo data
     Demo,
 }
 
@@ -36,21 +36,21 @@ pub struct Live {
     pub exe: String,
     pub version: Option<String>,
     pub attached_at: Option<Instant>,
-    /// 游戏客户区在屏幕上的位置，物理像素
+    /// The game's client area on screen, in physical pixels
     pub game_rect: Option<platform::window::Rect>,
     pub game_foreground: bool,
     pub game_minimized: bool,
-    /// 上一帧读内存花的时间
+    /// Time spent reading memory last frame
     pub read_ms: f32,
     pub actual_hz: f32,
-    /// 自己每 2 秒的 DPS，用来画曲线
+    /// Our DPS every 2 seconds, for the curve
     pub dps_history: Vec<f32>,
-    /// 当前目标怪物
+    /// Current target monster
     pub target: Option<u64>,
-    /// 最近一连串攻击的伤害（目标怪物）
+    /// Damage of the latest attack chain (on the target monster)
     pub combo_damage: f32,
     pub combo_at: f64,
-    /// 读取出错的计数，日志里按次数汇总
+    /// Count of read errors, summarized by count in the log
     pub errors: u64,
 }
 
@@ -82,13 +82,13 @@ impl Live {
         matches!(self.connection, Connection::Connected)
     }
 
-    /// 有数据可显示：连上了游戏，或者在演示
+    /// There is data to show: connected to the game, or in demo mode
     pub fn has_data(&self) -> bool {
         matches!(self.connection, Connection::Connected | Connection::Demo)
     }
 }
 
-/// 热键、托盘、主界面发出的动作。
+/// Actions sent by hotkeys, the tray and the main window.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     ToggleOverlay,
@@ -101,7 +101,7 @@ pub enum Action {
     Plugin { plugin: String, action: String },
 }
 
-/// 最近的事件，overlay 用来播报，主界面用来显示时间轴。
+/// Recent events: the overlay uses them for callouts, the main window for the timeline.
 #[derive(Default)]
 pub struct EventLog {
     pub items: VecDeque<(f64, Event)>,
@@ -125,9 +125,9 @@ pub struct Shared {
     pub theme: RwLock<Arc<Theme>>,
     pub actions: Mutex<VecDeque<Action>>,
     pub layout_mode: AtomicBool,
-    /// 按住"显示全部"
+    /// "Show everything" is held
     pub show_all: AtomicBool,
-    /// overlay 上一帧的耗时，微秒
+    /// Overlay time spent on the last frame, microseconds
     pub frame_us: AtomicU32,
     pub ctx: OnceLock<egui::Context>,
     pub started: Instant,
@@ -161,7 +161,7 @@ impl Shared {
         self.settings.read().unwrap()
     }
 
-    /// 改设置；改完标记为待保存，由主线程隔一会儿写盘。
+    /// Changes settings; marks them dirty so the main thread writes them to disk a little later.
     pub fn edit_settings<R>(&self, f: impl FnOnce(&mut Settings) -> R) -> R {
         let r = f(&mut self.settings.write().unwrap());
         self.settings_dirty.store(true, Ordering::Release);
@@ -201,7 +201,7 @@ impl Shared {
         self.actions.lock().unwrap().drain(..).collect()
     }
 
-    /// 请所有窗口重绘。读取线程在数据变化时调用。
+    /// Asks every window to repaint. Called by the reader thread when data changes.
     pub fn repaint(&self) {
         if let Some(ctx) = self.ctx.get() {
             ctx.request_repaint_of(egui::ViewportId::ROOT);

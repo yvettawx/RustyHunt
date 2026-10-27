@@ -1,11 +1,11 @@
-//! 演示数据：没连上游戏时驱动 overlay，用来调布局和看主题效果。
-//! 怪物、部位、异常都取自真实的世界数据，数值按一场普通的狩猎随机变化。
+//! Demo data: drives the overlay when the game isn't connected, for arranging the layout and previewing themes.
+//! Monsters, parts and ailments come from real World data; values change randomly like an ordinary hunt.
 
 use rh_core::model::*;
 
 use crate::data::data;
 
-/// 一个可重复的小随机数发生器，不需要额外依赖。
+/// A small repeatable random number generator, so no extra dependency is needed.
 struct Rng(u64);
 
 impl Rng {
@@ -40,8 +40,8 @@ pub struct Demo {
     flinch: Vec<(f32, f32)>,
 }
 
-const TARGET: i32 = 96; // 猛爆碎龙
-const OTHERS: [i32; 2] = [39, 76]; // 爆鳞龙、碎龙
+const TARGET: i32 = 96; // Raging Brachydios
+const OTHERS: [i32; 2] = [39, 76]; // Bazelgeuse, Brachydios
 
 impl Default for Demo {
     fn default() -> Self {
@@ -204,7 +204,7 @@ impl Demo {
                 palico: false,
             })
             .collect();
-        // 已经打了一阵子：伤害按各自的输出速度预先累计
+        // Already some time into the fight: pre-accumulate damage at each member's damage rate
         let elapsed = 50.0 * 60.0 - self.quest_left;
         let mut party: Vec<PartyMember> = party;
         for (p, rate) in party.iter_mut().zip([72.0f32, 62.0, 48.0, 42.0]) {
@@ -246,7 +246,7 @@ impl Demo {
         };
     }
 
-    /// 前进 `dt` 秒，返回新的快照。
+    /// Advances `dt` seconds and returns the new snapshot.
     pub fn step(&mut self, dt: f32) -> Snapshot {
         self.t += dt as f64;
         let t = self.t as f32;
@@ -262,7 +262,7 @@ impl Demo {
             s.world_time = Some(((mins / 60.0) as u8, (mins % 60.0) as u8));
         }
 
-        // 队伍输出，按名次给不同的手速
+        // Party damage: different hand speeds by rank
         let rates = [1.2f32, 2.6, 3.2, 3.0];
         let avgs = [60.0f32, 24.0, 15.0, 14.0];
         let mut dealt = 0.0;
@@ -349,7 +349,7 @@ impl Demo {
             }
         }
 
-        // 自身：偶尔受伤、红血慢慢回来、低血时喝药
+        // Self: takes hits now and then, red HP recovers slowly, drinks a potion when low
         let p = &mut s.player;
         if self.rng.chance(0.12 * dt) {
             let d = self.rng.range(18.0, 34.0);

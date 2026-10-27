@@ -1,23 +1,23 @@
-//! 插件清单 `plugin.toml`：编号、名称、简介、版本、作者、需要的程序版本、
-//! 权限、入口文件，以及注册的局内模块、热键动作、设置项、导出器、通知渠道。
+//! Plugin manifest `plugin.toml`: ID, name, summary, version, author, required app version,
+//! permissions, entry file, and the in-game modules, hotkey actions, settings, exporters and notification channels it registers.
 
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-/// 插件 API 的版本，按语义化版本管理（8.2）。
+/// Plugin API version, following semantic versioning (8.2).
 pub const API_VERSION: &str = "1.0";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum Permission {
-    /// 访问互联网（http_get）
+    /// Internet access (http_get)
     Net,
-    /// 读写插件自己的文件夹
+    /// Read and write the plugin's own folder
     Files,
-    /// 读图鉴（存档里的猎人笔记）
+    /// Read the Hunter's Notes (from the save)
     Save,
-    /// 在本机开一个只读的 HTTP 端口
+    /// Open a read-only local HTTP port
     Port,
 }
 
@@ -50,7 +50,7 @@ fn yes() -> bool {
 pub struct ModuleDecl {
     pub id: String,
     pub name: String,
-    /// 界面描述（模板）文件，格式和主题的模块模板相同
+    /// UI description (template) file, same format as a theme's module templates
     pub template: String,
     #[serde(default)]
     pub elements: Vec<Element>,
@@ -86,7 +86,7 @@ pub struct SettingDecl {
 pub struct ExporterDecl {
     pub id: String,
     pub name: String,
-    /// 导出文件的扩展名
+    /// File extension of the export
     pub ext: String,
 }
 
@@ -105,20 +105,20 @@ pub struct Manifest {
     pub version: String,
     #[serde(default)]
     pub author: String,
-    /// 需要的程序版本
+    /// Required app version
     #[serde(default = "default_app")]
     pub app: String,
-    /// 需要的插件 API 版本
+    /// Required plugin API version
     #[serde(default = "default_api")]
     pub api: String,
     #[serde(default = "default_entry")]
     pub entry: String,
     #[serde(default)]
     pub permissions: Vec<Permission>,
-    /// 订阅的事件，空表示不订阅
+    /// Subscribed events; empty means none
     #[serde(default)]
     pub events: Vec<String>,
-    /// 每秒收到几次数据快照，0 表示不要
+    /// Data snapshots per second; 0 means none
     #[serde(default)]
     pub frame_hz: u32,
     #[serde(default)]
@@ -179,7 +179,7 @@ impl Manifest {
         Ok(())
     }
 
-    /// 插件模块在设置和布局里用的编号：`插件编号.模块编号`
+    /// ID used for plugin modules in settings and layouts: `plugin ID.module ID`
     pub fn module_key(&self, module: &str) -> String {
         format!("{}.{module}", self.id)
     }

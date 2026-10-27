@@ -1,11 +1,12 @@
-//! 补丁与注入。两项都默认关闭，开启前弹窗确认：
+//! Patching and injection. Both are on by default and can be turned off in settings:
 //!
-//! - 完整性检查补丁：游戏会校验自己的代码段，改过代码（比如挂 hook）就会崩溃。
-//!   按地址表把两处校验跳过去；先核对原始字节，对不上就不动。游戏目录里有
-//!   Stracker's Loader 时它已经做了同样的事，这里跳过。
-//! - 伤害 hook：把 rustyhunt-native.dll 注入游戏，挂在伤害函数上，统计本地玩家
-//!   打大型怪物的伤害和会心，经本机端口交回来（协议见 `rh_core::native`）。
-//!   必须先有完整性检查补丁。
+//! - Integrity check patch: the game checksums its own code and crashes if it was changed (by a hook,
+//!   for example). Jumps over the two checks given in the address map, after checking the original
+//!   bytes; if they don't match nothing is touched. When Stracker's Loader is in the game folder it
+//!   already does the same, so this is skipped.
+//! - Damage hook: injects rustyhunt-native.dll into the game and hooks the damage function to count
+//!   the local player's damage and crits on large monsters, returned over a local port (protocol in
+//!   `rh_core::native`). Requires the integrity check patch.
 
 use std::io::{BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpStream};
@@ -71,13 +72,13 @@ fn set_status(f: impl FnOnce(&mut Status)) {
     f(s.get_or_insert_with(Status::default));
 }
 
-/// 补丁：(跳转起点, 跳转终点, 起点的原始字节, 终点的原始字节)
+/// Patch: (jump source, jump target, original bytes at the source, original bytes at the target)
 const CRC_PAIRS: [(&str, &str, &str, &str); 2] = [
     ("CRC_FUNC_1A", "CRC_FUNC_1B", "CRC_ORIGINAL_FUNC_1A", "CRC_ORIGINAL_FUNC_1B"),
     ("CRC_FUNC_2A", "CRC_FUNC_2B", "CRC_ORIGINAL_FUNC_2A", "CRC_ORIGINAL_FUNC_2B"),
 ];
 
-/// 从 a 跳到 b 的 6 字节：jmp rel32，再补一个 nop
+/// 6 bytes jumping from a to b: jmp rel32 plus a nop
 fn jump(a: u64, b: u64) -> [u8; 6] {
     let rel = (b as i64 - (a as i64 + 5)) as i32;
     let r = rel.to_le_bytes();
@@ -118,7 +119,7 @@ struct Session {
     map: AddressMap,
     process: Option<Process>,
     stracker: bool,
-    /// 已经打上的补丁：地址和原始字节，关掉时写回去
+    /// Patches applied: addresses and original bytes, written back when turned off
     patched: Vec<(u64, Vec<u8>)>,
     conn: Option<Conn>,
     injected: bool,
@@ -129,7 +130,7 @@ struct Session {
 
 fn dll_path() -> Option<PathBuf> {
     let dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
-    // 开发时 cargo 生成的文件名是下划线
+    // In development cargo names the file with underscores
     [DLL_NAME, "rustyhunt_native.dll"].iter().map(|n| dir.join(n)).find(|p| p.is_file())
 }
 
@@ -140,7 +141,7 @@ impl Session {
         let modules = platform::process::modules(pid).ok()?;
         let exe = Game::World.exe();
         let main = modules.iter().find(|m| m.name.eq_ignore_ascii_case(exe))?;
-        // Stracker's Loader 以 loader.dll 的名字载入游戏
+        // Stracker's Loader is loaded into the game as loader.dll
         let stracker = modules.iter().any(|m| m.name.eq_ignore_ascii_case("loader.dll"));
         set_status(|s| s.stracker = stracker);
         Some(Session {
@@ -182,7 +183,7 @@ impl Session {
             p.read_bytes(pb, &mut have_b).map_err(|e| e.to_string())?;
             let patch = jump(pa, pb);
             if have_a.starts_with(&patch) {
-                // 上次运行已经打过（主程序重启了，游戏没重启）
+                // Already patched by a previous run (the main program restarted, the game didn't)
                 plan.push((pa, None, want_a));
                 continue;
             }
@@ -227,7 +228,7 @@ impl Session {
         if self.injected {
             return Err(i18n::t("inj.ipc_none"));
         }
-        // 只注入一次；之后连不上就等下次重试
+        // Inject only once; if it can't connect afterwards, retry next time
         self.injected = true;
         let dll = dll_path().ok_or_else(|| format!("找不到 {DLL_NAME}"))?;
         log::info!("注入 {}", dll.display());
@@ -308,14 +309,14 @@ impl Sink for Injector {
         }
         let Some(s) = self.session.as_mut() else { return };
 
-        // 完整性检查补丁
+        // Integrity check patch
         if inj.crc_patch && s.patched.is_empty() && !s.stracker && now >= s.retry_at {
             match s.crc_on() {
                 Ok(()) => set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.patched"))),
                 Err(e) => {
                     fail(&i18n::t("inj.crc"), &e);
                     set_status(|st| st.crc = ItemStatus::Failed(e));
-                    // 字节对不上时不再反复尝试，等游戏或地址表变化
+                    // When the bytes don't match, stop retrying until the game or the map changes
                     s.retry_at = f64::INFINITY;
                 }
             }
@@ -323,14 +324,14 @@ impl Sink for Injector {
         if s.stracker {
             set_status(|st| st.crc = ItemStatus::Active(i18n::t("inj.handled")));
         }
-        // hook 挂着时不能撤补丁，否则游戏校验到改动会崩溃；等游戏重启
+        // The patch can't be removed while the hook is installed, or the game crashes when it sees the change; wait for a game restart
         if !inj.crc_patch && !s.patched.is_empty() && !s.hooked {
             s.crc_off();
             set_status(|st| st.crc = ItemStatus::Off);
         }
         let crc_ok = !s.patched.is_empty() || s.stracker;
 
-        // 伤害 hook
+        // Damage hook
         let want = inj.damage_hook && crc_ok && !(inj.solo_only && snap.online);
         if want && !s.hooked && now >= s.retry_at {
             match s.hook() {
@@ -364,7 +365,7 @@ impl Sink for Injector {
                 if let Some(st) = s.ask("STATS").as_deref().and_then(Stats::parse) {
                     *SPLIT.lock().unwrap() = Some(DamageSplit {
                         total: st.total as f32,
-                        // 伤害函数分不出物理和属性
+                        // The damage function can't tell raw from elemental
                         physical: None,
                         elemental: None,
                         critical: st.critical as f32,

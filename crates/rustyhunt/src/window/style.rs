@@ -1,4 +1,4 @@
-//! 主界面的颜色，从当前主题的 `window.*` 令牌取。
+//! Main window colors, taken from the current theme's `window.*` tokens.
 
 use egui::Color32;
 use ui_kit::Theme;
@@ -34,7 +34,7 @@ impl Pal {
         }
     }
 
-    /// 悬停时的浅底色
+    /// Light background on hover
     pub fn hover(&self) -> Color32 {
         if self.dark {
             Color32::from_rgba_unmultiplied(255, 255, 255, 10)

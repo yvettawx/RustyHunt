@@ -1,9 +1,9 @@
-//! 读存档 `SAVEDATA1000` 里的猎人笔记：每只大型怪物的讨伐数、捕获数、
-//! 最大和最小体型、研究等级。只读，不写。
+//! Reads the Hunter's Notes from the save `SAVEDATA1000`: for each large monster the slain and
+//! captured counts, largest and smallest size, and research level. Read-only, never written.
 //!
-//! 整个文件先用公开的 Blowfish 密钥解密；冰原起每个角色栏位又单独加密，
-//! 解法移植自 Cirilla（MIT 许可，Copyright (c) 2018 Wouter Visser），
-//! 它又来自 LEGENDFF/mhw-Savecrypt。
+//! The whole file is first decrypted with the public Blowfish key; from Iceborne on each
+//! character slot is encrypted again. The decryption is ported from Cirilla (MIT license,
+//! Copyright (c) 2018 Wouter Visser), which in turn comes from LEGENDFF/mhw-Savecrypt.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -19,15 +19,15 @@ const KEY: &[u8] = b"xieZjoe#P2134-3zmaghgpqoe0z8$3azeq";
 const MAGIC: [u8; 4] = [1, 0, 0, 0];
 const ICEBORNE_SIZE: usize = 11_284_704;
 
-/// 三个角色栏位的位置和长度；每个栏位后面跟 0x200 字节的校验块。
+/// Position and length of the three character slots; each slot is followed by a 0x200-byte checksum block.
 const SLOT_OFFSETS: [usize; 3] = [0x3010D8, 0x50AB98, 0x714658];
 const SLOT_LENGTH: usize = 0x2098C0;
 
 const GUILDCARD_MONSTERS: &str = include_str!("../../../data/world/guildcard_monsters.toml");
 
-/// 角色栏位内的偏移。参照 Cirilla 的 `misc/savedata.bt`，再用真实存档核对：
-/// 栏位开头 4 字节未知，然后是名字 64 字节和 7 个 int；
-/// 公会卡从 690 开始（开头是 Steam ID），猎人笔记在公会卡里 6923 字节处。
+/// Offsets inside a character slot. Based on Cirilla's `misc/savedata.bt` and checked against real saves:
+/// the slot starts with 4 unknown bytes, then the name (64 bytes) and 7 ints;
+/// the guild card starts at 690 (beginning with the Steam ID), and the Hunter's Notes are 6923 bytes into the guild card.
 const NAME_OFFSET: usize = 4;
 const GUILDCARD_OFFSET: usize = 690;
 const NOTES_OFFSET: usize = GUILDCARD_OFFSET + 6923;
@@ -54,13 +54,13 @@ impl std::error::Error for SaveError {}
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct MonsterRecord {
-    /// 公会卡上的序号
+    /// Index on the guild card
     pub index: usize,
-    /// 术语表里的键；不认识的序号为空
+    /// Key in the term table; empty for unknown indices
     pub key: String,
     pub slain: u16,
     pub captured: u16,
-    /// 体型百分比，例如 123 表示 1.23 倍；0 表示没有记录
+    /// Size in percent, e.g. 123 means 1.23x; 0 means no record
     pub largest: u16,
     pub smallest: u16,
     pub research: u8,
@@ -82,7 +82,7 @@ pub struct SaveFile {
     pub hunters: Vec<Hunter>,
 }
 
-/// 第一层：整个文件 Blowfish ECB（按小端读写每个 32 位字）。
+/// Layer one: the whole file in Blowfish ECB (each 32-bit word read and written little-endian).
 pub fn decrypt(mut data: Vec<u8>) -> Vec<u8> {
     let cipher = BlowfishLE::new_from_slice(KEY).expect("密钥长度合法");
     for chunk in data.as_chunks_mut::<8>().0 {
@@ -151,7 +151,7 @@ fn key_lengths(key_salt: u32, length: usize) -> [usize; 32] {
     out
 }
 
-/// 第二层：冰原的栏位加密。`data[offset+length..+0x200]` 是校验块。
+/// Layer two: Iceborne's slot encryption. `data[offset+length..+0x200]` is the checksum block.
 pub fn decrypt_region(data: &mut [u8], offset: usize, length: usize) {
     let key_salt = crc32(0xA37A_55D7, &data[offset + length..offset + length + 0x200]);
     let salt = salt(key_salt);
@@ -186,7 +186,7 @@ fn guildcard_keys() -> &'static HashMap<usize, String> {
     })
 }
 
-/// 公会卡序号对应的怪物键。
+/// Monster key for a guild card index.
 pub fn monster_key(index: usize) -> Option<&'static str> {
     guildcard_keys().get(&index).map(String::as_str)
 }
@@ -200,7 +200,7 @@ fn i32_at(b: &[u8], o: usize) -> i32 {
 }
 
 impl SaveFile {
-    /// 解析原始（加密的）存档文件内容。
+    /// Parses the raw (encrypted) save file contents.
     pub fn parse(raw: Vec<u8>) -> Result<SaveFile, SaveError> {
         if raw.len() != ICEBORNE_SIZE {
             return Err(SaveError::Size(raw.len()));
@@ -220,7 +220,7 @@ impl SaveFile {
             let name_raw = &s[NAME_OFFSET..ints];
             let name_end = name_raw.iter().position(|&b| b == 0).unwrap_or(64);
             let name = String::from_utf8_lossy(&name_raw[..name_end]).into_owned();
-            // 空栏位解出来是乱码；用过的栏位里公会卡开头是本存档的 Steam ID
+            // An empty slot decrypts to garbage; in a used slot the guild card starts with this save's Steam ID
             let card_id = u64::from_le_bytes(s[GUILDCARD_OFFSET..GUILDCARD_OFFSET + 8].try_into().unwrap());
             if card_id != steam_id || playtime == 0 {
                 continue;
@@ -252,7 +252,7 @@ impl SaveFile {
         Ok(SaveFile { steam_id, hunters })
     }
 
-    /// 读文件。游戏运行时存档可能被占用，先复制一份到 `tmp_dir` 再读。
+    /// Reads the file. The save may be locked while the game runs, so copy it to `tmp_dir` first.
     pub fn read(path: &std::path::Path, tmp_dir: &std::path::Path) -> std::io::Result<Result<SaveFile, SaveError>> {
         let raw = match std::fs::read(path) {
             Ok(r) => r,
@@ -275,7 +275,7 @@ mod tests {
 
     #[test]
     fn crc_matches_known_value() {
-        // 注释里给的：crc32(0x1079000F, "ONSTER HUNTER WORLD: ICEBORNE") = 0xBD75F29
+        // Given in the comments: crc32(0x1079000F, "ONSTER HUNTER WORLD: ICEBORNE") = 0xBD75F29
         assert_eq!(crc32(0x1079_000F, b"ONSTER HUNTER WORLD: ICEBORNE"), 0x0BD7_5F29);
     }
 
@@ -300,7 +300,7 @@ mod tests {
         assert_eq!(SaveFile::parse(vec![0; 100]), Err(SaveError::Size(100)));
     }
 
-    /// 用本机的真实存档验证：设置环境变量 RH_TEST_SAVE 指向 SAVEDATA1000。
+    /// Checks against a real local save: set the RH_TEST_SAVE environment variable to SAVEDATA1000.
     #[test]
     fn reads_real_save_when_available() {
         let Ok(path) = std::env::var("RH_TEST_SAVE") else { return };

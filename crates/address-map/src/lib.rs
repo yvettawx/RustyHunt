@@ -1,8 +1,8 @@
-//! 游戏地址表（`.map` 文件）的解析与查找。
+//! Parsing and lookup for game address maps (`.map` files).
 //!
-//! 语法：`Address|Offset|Instruction 名字 十六进制[,十六进制...] [# 注释]`，
-//! `0x` 前缀可省略，文件可带 UTF-8 BOM，换行可以是 CRLF。
-//! 与上游的一处不同：未知关键字会报错，而不是静默跳过。
+//! Syntax: `Address|Offset|Instruction name hex[,hex...] [# comment]`.
+//! The `0x` prefix is optional, the file may start with a UTF-8 BOM, and line endings may be CRLF.
+//! One difference from upstream: unknown keywords are an error instead of being skipped silently.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -14,20 +14,20 @@ fn strip_hex_prefix(s: &str) -> &str {
     s.strip_prefix("0x").or(s.strip_prefix("0X")).unwrap_or(s)
 }
 
-/// 解析一个十六进制数，`0x` 前缀可有可无。
+/// Parses a hex number; the `0x` prefix is optional.
 pub fn parse_hex(s: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(strip_hex_prefix(s), 16)
 }
 
-/// 解析逗号分隔的偏移列表。每项按 32 位读入后视为有符号数，
-/// 与上游 `Convert.ToInt32(s, 16)` 一致：`FFFFFFF0` 得到 -16。
+/// Parses a comma-separated offset list. Each item is read as 32 bits and treated as signed,
+/// matching upstream `Convert.ToInt32(s, 16)`: `FFFFFFF0` gives -16.
 pub fn parse_offsets(s: &str) -> Result<Vec<i32>, ParseIntError> {
     s.split(',')
         .map(|part| u32::from_str_radix(strip_hex_prefix(part), 16).map(|v| v as i32))
         .collect()
 }
 
-/// 地址表中有效的一行。
+/// A meaningful line of an address map.
 #[derive(Debug, PartialEq)]
 pub enum Entry {
     Address { name: String, value: u64 },
@@ -61,7 +61,7 @@ fn split_first_word(s: &str) -> (&str, &str) {
     }
 }
 
-/// 解析一行。空行和纯注释返回 `Ok(None)`。
+/// Parses one line. Blank lines and comment-only lines return `Ok(None)`.
 pub fn parse_line(line: &str) -> Result<Option<Entry>, LineError> {
     let content = line.split_once('#').map_or(line, |(before, _)| before);
 
@@ -91,7 +91,7 @@ pub fn parse_line(line: &str) -> Result<Option<Entry>, LineError> {
     }
 }
 
-/// 解析整个文件时的错误，行号从 1 开始。
+/// An error while parsing a whole file; line numbers start at 1.
 #[derive(Debug, PartialEq)]
 pub enum MapError {
     InvalidLine { line_number: usize, error: LineError },
@@ -111,7 +111,7 @@ impl fmt::Display for MapError {
 
 impl std::error::Error for MapError {}
 
-/// 读取地址表文件时的错误。
+/// An error while reading an address map file.
 #[derive(Debug)]
 pub enum LoadError {
     Io { path: PathBuf, error: std::io::Error },
@@ -133,7 +133,7 @@ impl fmt::Display for LoadError {
 
 impl std::error::Error for LoadError {}
 
-/// 解析后的地址表，按名字查询地址和偏移。
+/// A parsed address map, queried by name for addresses and offsets.
 #[derive(Debug, Default, Clone)]
 pub struct AddressMap {
     addresses: HashMap<String, u64>,
@@ -180,7 +180,7 @@ impl AddressMap {
         })
     }
 
-    /// 在 `dir` 里找 `<prefix>.<version>.map` 并读取。
+    /// Finds `<prefix>.<version>.map` in `dir` and reads it.
     pub fn load_version(dir: &Path, prefix: &str, version: &str) -> Result<AddressMap, LoadError> {
         let path = map_path(dir, prefix, version);
         if !path.is_file() {
@@ -200,7 +200,7 @@ impl AddressMap {
         self.offsets.get(name).map(Vec::as_slice)
     }
 
-    /// `Instruction` 行按字节取出。
+    /// Bytes of an `Instruction` line.
     pub fn bytes(&self, name: &str) -> Option<Vec<u8>> {
         self.offsets(name).map(|v| v.iter().map(|&b| b as u8).collect())
     }
@@ -218,7 +218,7 @@ pub fn map_path(dir: &Path, prefix: &str, version: &str) -> PathBuf {
     dir.join(format!("{prefix}.{version}.map"))
 }
 
-/// 列出 `dir` 里 `<prefix>.<版本>.map` 的所有版本号，从小到大。
+/// Lists the versions of all `<prefix>.<version>.map` files in `dir`, ascending.
 pub fn available_versions(dir: &Path, prefix: &str) -> Vec<String> {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return Vec::new();
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn parse_offsets_accepts_missing_prefix_and_spaces() {
-        // 上游 Rise 地址表里 GUI::VisibilityFlag 有一项没写 0x
+        // One GUI::VisibilityFlag entry in the upstream Rise map has no 0x prefix
         assert_eq!(parse_offsets("0x58,48,0x68,0x10,0x30"), Ok(vec![0x58, 0x48, 0x68, 0x10, 0x30]));
         assert_eq!(parse_offsets("0x10, 0x20 "), Ok(vec![0x10, 0x20]));
     }

@@ -1,2 +1,2 @@
-# 本仓库的代码按 160 列写；cargo fmt 用这份配置
+# Code in this repository is written at 160 columns; cargo fmt uses this config
 max_width = 160

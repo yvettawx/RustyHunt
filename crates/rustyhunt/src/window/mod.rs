@@ -1,4 +1,4 @@
-//! 主界面：1280×800，自绘标题栏，侧栏七页。
+//! Main window: 1280x800, custom title bar, seven pages in the sidebar.
 
 mod home;
 mod logs;
@@ -28,7 +28,7 @@ pub fn main_viewport() -> ViewportId {
     ViewportId::from_hash_of("rustyhunt-main")
 }
 
-/// 托盘和窗口用的图标：黑底方块里一个橙色菱形。
+/// Icon for the tray and windows: an orange diamond in a black square.
 pub fn icon_rgba(size: u32) -> Vec<u8> {
     let mut v = vec![0u8; (size * size * 4) as usize];
     let c = size as f32 / 2.0;
@@ -111,10 +111,10 @@ impl Page {
     }
 }
 
-/// 弹窗确认后执行的动作
+/// Action to run once the dialog is confirmed
 pub type OnYes = Box<dyn FnOnce(&Arc<Shared>) + Send>;
 
-/// 弹窗：开启前确认（注入、插件权限等）。
+/// Dialog: confirmation before turning something on (injection, plugin permissions and so on).
 pub struct Modal {
     pub title: String,
     pub lines: Vec<String>,
@@ -142,7 +142,7 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
-    /// 截图用：切到页面里的某个页签
+    /// For screenshots: switch to a tab within the page
     pub fn set_tab(&mut self, tab: usize) {
         match self.page {
             Page::Records => self.records.tab = tab,
@@ -194,7 +194,7 @@ impl MainWindow {
     }
 
     pub fn on_close(&mut self, shared: &Shared) {
-        // 记住窗口位置
+        // Remember the window position
         if let Some(r) = self.shared.ctx.get().and_then(|c| c.input_for(main_viewport(), |i| i.viewport().outer_rect)) {
             let inner = self
                 .shared
@@ -272,7 +272,7 @@ impl MainWindow {
         }
         self.modal(ui, &pal, Rect::from_min_max(pos2(full.min.x, title.max.y), full.max));
 
-        // 连接状态、日志等会变，主界面每秒刷新一次就够
+        // Connection status, logs and the like change; refreshing the main window once a second is enough
         ctx.request_repaint_after(std::time::Duration::from_millis(500));
     }
 
@@ -305,7 +305,7 @@ impl MainWindow {
         });
         ui.painter().galley(pos2(mark.max.x + 10.0, r.center().y - g.size().y / 2.0), g, pal.ink);
 
-        // 右侧：连接状态、铃铛、最小化、最大化、关闭
+        // Right side: connection status, bell, minimize, maximize, close
         let mut x = r.max.x;
         let btn = |ui: &mut Ui, x: &mut f32, id: &str| -> (Rect, egui::Response) {
             *x -= 44.0;
@@ -350,7 +350,7 @@ impl MainWindow {
             [nr.center() + vec2(-5.0, 0.0), nr.center() + vec2(5.0, 0.0)],
             Stroke::new(1.2, ic(&nr, min.hovered(), false)),
         );
-        // 铃铛
+        // Bell
         let b = br.center();
         let bs = Stroke::new(1.1, ic(&br, bell.hovered(), false));
         let pts = [
@@ -445,7 +445,7 @@ impl MainWindow {
             y += 40.0;
         }
 
-        // 底部：overlay 开关、布局模式开关、版本号
+        // Bottom: overlay toggle, layout mode toggle, version
         let mut by = r.max.y - 22.0 - 14.0;
         text_at(
             ui,
@@ -552,7 +552,7 @@ impl MainWindow {
                         });
                     });
             });
-        // 点面板外面关闭
+        // Click outside the panel to close it
         if ui.ctx().input(|i| i.pointer.any_click())
             && let Some(p) = ui.ctx().pointer_interact_pos()
             && !panel.contains(p)
@@ -566,7 +566,7 @@ impl MainWindow {
         }
     }
 
-    /// 通知上的按钮：文字和动作。
+    /// A button on a notification: text and action.
     #[allow(clippy::type_complexity)]
     fn notification_action(&self, kind: &Kind) -> Option<(String, Box<dyn FnOnce(&mut MainWindow)>)> {
         match kind {
@@ -825,7 +825,7 @@ impl MainWindow {
     }
 }
 
-/// 无边框窗口靠边拖动改大小。
+/// Resizing a borderless window by dragging its edges.
 fn resize_edges(ui: &mut Ui, r: Rect) {
     use egui::ResizeDirection as D;
     let m = 5.0;

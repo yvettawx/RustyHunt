@@ -1,9 +1,9 @@
-# 图鉴用的怪物资料（世界：冰原）。
-# species：种类，键对应 locales/game/*.toml 的 [type]，按游戏内猎人笔记的分类。
-# maps：探索里能遇到的地图（来自 Kiranico 各怪物页的"探索"一栏，2026-10-26 取数），
-#       A 古代树森林、W 大蚁冢荒地、C 陆珊瑚台地、R 瘴气之谷、E 龙结晶之地、H 永霜冻土，G 表示聚魔之地。
-# fixed：体型固定，不能登记金冠。
-# research：研究等级上限。下位登场的怪 9，上位登场的 7，冰原新增的 4；熔山龙、冥灯龙 4。
+# Monster data for the Hunter's Notes (World: Iceborne).
+# species: monster type, a key into [type] of locales/game/*.toml, following the in-game Hunter's Notes categories.
+# maps: maps where it appears in expeditions (from the "Expedition" column of each Kiranico monster page, taken 2026-10-26).
+#       A Ancient Forest, W Wildspire Waste, C Coral Highlands, R Rotten Vale, E Elder's Recess, H Hoarfrost Reach, G Guiding Lands.
+# fixed: fixed size, no crowns to record.
+# research: research level cap. 9 for monsters introduced in Low Rank, 7 for High Rank, 4 for new in Iceborne; Zorah Magdaros and Xeno'jiiva 4.
 
 [acidic_glavenus]
 species = "TYPE_BRUTE_WYVERN"

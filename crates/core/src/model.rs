@@ -1,5 +1,5 @@
-//! 三作统一的游戏数据快照。读取线程每一帧产出一份 [`Snapshot`]，
-//! overlay、记录、插件都只读它。字段表见 `docs/fields.md`。
+//! Game data snapshot shared by the three games. The reader thread produces one [`Snapshot`]
+//! per frame; the overlay, records and plugins only read it. Field list: `docs/fields.md`.
 
 use serde::{Deserialize, Serialize};
 
@@ -39,7 +39,7 @@ impl Game {
         }
     }
 
-    /// 1.0 只支持世界
+    /// 1.0 supports World only
     pub fn supported(self) -> bool {
         matches!(self, Game::World)
     }
@@ -149,9 +149,9 @@ impl Element {
 pub enum Target {
     #[default]
     None,
-    /// 这只怪物是目标
+    /// This monster is the target
     Own,
-    /// 目标是另一只怪物
+    /// The target is another monster
     Other,
 }
 
@@ -167,18 +167,18 @@ pub enum PartKind {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Part {
     pub id: u32,
-    /// 部位名的本地化键，例如 `PART_HEAD`
+    /// Localization key of the part name, e.g. `PART_HEAD`
     pub key: String,
     pub kind: PartKind,
-    /// 硬直：当前值和上限
+    /// Flinch: current value and maximum
     pub flinch: f32,
     pub flinch_max: f32,
-    /// 耐久：到下一次破坏还差多少。切断部位用切断耐久
+    /// Durability left until the next break. Severable parts use sever durability
     pub durability: f32,
     pub durability_max: f32,
-    /// 已经破坏（或切断）的次数
+    /// Times broken (or severed)
     pub breaks: i32,
-    /// 能破坏的总次数，0 表示不能破坏
+    /// Total possible breaks; 0 means it can't break
     pub breaks_max: i32,
     pub tenderized: f32,
     pub tenderized_max: f32,
@@ -200,14 +200,14 @@ impl Part {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Ailment {
-    /// 本地化键，例如 `AILMENT_POISON`
+    /// Localization key, e.g. `AILMENT_POISON`
     pub key: String,
     pub buildup: f32,
     pub buildup_max: f32,
-    /// 正在生效时的剩余时间
+    /// Time left while active
     pub timer: f32,
     pub timer_max: f32,
-    /// 已经触发的次数
+    /// Times triggered
     pub count: i32,
 }
 
@@ -227,11 +227,11 @@ impl Ailment {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Monster {
-    /// 在游戏内存里的地址，一场任务里唯一
+    /// Address in game memory, unique within a quest
     pub uid: u64,
-    /// 游戏内部编号
+    /// In-game ID
     pub id: i32,
-    /// 术语表 `locales/terms/*.toml` 里的键，例如 `raging_brachydios`
+    /// Key in `locales/terms/*.toml`, e.g. `raging_brachydios`
     pub key: String,
     pub hp: f32,
     pub hp_max: f32,
@@ -241,10 +241,10 @@ pub struct Monster {
     pub enrage_timer: f32,
     pub enrage_timer_max: f32,
     pub tired: bool,
-    /// 血量比例低于它时可以捕获，0 表示不能捕获
+    /// HP ratio below which the monster can be captured; 0 means it can't
     pub capture_threshold: f32,
     pub crown: Crown,
-    /// 体型倍率，例如 1.23
+    /// Size multiplier, e.g. 1.23
     pub size: f32,
     pub weaknesses: Vec<Element>,
     pub parts: Vec<Part>,
@@ -252,7 +252,7 @@ pub struct Monster {
     pub target: Target,
     pub manual_target: Target,
     pub captured: bool,
-    /// 是否是大型怪物
+    /// Whether this is a large monster
     pub large: bool,
 }
 
@@ -301,16 +301,16 @@ impl SharpnessLevel {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Sharpness {
     pub level: SharpnessLevel,
-    /// 当前斩味值（击数），从 0 开始累计
+    /// Current sharpness value (hits), counted from 0
     pub current: i32,
-    /// 能达到的最大值（含匠）
+    /// Highest reachable value (with Handicraft)
     pub max: i32,
-    /// 每一段颜色的上限，7 段
+    /// Upper bound of each color segment, 7 segments
     pub thresholds: Vec<i32>,
 }
 
 impl Sharpness {
-    /// 当前颜色还能打多少下
+    /// Hits left in the current color
     pub fn hits_left(&self) -> i32 {
         let level = self.level.index();
         let start = if level == 0 {
@@ -337,9 +337,9 @@ pub enum AbnormalityKind {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Abnormality {
-    /// 唯一编号，例如 `Consumables_6C4`
+    /// Unique ID, e.g. `Consumables_6C4`
     pub id: String,
-    /// 本地化键，例如 `ABNORMALITY_DEMON_POWDER`
+    /// Localization key, e.g. `ABNORMALITY_DEMON_POWDER`
     pub key: String,
     pub kind: AbnormalityKind,
     pub timer: f32,
@@ -349,7 +349,7 @@ pub struct Abnormality {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Tool {
-    /// 本地化键，例如 `TOOL_GHILLIE_MANTLE`；空表示没有装备
+    /// Localization key, e.g. `TOOL_GHILLIE_MANTLE`; empty means nothing equipped
     pub key: String,
     pub timer: f32,
     pub timer_max: f32,
@@ -357,16 +357,16 @@ pub struct Tool {
     pub cooldown_max: f32,
 }
 
-/// 武器专用槽。只有世界支持的五种武器有内容。
+/// Weapon-specific gauge. Only the five weapons World supports have content.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum WeaponState {
     #[default]
     None,
     Longsword {
-        /// 气刃槽 0..100
+        /// Spirit gauge 0..100
         gauge: f32,
-        /// 练气等级 0 无，1 白，2 黄，3 红
+        /// Spirit level: 0 none, 1 white, 2 yellow, 3 red
         level: i32,
         level_timer: f32,
         level_timer_max: f32,
@@ -386,16 +386,16 @@ pub enum WeaponState {
     ChargeBlade {
         phials: i32,
         phials_max: i32,
-        /// 剑能量 0..100
+        /// Sword energy 0..100
         charge: f32,
         shield: f32,
         sword: f32,
         axe: f32,
     },
     SwitchAxe {
-        /// 剑瓶 0..100
+        /// Phial gauge 0..100
         gauge: f32,
-        /// 觉醒充能 0..100
+        /// Awakening charge 0..100
         charge: f32,
         awakened_timer: f32,
         awakened_timer_max: f32,
@@ -409,9 +409,9 @@ pub struct Player {
     pub mr: i32,
     pub hp: f32,
     pub hp_max: f32,
-    /// 可回复的红血上限（生命条会回到这里）
+    /// Recoverable red HP cap (the bar heals back up to here)
     pub hp_recoverable: f32,
-    /// 正在回复到的目标值
+    /// Target value currently being healed to
     pub hp_healing_to: f32,
     pub hp_cap: f32,
     pub stamina: f32,
@@ -438,7 +438,7 @@ pub struct PartyMember {
     pub damage: f32,
     pub is_self: bool,
     pub mr: i32,
-    /// 随从不是猎人
+    /// Palicoes aren't hunters
     pub palico: bool,
 }
 
@@ -480,7 +480,7 @@ pub struct Fertilizer {
     pub count: i32,
 }
 
-/// 据点活动（世界）
+/// Base activities (World)
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Base {
     pub argosy_days: i32,
@@ -495,7 +495,7 @@ pub struct Base {
     pub steam_stored: i32,
 }
 
-/// 伤害 hook 送来的本机玩家伤害拆分。
+/// Damage split for the local player, sent by the damage hook.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct DamageSplit {
     pub total: f32,
@@ -515,26 +515,26 @@ impl DamageSplit {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Snapshot {
     pub game: Game,
-    /// 读取线程启动后的秒数
+    /// Seconds since the reader thread started
     pub time: f64,
     pub stage_id: i32,
-    /// 术语表里地图的键，城镇等没有条目时为空
+    /// Map key in the term table; empty for towns and other places without an entry
     pub stage_key: String,
     pub in_hunt_zone: bool,
     pub in_town: bool,
-    /// 打开了游戏菜单或地图
+    /// The game menu or map is open
     pub hud_open: bool,
-    /// 游戏内时间（时、分）
+    /// In-game time (hour, minute)
     pub world_time: Option<(u8, u8)>,
     pub quest: Option<Quest>,
-    /// 这一场狩猎已经过去的秒数
+    /// Seconds elapsed in this hunt
     pub elapsed: f32,
     pub player: Player,
     pub party: Vec<PartyMember>,
     pub monsters: Vec<Monster>,
     pub base: Option<Base>,
     pub damage_split: Option<DamageSplit>,
-    /// 多人任务
+    /// Multiplayer quest
     pub online: bool,
 }
 

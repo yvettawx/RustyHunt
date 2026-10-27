@@ -1,4 +1,4 @@
-//! 读另一个进程内存的统一接口。真实进程和测试用的假内存都实现 [`Memory`]。
+//! A common interface for reading another process's memory. Real processes and the fake memory used in tests both implement [`Memory`].
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -22,7 +22,7 @@ impl std::error::Error for ReadError {}
 pub type ReadResult<T> = Result<T, ReadError>;
 
 pub trait Memory {
-    /// 把 `address` 开始的 `buf.len()` 个字节读进 `buf`；读不全算失败。
+    /// Reads `buf.len()` bytes starting at `address` into `buf`; a partial read is a failure.
     fn read_bytes(&self, address: u64, buf: &mut [u8]) -> ReadResult<()>;
 
     fn read<T: Pod>(&self, address: u64) -> ReadResult<T>
@@ -52,7 +52,7 @@ pub trait Memory {
         self.read::<u64>(address)
     }
 
-    /// 读一个以 0 结尾的 UTF-8 字符串，最多 `max_len` 字节。
+    /// Reads a null-terminated UTF-8 string of at most `max_len` bytes.
     fn read_string(&self, address: u64, max_len: usize) -> ReadResult<String>
     where
         Self: Sized,
@@ -63,8 +63,8 @@ pub trait Memory {
         Ok(String::from_utf8_lossy(&buf[..end]).into_owned())
     }
 
-    /// 上游 `ReadAsync(address, offsets)`：每一步先解引用当前地址，再加偏移。
-    /// 中途读到空指针时返回 0。
+    /// Upstream `ReadAsync(address, offsets)`: each step dereferences the current address, then adds the offset.
+    /// Returns 0 when a null pointer is hit along the way.
     fn follow(&self, address: u64, offsets: &[i32]) -> ReadResult<u64>
     where
         Self: Sized,
@@ -80,7 +80,7 @@ pub trait Memory {
         Ok(address)
     }
 
-    /// 上游 `ReadPtrAsync(address, offsets)`：每一步先加偏移，再解引用。
+    /// Upstream `ReadPtrAsync(address, offsets)`: each step adds the offset, then dereferences.
     fn follow_ptr(&self, address: u64, offsets: &[i32]) -> ReadResult<u64>
     where
         Self: Sized,
@@ -96,7 +96,7 @@ pub trait Memory {
         Ok(address)
     }
 
-    /// 上游 `DerefAsync<T>`：按 [`Memory::follow`] 走完指针链再读值；链断了得到零值。
+    /// Upstream `DerefAsync<T>`: follows the chain with [`Memory::follow`], then reads the value; a broken chain gives zero.
     fn deref<T: Pod>(&self, address: u64, offsets: &[i32]) -> ReadResult<T>
     where
         Self: Sized,
@@ -114,7 +114,7 @@ impl<M: Memory + ?Sized> Memory for &M {
     }
 }
 
-/// 测试用的内存：若干段按地址存放的字节。
+/// Memory for tests: a few byte ranges stored by address.
 #[derive(Debug, Default, Clone)]
 pub struct FakeMemory {
     regions: BTreeMap<u64, Vec<u8>>,
@@ -126,7 +126,7 @@ impl FakeMemory {
     }
 
     pub fn put_bytes(&mut self, address: u64, bytes: &[u8]) {
-        // 和已有的段重叠时直接写进去，否则新开一段
+        // Write into an existing range when it overlaps, otherwise start a new one
         for (&start, region) in self.regions.iter_mut() {
             let end = start + region.len() as u64;
             if address >= start && address + bytes.len() as u64 <= end {
@@ -146,7 +146,7 @@ impl FakeMemory {
         self.put_bytes(address, bytemuck::cast_slice(values));
     }
 
-    /// 预留一段全 0 的内存，之后的 `put` 会写进这一段。
+    /// Reserves a zeroed range; later `put` calls write into it.
     pub fn reserve(&mut self, address: u64, len: usize) {
         self.regions.insert(address, vec![0; len]);
     }

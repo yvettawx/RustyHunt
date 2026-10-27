@@ -1,9 +1,9 @@
-//! 更新：GitHub Releases 上的程序包和地址表。
+//! Updates: app packages and address maps on GitHub Releases.
 //!
-//! - 程序：tag 形如 `v1.2.0`，附件 `RustyHunt-<版本>-portable.zip` 和 `SHA256SUMS`。
-//!   下载、校验后解到 updates 目录，下次启动时替换；新版本启动失败时回退。
-//! - 地址表：tag 形如 `maps-20261101`，附件是 `MonsterHunterWorld.<版本>.map`
-//!   和 `SHA256SUMS`，只更新地址表，不更新程序。
+//! - App: tags look like `v1.2.0`, with assets `RustyHunt-<version>-portable.zip` and `SHA256SUMS`.
+//!   Downloaded and verified, then extracted into updates and swapped in on the next start; rolls back if the new version fails to start.
+//! - Address maps: tags look like `maps-20261101`, with assets `MonsterHunterWorld.<version>.map`
+//!   and `SHA256SUMS`; updates only the maps, not the app.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -45,7 +45,7 @@ impl Release {
         self.published_at.as_deref().unwrap_or("").chars().take(10).collect()
     }
 
-    /// 更新说明按行拆开，形如 "新增 xxx"
+    /// Release notes split into lines, like "Added xxx"
     pub fn notes(&self) -> Vec<String> {
         self.body
             .as_deref()
@@ -79,7 +79,7 @@ pub enum Download {
     Failed(String),
 }
 
-/// 主界面的更新面板读这个状态。
+/// State read by the update panel in the main window.
 #[derive(Default)]
 pub struct UpdateState {
     pub releases: Vec<Release>,
@@ -114,7 +114,7 @@ pub fn fetch_releases(repo: &str) -> Result<Vec<Release>, String> {
     resp.body_mut().read_json::<Vec<Release>>().map_err(|e| e.to_string())
 }
 
-/// 比较 "1.2.10" 和 "1.10.0" 这种版本号。
+/// Compares versions like "1.2.10" and "1.10.0".
 pub fn newer(a: &str, b: &str) -> bool {
     let parse = |v: &str| -> Vec<u64> { v.split(['.', '-']).map(|x| x.parse().unwrap_or(0)).collect() };
     parse(a) > parse(b)
@@ -134,7 +134,7 @@ fn sha256(path: &Path) -> std::io::Result<String> {
     Ok(h.finalize().iter().map(|b| format!("{b:02x}")).collect())
 }
 
-/// `SHA256SUMS` 文件：每行 "<十六进制>  <文件名>"。
+/// A `SHA256SUMS` file: each line is "<hex>  <file name>".
 fn expected_hash(sums: &str, name: &str) -> Option<String> {
     sums.lines().find_map(|l| {
         let mut it = l.split_whitespace();
@@ -180,7 +180,7 @@ fn fetch_text(url: &str) -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
-/// 启动时检查：有新版本只发通知，不自动下载。也顺便检查地址表。
+/// Check at startup: a new version only triggers a notification, nothing is downloaded. Maps are checked too.
 pub fn check_on_start(shared: Arc<Shared>) {
     if !shared.settings().update.check_on_start {
         return;
@@ -249,7 +249,7 @@ pub fn check(shared: &Shared, quiet: bool) {
     shared.repaint();
 }
 
-/// 下载最新的地址表。只下本地没有的版本，校验后放进数据目录的 maps。
+/// Downloads the latest address maps. Only versions not present locally; verified, then put into maps in the data directory.
 pub fn update_maps(shared: &Shared, releases: &[Release]) {
     let Some(rel) = releases.iter().filter(|r| r.tag_name.starts_with("maps-")).max_by_key(|r| r.tag_name.clone()) else {
         return;
@@ -288,7 +288,7 @@ pub fn update_maps(shared: &Shared, releases: &[Release]) {
 struct Pending {
     version: String,
     dir: PathBuf,
-    /// prepared：等待替换；applied：已替换，新版本还没确认能启动
+    /// prepared: waiting to be swapped in; applied: swapped in, the new version hasn't been confirmed to start yet
     state: String,
     attempts: u32,
     backup: Option<PathBuf>,
@@ -298,7 +298,7 @@ fn pending_file() -> PathBuf {
     rh_core::paths::updates().join("pending.json")
 }
 
-/// 后台下载并校验新版本。
+/// Downloads and verifies a new version in the background.
 pub fn start_download(shared: Arc<Shared>, release: Release) {
     std::thread::Builder::new()
         .name("update-download".into())
@@ -361,7 +361,7 @@ fn copy_tree(src: &Path, dst: &Path) -> std::io::Result<()> {
         if p.is_dir() {
             copy_tree(&p, &to)?;
         } else if e.file_name() == "portable" {
-            // 更新包是便携版的包：不能把安装版改成便携版
+            // Update packages are portable packages: don't turn an installed build into a portable one
             continue;
         } else {
             std::fs::copy(&p, &to)?;
@@ -370,7 +370,7 @@ fn copy_tree(src: &Path, dst: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// 启动时处理待安装的更新。返回 true 表示已经换成新版本并启动了它，当前进程要退出。
+/// Handles a pending update at startup. Returns true when the new version is in place and started, so this process should exit.
 pub fn apply_pending() -> bool {
     let path = pending_file();
     let Some(mut p) = std::fs::read_to_string(&path).ok().and_then(|t| serde_json::from_str::<Pending>(&t).ok()) else {
@@ -380,7 +380,7 @@ pub fn apply_pending() -> bool {
     let install = rh_core::paths::exe_dir();
     match p.state.as_str() {
         "prepared" => {
-            // 包里可能多一层目录
+            // The package may have an extra directory level
             let root = if p.dir.join("rustyhunt.exe").is_file() {
                 p.dir.clone()
             } else {
@@ -391,7 +391,7 @@ pub fn apply_pending() -> bool {
             };
             let backup = rh_core::paths::updates().join("backup");
             let _ = std::fs::remove_dir_all(&backup);
-            // 运行中的 exe 不能覆盖，但能改名
+            // A running exe can't be overwritten, but it can be renamed
             let old = exe.with_extension("old.exe");
             let _ = std::fs::remove_file(&old);
             if std::fs::rename(&exe, &old).is_err() {
@@ -421,7 +421,7 @@ pub fn apply_pending() -> bool {
         }
         "applied" => {
             if p.version == rh_core::VERSION {
-                // 新版本跑起来了：等主界面出来后由 confirm_started 确认
+                // The new version is running: confirm_started confirms it once the main window is up
                 p.attempts += 1;
                 if p.attempts > 2 {
                     rollback(&p, &exe);
@@ -447,7 +447,7 @@ fn rollback(p: &Pending, exe: &Path) {
     let _ = exe;
 }
 
-/// 新版本正常运行起来以后调用：删掉旧文件和标记。
+/// Called once the new version runs normally: deletes the old files and the marker.
 pub fn confirm_started() {
     let path = pending_file();
     if let Some(p) = std::fs::read_to_string(&path).ok().and_then(|t| serde_json::from_str::<Pending>(&t).ok())

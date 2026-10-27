@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  示例主题：熔岩。深色底，暖色强调；
-  演示三层：令牌（颜色、字体、时长）、组件样式（血条、标签）、模块模板（时钟）。
-  格式说明见 docs/theme.md，编辑器里配上 docs/theme.xsd 可以自动补全。
+  Example theme: Ember. Dark base, warm accents.
+  Shows all three layers: tokens (colors, fonts, durations), component styles (bars, tags), module templates (the clock).
+  The format is described in docs/theme.md; point your editor at docs/theme.xsd for completion.
 -->
 <theme xmlns="urn:rustyhunt:theme:1"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="urn:rustyhunt:theme:1 ../../../docs/theme.xsd"
-       id="ember" name="熔岩" version="1.0.0" author="RustyHunt" app="1.0" base="dark"
-       description="深色底，暖色强调，分段血条" tags="dark,warm">
+       id="ember" name="Ember" version="1.0.0" author="RustyHunt" app="1.0" base="dark"
+       description="Dark base, warm accents, segmented HP bars" tags="dark,warm">
 
   <tokens>
     <!-- overlay -->
@@ -17,7 +17,7 @@
     <color name="danger" value="#ff5a3c"/>
     <color name="ghost" value="#ffd08a"/>
     <color name="hatch" value="#f0e3d64d"/>
-    <!-- 主界面 -->
+    <!-- Main window -->
     <color name="window.paper" value="#1c1614"/>
     <color name="window.ink" value="#f0e3d6"/>
     <color name="window.mute" value="#9a8a7c"/>
@@ -33,16 +33,16 @@
   </tokens>
 
   <styles>
-    <!-- 所有条：平行四边形，空槽画斜线 -->
+    <!-- All bars: parallelograms with a hatched track -->
     <bar shape="parallelogram" skew="4" empty="hatch"/>
-    <!-- 怪物和自身的血条：分 10 段，两端加小竖线 -->
+    <!-- Monster and player HP bars: 10 segments with end caps -->
     <bar for="monster-hp" segments="10" gap="2" caps="true"/>
     <bar for="player-hp" segments="10" gap="2" caps="true"/>
     <tag shape="cut" cut="4"/>
     <pip shape="diamond"/>
   </styles>
 
-  <!-- 时钟改成一圈圆环：剩余时间占任务总时长的比例 -->
+  <!-- The clock as a ring: time left as a share of the quest time limit -->
   <module id="clock">
     <row gap="12" align="center">
       <arc value="{quest.time_left / quest.time_max | clamp01}" radius="18" thickness="4" from="0" to="360" stroke="accent" track="track">

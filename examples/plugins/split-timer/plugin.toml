@@ -1,6 +1,6 @@
 id = "split-timer"
-name = "分段计时"
-description = "部位破坏、讨伐、捕获和区域切换时自动分段，和这个任务的最好成绩比较。"
+name = "Split timer"
+description = "Splits automatically on part breaks, slays, captures and area changes, and compares with your best run of the quest."
 version = "1.0.0"
 author = "RustyHunt"
 app = "1.0"
@@ -11,30 +11,30 @@ frame_hz = 4
 
 [[modules]]
 id = "split"
-name = "分段计时"
+name = "Split timer"
 template = "split.xml"
 default_on = true
-elements = [{ key = "diff", name = "和最好成绩的差" }]
+elements = [{ key = "diff", name = "Difference from best" }]
 
 [[actions]]
 id = "split"
-name = "分段计时 手动分段"
+name = "Split timer: manual split"
 key = "F9"
 
 [[actions]]
 id = "reset"
-name = "分段计时 清除最好成绩"
+name = "Split timer: clear best"
 key = ""
 
 [[settings]]
 key = "stage_split"
-name = "区域切换时分段"
+name = "Split on area change"
 type = "bool"
 default = false
 
 [[settings]]
 key = "rows"
-name = "显示段数"
+name = "Splits shown"
 type = "number"
 default = 5
 min = 1
@@ -42,5 +42,5 @@ max = 10
 
 [[exporters]]
 id = "markdown"
-name = "Markdown 表格"
+name = "Markdown table"
 ext = "md"

@@ -1,5 +1,5 @@
-//! 世界的静态数据：怪物（部位、弱点、体型、捕获线）、怪物异常、增益。
-//! 来源是上游的 `MonsterData.xml` 和 `AbnormalityData.xml`。
+//! Static World data: monsters (parts, weaknesses, sizes, capture threshold), monster ailments and buffs.
+//! Taken from upstream `MonsterData.xml` and `AbnormalityData.xml`.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -15,7 +15,7 @@ pub struct PartDef {
     pub id: u32,
     pub key: String,
     pub severable: bool,
-    /// 每次破坏需要的累计硬直次数
+    /// Accumulated flinch count needed for each break
     pub thresholds: Vec<i32>,
     pub tenderize_ids: Vec<u32>,
 }
@@ -23,7 +23,7 @@ pub struct PartDef {
 #[derive(Debug, Clone, PartialEq)]
 pub struct MonsterDef {
     pub id: i32,
-    /// 捕获线，百分比
+    /// Capture threshold, percent
     pub capture: f32,
     pub mini: f32,
     pub silver: f32,
@@ -37,9 +37,9 @@ pub struct AbnormalityDef {
     pub id: String,
     pub key: String,
     pub kind: AbnormalityKind,
-    /// 从哪个基址读：Gears 分类走装备地址，其他走增益地址
+    /// Which base address to read from: the Gears category uses the gear address, everything else the buff address
     pub gear: bool,
-    /// 从食事地址读
+    /// Read from the meal address
     pub food: bool,
     pub offset: i32,
     pub depends_on: i32,
@@ -64,7 +64,7 @@ impl Data {
         self.monster_keys.get(&id).cloned().unwrap_or_else(|| format!("em{id:03}"))
     }
 
-    /// 已知的怪物异常；字符串是纯数字的条目是未知异常，跳过
+    /// Known monster ailments; entries whose string is just a number are unknown ailments and are skipped
     pub fn ailment(&self, id: i32) -> Option<&str> {
         self.ailments.get(&id).map(String::as_str).filter(|s| !s.chars().all(|c| c.is_ascii_digit()))
     }

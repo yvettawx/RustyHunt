@@ -1,5 +1,5 @@
-//! 首次启动：六步，每步都能跳过；左边是选项，右边一段循环动画，
-//! 演示这一步的设置改的是什么。选项选了就写进设置。
+//! First run: six steps, each can be skipped; options on the left, and on the right a looping animation
+//! showing what this step's setting changes. A chosen option is written to settings right away.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -33,7 +33,7 @@ struct Account {
 
 pub struct State {
     step: usize,
-    /// 这一步的动画从什么时候开始
+    /// When this step's animation started
     t0: f64,
     lang: Lang,
     games: Vec<Found>,
@@ -43,9 +43,9 @@ pub struct State {
     bottom: bool,
     ours: bool,
     scene: usize,
-    /// 预览用的各语言文案
+    /// Copy in each language for the preview
     previews: Vec<(Lang, Arc<I18n>)>,
-    /// 平滑过渡的值
+    /// A smoothly transitioning value
     hud: f32,
     side: f32,
 }
@@ -124,7 +124,7 @@ impl State {
         i
     }
 
-    /// 返回 false 表示引导结束。
+    /// Returns false when onboarding is finished.
     pub fn ui(&mut self, w: &mut MainWindow, ui: &mut Ui, pal: &Pal, r: Rect) -> bool {
         let shared = w.shared.clone();
         let mut keep = true;
@@ -149,7 +149,7 @@ impl State {
                     self.preview(ui, pal, &shared, preview);
                 });
             });
-        // 动画按 60 帧刷新；一直 request_repaint 会把 overlay 的重绘挤掉
+        // Animations refresh at 60 fps; calling request_repaint all the time would starve the overlay's repaints
         ui.ctx().request_repaint_after(std::time::Duration::from_millis(16));
         if !keep {
             shared.edit_settings(|s| s.first_run_done = true);
@@ -186,7 +186,7 @@ impl State {
         });
     }
 
-    /// 一行选项；返回是否被点了。
+    /// One option row; returns whether it was clicked.
     fn opt(ui: &mut Ui, pal: &Pal, text: &str, desc: &str, on: bool, miss: bool) -> bool {
         let w = ui.available_width();
         let (r, resp) = ui.allocate_exact_size(vec2(w, 48.0), Sense::click());
@@ -245,7 +245,7 @@ impl State {
                         self.t0 = shared.now();
                     }
                     if !found {
-                        // 找不到时手动选路径
+                        // Pick the path by hand when it can't be found
                         let rr = Rect::from_min_size(pos2(ui.min_rect().min.x, row_top), vec2(w, 48.0));
                         let mut pick = false;
                         ui.scope_builder(
@@ -368,7 +368,7 @@ fn hotkey_rows(hk: &rh_core::settings::Hotkeys) -> Vec<(String, String)> {
     ]
 }
 
-// ---- 右边的演示 ----
+// ---- Demo on the right ----
 
 const HUD: Color32 = Color32::from_rgb(0xf2, 0xf0, 0xe9);
 
@@ -376,7 +376,7 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t.clamp(0.0, 1.0)
 }
 
-/// 缓动：开始快、结束慢
+/// Easing: fast start, slow end
 fn ease(t: f32) -> f32 {
     let t = t.clamp(0.0, 1.0);
     1.0 - (1.0 - t).powi(3)
@@ -389,13 +389,13 @@ enum Density {
     Minimal,
 }
 
-/// 预览画面这一帧的状态。
+/// State of the preview picture this frame.
 struct Frame {
     density: Density,
     hud: f32,
     layout_grid: bool,
     cursor: Option<Pos2>,
-    /// 伤害模块的位置（比例坐标）
+    /// Position of the damage module (proportional coordinates)
     dps_at: Pos2,
     target_other: bool,
     banner: f32,
@@ -495,7 +495,7 @@ impl State {
             _ => {}
         }
 
-        // 过渡：显示、隐藏和换位置都不是一下子跳过去
+        // Transitions: showing, hiding and moving never jump
         let k = (dt / 0.3).min(1.0);
         self.hud += (f.hud - self.hud) * k;
         let side_target = if self.bottom { 0.0 } else { 1.0 };
@@ -536,7 +536,7 @@ impl State {
             p.galley(pos2(br.min.x + 22.0, br.min.y + 5.0), gal, HUD);
         }
 
-        // 热键演示下面的说明：按键、名字、效果、五个点
+        // Caption under the hotkey demo: key, name, effect, five dots
         if let Some((key, name, chip, down)) = caption {
             let p = ui.painter();
             let y = r.max.y + 24.0;
@@ -568,7 +568,7 @@ impl State {
     }
 }
 
-/// 预览底：深色竖向渐变，不用游戏截图。
+/// Preview background: dark vertical gradient, no game screenshot.
 fn backdrop(p: &egui::Painter, r: Rect) {
     let mut mesh = egui::epaint::Mesh::default();
     let top = Color32::from_rgb(0x34, 0x36, 0x35);
@@ -586,7 +586,7 @@ fn fade(c: Color32, a: f32) -> Color32 {
     c.gamma_multiply(a.clamp(0.0, 1.0))
 }
 
-/// 一条细线条：底槽加填充
+/// A thin bar: track plus fill
 fn line(p: &egui::Painter, x: f32, y: f32, w: f32, h: f32, ratio: f32, fill: Color32, a: f32) {
     p.rect_filled(
         Rect::from_min_size(pos2(x, y), vec2(w, h)),
@@ -612,7 +612,7 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
     let at = |x: f32, y: f32| pos2(r.min.x + r.width() * x, r.min.y + r.height() * y);
     let fs = |s: f32| (s * u).max(6.0);
 
-    // 自身：底板先模糊掉原生血条，再出现模块
+    // Player: the backing first blurs out the native health bar, then the module appears
     if f.banner > 0.0 {
         let br = Rect::from_min_size(at(0.045, 0.025), vec2(r.width() * 0.36, r.height() * 0.11));
         p.rect_filled(br, CornerRadius::same(6), fade(Color32::from_black_alpha(110), f.banner * a));
@@ -633,7 +633,7 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
         line(p, o.x, o.y + fs(21.0), w, fs(2.0), 0.7, fade(HUD, 0.6), pa);
     }
 
-    // 增益
+    // Buffs
     let buff_a = if f.density == Density::Minimal { 0.0 } else { a };
     if buff_a > 0.0 {
         let mut x = at(0.03, 0.30).x;
@@ -654,7 +654,7 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
         }
     }
 
-    // 伤害
+    // Damage
     let dps_a = if f.density == Density::Minimal { 0.0 } else { a };
     if dps_a > 0.0 {
         let o = at(f.dps_at.x, f.dps_at.y);
@@ -677,7 +677,7 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
         }
     }
 
-    // 怪物：底部和右侧两种位置之间平滑移动
+    // Monster: moves smoothly between the bottom and right positions
     let ox = lerp(0.22, 0.70, side);
     let oy = lerp(0.66, 0.14, side);
     let mw = r.width() * lerp(0.56, 0.27, side);
@@ -721,7 +721,7 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
         }
     }
 
-    // 布局模式：网格和光标
+    // Layout mode: grid and cursor
     if f.layout_grid {
         p.rect_filled(r, CornerRadius::ZERO, Color32::from_black_alpha(80));
         let step = 12.0 * u.max(0.8);
@@ -755,7 +755,7 @@ fn dashed(p: &egui::Painter, r: Rect, a: f32) {
     }
 }
 
-/// 存档账号这一步：图鉴格子按存档逐个点亮金冠。
+/// The save account step: crowns light up one by one in the notes grid according to the save.
 fn draw_book(p: &egui::Painter, pal: &Pal, r: Rect, t: f32, u: f32) {
     const BOOK: [(&str, bool, bool); 12] = [
         ("raging_brachydios", true, false),

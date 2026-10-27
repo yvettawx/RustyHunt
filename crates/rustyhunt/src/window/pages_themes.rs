@@ -1,4 +1,4 @@
-//! 04 主题：内置浅色、深色和本地主题；应用、导入、删除、打开 XML、跟随系统。
+//! 04 Themes: built-in light and dark plus local themes; apply, import, delete, open the XML, follow the system.
 
 use std::time::{Duration, Instant};
 
@@ -25,7 +25,7 @@ impl State {
     }
 }
 
-/// 当前在用的主题编号（跟随系统时是内置的浅色或深色）。
+/// ID of the theme in use (when following the system, the built-in light or dark).
 fn active(w: &MainWindow) -> String {
     let s = w.shared.settings();
     if s.theme_follow_system {
@@ -36,7 +36,7 @@ fn active(w: &MainWindow) -> String {
 }
 
 pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
-    // 主题文件夹可能被手动改动，隔几秒重新扫一次
+    // Theme folders may be changed by hand; rescan every few seconds
     if w.themes.loaded.is_none_or(|t| t.elapsed() > Duration::from_secs(3)) {
         w.themes.refresh();
     }
@@ -172,13 +172,13 @@ fn card(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, e: &Entry, width: f32, on: b
 }
 
 fn apply(w: &mut MainWindow, id: &str) {
-    // 手动选了主题就不再跟随系统
+    // Picking a theme by hand stops following the system
     w.shared.edit_settings(|s| s.theme_follow_system = false);
     themes::apply(&w.shared, id);
     w.themes.loaded = None;
 }
 
-/// 主题卡片上的小样：用这个主题自己的窗口配色画一块侧栏、名牌、血条和一行状态。
+/// Swatch on a theme card: a bit of sidebar, a name tag, an HP bar and a status line in this theme's own window colors.
 fn preview(ui: &Ui, r: Rect, e: &Entry, broken: bool) {
     let fallback = ui_kit::Theme::builtin(false);
     let c = Pal::of(e.theme.as_ref().unwrap_or(&fallback));
@@ -198,7 +198,7 @@ fn preview(ui: &Ui, r: Rect, e: &Entry, broken: bool) {
     let tr = Rect::from_min_size(pos2(x, r.min.y + 46.0), tag.size() + vec2(16.0, 5.0));
     p.rect_filled(tr, CornerRadius::ZERO, fade(c.block));
     p.galley(tr.min + vec2(8.0, 3.0), tag, fade(c.onblock));
-    // 血条：剩下的部分画斜线
+    // HP bar: hatch the remaining part
     let hp = Rect::from_min_max(pos2(x, r.min.y + 84.0), pos2(right, r.min.y + 91.0));
     let mut sx = hp.min.x;
     while sx < hp.max.x + hp.height() {

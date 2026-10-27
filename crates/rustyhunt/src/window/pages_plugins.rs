@@ -1,4 +1,4 @@
-//! 05 插件：已安装列表、启用、停用、权限、设置、删除；从文件安装。
+//! 05 Plugins: installed list, enable, disable, permissions, settings, delete; install from file.
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, Ui, pos2, vec2};
 use plugin_host::Permission;
@@ -176,7 +176,7 @@ fn detail(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, v: &View) {
         row(ui, pal, &perm_name(p), |ui| changed = switch(ui, pal, &mut granted).changed());
         if changed {
             if granted {
-                // 授予权限要确认
+                // Granting a permission needs confirmation
                 let id = m.id.clone();
                 w.modal = Some(Modal {
                     title: i18n::tf("plugin.ask_perm", &[("perm", &perm_name(p))]),
@@ -269,7 +269,7 @@ fn detail(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, v: &View) {
     });
 }
 
-/// 从文件安装：先读清单，弹窗列出作者和权限，确认后再装。
+/// Install from file: read the manifest first, show the author and permissions in a dialog, install after confirmation.
 fn ask_install(w: &mut MainWindow, path: &std::path::Path) {
     match plugins::prepare(path) {
         Ok(staged) => {

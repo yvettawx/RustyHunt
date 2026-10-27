@@ -1,5 +1,5 @@
-//! 图鉴：从 Steam 存档读猎人笔记（只读），读不到时可以手动登记；
-//! 狩猎结束时体型达到金冠，自动在图鉴里点亮并发通知。
+//! Hunter's Notes: read from the Steam save (read-only), with manual entry when the save can't be read.
+//! When a hunt ends with a crown-size monster, it lights up in the notes automatically and a notification is sent.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
@@ -17,7 +17,7 @@ const DATA: &str = include_str!("../../../data/world/bestiary.toml");
 #[derive(Debug, Clone, Deserialize)]
 pub struct Info {
     pub species: String,
-    /// 研究等级上限
+    /// Research level cap
     pub research: u8,
     #[serde(default)]
     pub maps: String,
@@ -30,7 +30,7 @@ pub fn info() -> &'static BTreeMap<String, Info> {
     I.get_or_init(|| toml::from_str(DATA).expect("内置图鉴数据格式正确"))
 }
 
-/// 地图代号对应术语表里的地图。
+/// Map codes to the maps in the term table.
 pub fn map_keys(code: &str) -> Vec<&'static str> {
     code.chars()
         .filter_map(|c| {
@@ -48,7 +48,7 @@ pub fn map_keys(code: &str) -> Vec<&'static str> {
         .collect()
 }
 
-/// 手动登记的值，盖过存档里的值。
+/// Manually entered values, which override the save.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Manual {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -132,7 +132,7 @@ pub fn with<R>(f: impl FnOnce(&mut Book) -> R) -> R {
     f(b)
 }
 
-/// 存档路径：设置里选的 Steam 账号；没选时用第一个有世界存档的账号。
+/// Save path: the Steam account chosen in settings; if none, the first account with a World save.
 pub fn save_path(account: Option<u32>) -> Option<PathBuf> {
     let steam = platform::steam::steam_dir()?;
     let app = Game::World.steam_app_id();
@@ -143,7 +143,7 @@ pub fn save_path(account: Option<u32>) -> Option<PathBuf> {
     platform::steam::accounts(&steam).into_iter().map(|a| file(a.account_id)).find(|p| p.is_file())
 }
 
-/// 游戏内部编号到皇冠阈值：按术语表的键反查。
+/// In-game ID to crown thresholds, looked up through the term table key.
 fn thresholds(key: &str) -> (f32, f32) {
     let d = game_world::data::data();
     d.monster_keys
@@ -181,7 +181,7 @@ pub fn rows(book: &Book) -> Vec<Row> {
                 big: !inf.fixed && m.big.unwrap_or(big),
                 small: !inf.fixed && m.small.unwrap_or(small),
                 research,
-                // 存档里的值超过表里的上限时，以存档为准
+                // When the save's value is above the table's cap, the save wins
                 research_cap: inf.research.max(saved_research).min(9),
                 nav: m.nav.unwrap_or(0),
                 slain: r.map_or(0, |r| r.slain),
@@ -193,7 +193,7 @@ pub fn rows(book: &Book) -> Vec<Row> {
         .collect()
 }
 
-/// 后台读存档。读完后比较前后点亮的金冠数量，发通知。
+/// Reads the save in the background, then compares how many crowns are lit before and after and sends a notification.
 pub fn read(shared: std::sync::Arc<Shared>) {
     let account = shared.settings().save_account;
     let player = shared.live().snapshot.player.name.clone();
@@ -216,7 +216,7 @@ pub fn read(shared: std::sync::Arc<Shared>) {
                 b.path = Some(path.clone());
                 match result {
                     Ok(Ok(save)) => {
-                        // 连着游戏时选当前角色，否则选游戏时间最长的
+                        // While connected to the game pick the current character, otherwise the one with the most play time
                         b.hunter = save
                             .hunters
                             .iter()
@@ -261,7 +261,7 @@ pub fn read(shared: std::sync::Arc<Shared>) {
         .ok();
 }
 
-/// 手动改一项。
+/// Changes one entry manually.
 pub fn set(key: &str, f: impl FnOnce(&mut Manual)) {
     with(|b| {
         let m = b.store.world.entry(key.to_string()).or_default();
@@ -270,7 +270,7 @@ pub fn set(key: &str, f: impl FnOnce(&mut Manual)) {
     });
 }
 
-/// 狩猎结束时：金冠或小金冠还没登记的，自动点亮并发通知。
+/// When a hunt ends: crowns not recorded yet are lit automatically and a notification is sent.
 pub fn on_hunt_finished(shared: &Shared, key: &str, crown: Crown, _size: f32) {
     if !matches!(crown, Crown::Gold | Crown::Mini) || info().get(key).is_none_or(|i| i.fixed) {
         return;
@@ -333,7 +333,7 @@ pub fn export_json() -> String {
     serde_json::to_string_pretty(&serde_json::json!({ "game": "world", "monsters": v })).unwrap_or_default()
 }
 
-/// 导入备份：作为手动登记写入。
+/// Imports a backup as manual entries.
 pub fn import_json(text: &str) -> Result<usize, String> {
     let v: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let rows: Vec<ExportRow> = serde_json::from_value(v.get("monsters").cloned().unwrap_or_default()).map_err(|e| e.to_string())?;

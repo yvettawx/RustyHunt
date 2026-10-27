@@ -1,4 +1,4 @@
-//! Windows 平台相关的功能：进程、内存、窗口、按键、Steam。
+//! Windows-specific features: processes, memory, windows, keys, Steam.
 
 pub mod keys;
 pub mod memory;
@@ -11,7 +11,7 @@ pub mod window;
 
 pub use memory::{FakeMemory, Memory, ReadError, ReadResult};
 
-/// 转成以 0 结尾的 UTF-16，给 Win32 的 `W` 系列函数用。
+/// Converts to null-terminated UTF-16 for the Win32 `W` functions.
 pub fn wide(s: &std::ffi::OsStr) -> Vec<u16> {
     #[cfg(windows)]
     {

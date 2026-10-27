@@ -1,16 +1,16 @@
-//! 主程序和注入游戏的 rustyhunt-native.dll 之间的协议。
+//! Protocol between the main program and rustyhunt-native.dll injected into the game.
 //!
-//! DLL 在 127.0.0.1 上开一个 TCP 端口，一问一答，每条消息一行：
+//! The DLL opens a TCP port on 127.0.0.1; request and reply, one message per line:
 //!
-//! | 请求 | 回答 |
+//! | Request | Reply |
 //! |---|---|
-//! | `HELLO` | `RUSTYHUNT-NATIVE <版本>` |
-//! | `HOOK <十六进制地址>` | `OK` 或 `ERR <原因>` |
+//! | `HELLO` | `RUSTYHUNT-NATIVE <version>` |
+//! | `HOOK <hex address>` | `OK` or `ERR <reason>` |
 //! | `UNHOOK` | `OK` |
-//! | `STATS` | `STATS <总伤害> <会心伤害> <命中次数> <会心次数>` |
+//! | `STATS` | `STATS <total damage> <crit damage> <hits> <crits>` |
 //! | `CLEAR` | `OK` |
 
-/// 和上游 HunterPie 的端口不同，两个程序同时开着也不冲突。
+/// Differs from upstream HunterPie's port, so both programs can run at the same time.
 pub const PORT: u16 = 22013;
 
 pub const DLL_NAME: &str = "rustyhunt-native.dll";

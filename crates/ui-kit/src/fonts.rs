@@ -1,6 +1,6 @@
-//! 字体：数字用自带的 Montserrat（只含拉丁字符，约 140 KB），中文用系统的
-//! 微软雅黑，日文缺字时退到游黑体。系统字体用内存映射读，只有用到的字形
-//! 才会进内存。
+//! Fonts: numbers use the bundled Montserrat (Latin only, about 140 KB), Chinese uses the system's
+//! Microsoft YaHei, and missing Japanese glyphs fall back to Yu Gothic. System fonts are memory-mapped,
+//! so only the glyphs actually used end up in memory.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -51,7 +51,7 @@ impl Font {
         FontId::new(size, self.family())
     }
 
-    /// 主题里写的 family 和 weight 对应到哪一种字体。
+    /// Which font a theme's family and weight map to.
     pub fn from_token(family: &str, weight: u16) -> Font {
         let num = family.to_ascii_lowercase().contains("montserrat") || family == "number";
         match (num, weight) {
@@ -74,7 +74,7 @@ impl AsRef<[u8]> for Mapped {
 
 fn map_font(path: &Path) -> Option<Arc<dyn AsRef<[u8]> + Send + Sync>> {
     let file = std::fs::File::open(path).ok()?;
-    // 系统字体目录里的文件不会在运行时被改写
+    // Files in the system font directory aren't rewritten at runtime
     let map = unsafe { memmap2::Mmap::map(&file) }.ok()?;
     Some(Arc::new(Mapped(map)))
 }
@@ -86,7 +86,7 @@ fn windows_fonts() -> std::path::PathBuf {
         .join("Fonts")
 }
 
-/// 主题自带的字体：名字 -> 文件内容。
+/// Fonts bundled with a theme: name -> file contents.
 pub type ExtraFonts = BTreeMap<String, Vec<u8>>;
 
 pub fn definitions(extra: &ExtraFonts) -> FontDefinitions {
@@ -128,7 +128,7 @@ pub fn definitions(extra: &ExtraFonts) -> FontDefinitions {
         themed.push(format!("theme-{name}"));
     }
 
-    // 粗体缺字时退到常规体，再退到 egui 自带的字体
+    // Missing bold glyphs fall back to the regular face, then to egui's built-in font
     cjk_bold.extend(cjk.iter().cloned());
     let builtin: Vec<String> = d.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
     let chain = |first: &[&str], rest: &[String]| -> Vec<String> {

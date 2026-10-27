@@ -1,5 +1,5 @@
-//! 三作共用的数据结构、事件、设置、文案和模块描述。上层只依赖这里，
-//! 不直接依赖某一作的读取逻辑。
+//! Data structures, events, settings, copy and module descriptions shared by the three games.
+//! Upper layers depend only on this crate, never directly on one game's reader.
 
 pub mod events;
 pub mod i18n;
@@ -14,8 +14,8 @@ pub use model::*;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// 检查更新用的 GitHub 仓库，可以在设置里改。
+/// GitHub repository used for update checks; can be changed in settings.
 pub const DEFAULT_REPO: &str = "yvettawx/RustyHunt";
 
-/// 数据字段表的版本，加字段时升小版本。
+/// Version of the data field table; bump the minor version when adding fields.
 pub const FIELDS_VERSION: &str = "1.0";

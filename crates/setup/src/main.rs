@@ -1,8 +1,8 @@
-//! RustyHunt 安装版的安装程序：装在当前用户目录，不需要管理员权限；
-//! 数据在 `%APPDATA%\RustyHunt\`。带 `--uninstall` 运行时卸载。
+//! Installer for the installed build of RustyHunt: installs into the current user's folder, no admin rights needed;
+//! data lives in `%APPDATA%\RustyHunt\`. Run with `--uninstall` to uninstall.
 //!
-//! 安装包里装的就是便携版的 zip（去掉 `portable` 标记），所以两种形式的程序文件完全一样，
-//! 更新也走同一个包。
+//! The payload is the portable zip (without the `portable` marker), so both forms have exactly the same program files
+//! and updates use the same package.
 
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
@@ -44,7 +44,7 @@ fn lang() -> Lang {
     }
 }
 
-/// 安装程序自己的几句话，按系统语言选。
+/// The installer's own few lines of text, picked by system language.
 fn t(key: &str) -> &'static str {
     let l = lang();
     let row: [&str; 4] = match key {
@@ -98,7 +98,7 @@ fn shortcut() -> Option<PathBuf> {
     std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("Microsoft\\Windows\\Start Menu\\Programs").join(format!("{APP}.lnk")))
 }
 
-/// zip 里的路径：去掉共同的顶层文件夹；不安全的路径返回 None。
+/// Path inside the zip with the common top-level folder removed; None for unsafe paths.
 fn entry_path(name: &Path, strip: Option<&Path>) -> Option<PathBuf> {
     let p = match strip {
         Some(s) => name.strip_prefix(s).ok()?.to_path_buf(),
@@ -114,7 +114,7 @@ fn common_root(z: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> Option<PathBu
         let name = e.enclosed_name()?;
         let mut comps = name.components();
         let first = comps.next()?.as_os_str().to_owned();
-        // 顶层有文件，说明没有共同的文件夹（不能看扩展名：RustyHunt-1.0.0 也有"扩展名"）
+        // A file at the top level means there's no common folder (extensions can't tell: RustyHunt-1.0.0 has an "extension" too)
         if comps.next().is_none() && !e.is_dir() {
             return None;
         }
@@ -135,7 +135,7 @@ fn extract(payload: &[u8], to: &Path) -> Result<u64, String> {
         let mut e = z.by_index(i).map_err(|e| e.to_string())?;
         let Some(name) = e.enclosed_name() else { continue };
         let Some(rel) = entry_path(&name, strip.as_deref()) else { continue };
-        // 安装版不要便携版标记
+        // The installed build doesn't want the portable marker
         if rel == Path::new("portable") {
             continue;
         }
@@ -170,7 +170,7 @@ fn reg_dword(h: HKEY, name: &str, value: u32) {
     }
 }
 
-/// 在"设置 > 应用"里登记，可以从那里卸载。
+/// Registers under Settings > Apps so it can be uninstalled from there.
 fn register(dir: &Path, bytes: u64) {
     let key = wide(UNINSTALL_KEY);
     let mut h: HKEY = std::ptr::null_mut();
@@ -231,7 +231,7 @@ fn install() {
     if message(&format!("{}\n{}", t("install_to"), dir.display()), MB_YESNO | MB_ICONQUESTION) != IDYES {
         return;
     }
-    // 正在运行的 exe 删不掉：先试着改个名，改不了说明程序开着
+    // A running exe can't be deleted: try renaming it first; if that fails the program is open
     let exe = dir.join("rustyhunt.exe");
     if exe.exists() {
         let probe = dir.join("rustyhunt.exe.setup");
@@ -293,7 +293,7 @@ fn uninstall() {
     }
     let key = wide(UNINSTALL_KEY);
     unsafe { RegDeleteTreeW(HKEY_CURRENT_USER, key.as_ptr()) };
-    // 自己还在运行，删不掉自己所在的文件夹：退出后让 cmd 删
+    // We're still running and can't delete our own folder: let cmd delete it after we exit
     let _ = Command::new("cmd")
         .raw_arg(format!("/c ping 127.0.0.1 -n 3 >nul & rmdir /s /q \"{}\"", dir.display()))
         .creation_flags(CREATE_NO_WINDOW)

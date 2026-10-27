@@ -1,5 +1,5 @@
-//! Iceborne 存档加密用的常量表。来自 Cirilla（MIT 许可，Copyright (c) 2018 Wouter Visser），
-//! 原始出处是 LEGENDFF/mhw-Savecrypt。
+//! Constant tables for Iceborne save encryption. From Cirilla (MIT license, Copyright (c) 2018 Wouter Visser),
+//! originally from LEGENDFF/mhw-Savecrypt.
 
 #[rustfmt::skip]
 pub static INTEGERS: [u32; 4096] = [

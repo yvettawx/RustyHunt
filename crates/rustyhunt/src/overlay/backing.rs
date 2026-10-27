@@ -1,6 +1,6 @@
-//! 自身模块的底板：盖住原生血条。三种样式：关、实底、模糊。
-//! 实底直接画在 overlay 里，边缘羽化；模糊用一个单独的小窗口，让系统（DWM）
-//! 模糊它后面的游戏画面，overlay 再在边缘叠一层渐变把硬边柔化。
+//! Backing of the player module, covering the native health bar. Three styles: off, solid, blur.
+//! Solid is drawn in the overlay with feathered edges; blur uses a separate small window so the
+//! system (DWM) blurs the game behind it, and the overlay adds a gradient at the edges to soften them.
 
 use egui::epaint::Mesh;
 use egui::{Color32, Id, LayerId, Order, Pos2, Rect, Shape, pos2, vec2};
@@ -17,7 +17,7 @@ pub struct Backing {
     last: Option<(i32, i32, i32, i32, u8)>,
 }
 
-/// 四周羽化的矩形：外圈透明，往里渐变到 `color`。
+/// A rectangle feathered on all sides: transparent at the edge, fading in to `color`.
 fn feathered(rect: Rect, fx: f32, fy: f32, color: Color32) -> Shape {
     let xs = [rect.min.x, rect.min.x + fx, rect.max.x - fx, rect.max.x];
     let ys = [rect.min.y, rect.min.y + fy, rect.max.y - fy, rect.max.y];
@@ -68,7 +68,7 @@ impl Backing {
                 painter.add(feathered(rect, fx, fy, Color32::from_rgba_unmultiplied(10, 10, 10, (op * 255.0) as u8)));
             }
             Mode::Blur => {
-                // 模糊窗口只盖中间不羽化的部分，四周用渐变过渡
+                // The blur window only covers the unfeathered middle; the edges use a gradient
                 let ppp = ctx.pixels_per_point();
                 let Some(origin) = crate::win::window_origin(overlay) else { return };
                 let inner = rect.shrink2(vec2(fx * 0.5, fy * 0.5));

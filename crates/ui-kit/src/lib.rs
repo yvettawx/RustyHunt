@@ -1,4 +1,4 @@
-//! 界面描述的解析和绘制，主题和插件共用。
+//! Parsing and drawing UI descriptions, shared by themes and plugins.
 
 pub mod check;
 pub mod color;

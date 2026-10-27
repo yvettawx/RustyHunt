@@ -1,4 +1,4 @@
-//! 07 日志：按级别筛选、搜索、复制、打开日志文件。
+//! 07 Log: filter by level, search, copy, open the log file.
 
 use egui::{Color32, Ui, vec2};
 use log::Level;

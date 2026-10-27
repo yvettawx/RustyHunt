@@ -1,4 +1,4 @@
-//! 06 设置：通用、热键、性能、文件、注入、通知、语言、关于。
+//! 06 Settings: general, hotkeys, performance, files, injection, notifications, language, about.
 
 use egui::{Align2, CornerRadius, Rect, Sense, Ui, pos2, vec2};
 use rh_core::i18n::{self, Lang};
@@ -13,7 +13,7 @@ use crate::state::Shared;
 #[derive(Default)]
 pub struct State {
     pub tab: usize,
-    /// 正在录制哪个热键
+    /// The hotkey being recorded
     capturing: Option<String>,
     capture_armed: bool,
 }
@@ -132,7 +132,7 @@ fn hotkeys(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ("show_all", "hotkey.show_all", hk.show_all.clone()),
         ("cycle_target", "hotkey.cycle_target", hk.cycle_target.clone()),
     ];
-    // 录制：等所有键松开后，按下的第一个组合就是新热键
+    // Recording: after all keys are released, the first combination pressed becomes the new hotkey
     if let Some(id) = w.settings.capturing.clone() {
         let any = platform::keys::capture();
         if !w.settings.capture_armed {
@@ -469,7 +469,7 @@ fn language(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     });
 }
 
-/// 用户导入的语言包：数据目录 locales 下的 `<语言>.toml`，覆盖或补充内置文案。
+/// Language packs imported by the user: `<lang>.toml` under locales in the data directory, overriding or adding to the bundled copy.
 fn installed_packs() -> Vec<(String, std::path::PathBuf)> {
     std::fs::read_dir(rh_core::paths::locales())
         .into_iter()

@@ -1,5 +1,5 @@
-//! 读取线程：找游戏进程、按版本挑地址表、按设置的频率读内存，
-//! 把快照和事件交给 overlay、记录和插件。读和画分开两个线程。
+//! Reader thread: finds the game process, picks the address map for its version, reads memory at
+//! the configured rate, and hands snapshots and events to the overlay, records and plugins. Reading and drawing run on separate threads.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -16,7 +16,7 @@ use rh_core::settings::TargetMode;
 use crate::notify::{Kind, Notification};
 use crate::state::{Connection, Live, Shared};
 
-/// 每一帧拿到快照和事件的下游：狩猎记录、插件、注入。
+/// Consumers of each frame's snapshot and events: hunt records, plugins, injection.
 pub trait Sink: Send {
     fn frame(&mut self, shared: &Shared, snap: &Arc<Snapshot>, events: &[Event]);
     fn attached(&mut self, _shared: &Shared, _pid: u32) {}
@@ -38,7 +38,7 @@ enum Phase {
 }
 
 pub fn map_dirs() -> Vec<PathBuf> {
-    // 单独更新的地址表优先
+    // Separately updated maps take priority
     vec![rh_core::paths::maps(), rh_core::paths::bundled("maps")]
 }
 
@@ -117,7 +117,7 @@ impl Scanner {
                 if !platform::process::find_process(Game::World.exe()).is_some_and(|p| p == pid) {
                     self.detach("游戏已退出");
                 } else if since.elapsed() > Duration::from_secs(10) {
-                    // 地址表可能刚单独更新过，重新试
+                    // The map may have just been updated separately; try again
                     if game_world::attach::load_map(&map_dirs(), &version).is_ok() {
                         log::info!("找到版本 {version} 的地址表，重新连接");
                         self.phase = Phase::Idle;
@@ -159,7 +159,7 @@ impl Scanner {
         let Some(win) = window::main_window(pid) else { return };
         let title = win.title();
         let Some(version) = game_world::attach::version_from_title(&title) else {
-            // 刚启动时标题里还没有版本号
+            // Right after launch the title has no version yet
             log::debug!("窗口标题 {title} 里没有版本号，稍后再试");
             return;
         };
@@ -230,7 +230,7 @@ impl Scanner {
             reader.map().len(),
             module.base
         );
-        // 崩溃日志里要写游戏版本
+        // Crash logs should include the game version
         crate::crash::set_game_version(&version);
         {
             let mut live = self.shared.live.write().unwrap();
@@ -291,7 +291,7 @@ impl Scanner {
         let snap = reader.read(&prev, now);
         let read_ms = t0.elapsed().as_secs_f32() * 1000.0;
 
-        // 读失败只写日志，同一类每分钟最多一条
+        // Read failures only go to the log, at most once a minute per kind
         let warnings = std::mem::take(&mut reader.warnings);
         for w in warnings {
             let key = w.split('：').next().unwrap_or(&w).to_string();
@@ -313,14 +313,14 @@ impl Scanner {
         self.publish(snap, Connection::Connected);
     }
 
-    /// 选目标、算连击伤害和 DPS 曲线、比较事件，然后发布。
+    /// Picks the target, computes combo damage and the DPS curve, compares events, then publishes.
     fn publish(&mut self, mut snap: Snapshot, connection: Connection) {
         let now = self.shared.now();
         let prev = self.shared.live().snapshot.clone();
         let mode = self.shared.settings().profile(Game::World).monster.target_mode;
 
         if let Some(split) = crate::injection::damage_split() {
-            // 单人时自己的伤害本来是按怪物掉血估的，有 hook 就用准确值
+            // Solo, our damage is estimated from monster HP loss; with the hook use the exact value
             if !snap.online
                 && split.total > 0.0
                 && let Some(me) = snap.party.iter_mut().find(|p| p.is_self)
@@ -339,7 +339,7 @@ impl Scanner {
         }
         self.hit_times.retain(|uid, _| snap.monster(*uid).is_some());
 
-        // 处理"切换目标"动作的计数在主线程做，这里读结果
+        // The "switch target" action is counted on the main thread; read the result here
         let manual = self.shared.live().target;
         let target = select_target(&snap, mode, manual, &self.hit_times, &mut self.manual_target);
 
@@ -399,7 +399,7 @@ impl Scanner {
     }
 }
 
-/// 按目标模式选目标怪物。
+/// Picks the target monster by target mode.
 pub fn select_target(snap: &Snapshot, mode: TargetMode, manual: Option<u64>, hits: &std::collections::HashMap<u64, f64>, _cursor: &mut usize) -> Option<u64> {
     let alive: Vec<&rh_core::model::Monster> = snap.large_monsters().filter(|m| m.alive()).collect();
     let fallback = || {
@@ -433,7 +433,7 @@ pub fn select_target(snap: &Snapshot, mode: TargetMode, manual: Option<u64>, hit
     }
 }
 
-/// 手动切换：从当前目标换到下一只活着的大型怪物。
+/// Manual switch: from the current target to the next living large monster.
 pub fn next_target(snap: &Snapshot, current: Option<u64>) -> Option<u64> {
     let list: Vec<u64> = snap.large_monsters().filter(|m| m.alive()).map(|m| m.uid).collect();
     if list.is_empty() {

@@ -1,4 +1,4 @@
-//! 设置，存成 `settings.toml`。每个游戏单独一套布局方案。
+//! Settings, stored as `settings.toml`. Each game has its own set of layout profiles.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -80,7 +80,7 @@ pub struct ModuleConfig {
     pub opacity: f32,
     pub hide_in_menu: bool,
     pub quest_only: bool,
-    /// 关掉的元素
+    /// Elements turned off
     pub off: BTreeSet<String>,
 }
 
@@ -131,11 +131,11 @@ impl Default for MonsterOptions {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PlayerOptions {
-    /// 低血阈值，百分比
+    /// Low-HP threshold, percent
     pub low_hp: f32,
     pub backing: Backing,
     pub blur: f32,
-    /// 底板不透明度 0..1
+    /// Backing opacity 0..1
     pub backing_opacity: f32,
     pub backing_w: f32,
     pub backing_h: f32,
@@ -157,7 +157,7 @@ impl Default for PlayerOptions {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tray {
     pub name: String,
-    /// 增益编号；空表示显示全部
+    /// Buff IDs; empty means show all
     pub ids: BTreeSet<String>,
 }
 
@@ -165,7 +165,7 @@ pub struct Tray {
 #[serde(default)]
 pub struct BuffOptions {
     pub trays: Vec<Tray>,
-    /// 剩余秒数低于它时变色
+    /// Changes color when fewer seconds than this are left
     pub low_secs: f32,
 }
 
@@ -181,7 +181,7 @@ impl Default for BuffOptions {
     }
 }
 
-/// 一个布局方案：每个模块的开关、位置、显示设置。
+/// A layout profile: on/off, position and display settings of every module.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Profile {
@@ -200,7 +200,7 @@ impl Profile {
         p
     }
 
-    /// 补上缺的模块（新版本加了模块，或者装了插件）。
+    /// Adds missing modules (added in a new version, or by an installed plugin).
     pub fn ensure(&mut self, game: Game, info: &ModuleInfo) {
         let side = self.monster.layout == MonsterLayout::Side;
         self.modules.entry(info.id.clone()).or_insert_with(|| ModuleConfig {
@@ -276,7 +276,7 @@ pub struct Hotkeys {
     pub density: String,
     pub show_all: String,
     pub cycle_target: String,
-    /// 插件注册的动作：插件编号.动作编号 -> 热键
+    /// Actions registered by plugins: plugin ID.action ID -> hotkey
     pub plugin: BTreeMap<String, String>,
 }
 
@@ -303,7 +303,7 @@ pub struct Notify {
     pub map_mismatch: bool,
     pub crown: bool,
     pub disconnect: bool,
-    /// 插件注册的通知渠道
+    /// Notification channels registered by plugins
     pub channels: BTreeMap<String, bool>,
 }
 
@@ -364,7 +364,7 @@ pub struct PluginState {
     pub enabled: bool,
     pub granted: BTreeSet<String>,
     pub settings: BTreeMap<String, toml::Value>,
-    /// 安装时确认过的权限，权限变化时要重新确认
+    /// Permissions confirmed at install time; a permission change needs a new confirmation
     pub confirmed: BTreeSet<String>,
 }
 
@@ -372,7 +372,7 @@ pub struct PluginState {
 #[serde(default)]
 pub struct Update {
     pub check_on_start: bool,
-    /// GitHub 仓库，形如 owner/name
+    /// GitHub repository, as owner/name
     pub repo: String,
     pub skipped: Option<String>,
 }
@@ -411,7 +411,7 @@ pub struct Settings {
     pub game_paths: BTreeMap<String, String>,
     pub update: Update,
     pub plugins: BTreeMap<String, PluginState>,
-    /// 没连上游戏时用模拟数据驱动 overlay
+    /// Drive the overlay with simulated data when the game isn't connected
     pub demo: bool,
     pub window: Option<[f32; 4]>,
 }
@@ -464,7 +464,7 @@ impl Settings {
         s
     }
 
-    /// 写到临时文件再改名，写一半断电也不会坏。
+    /// Writes to a temporary file and renames it, so a power cut mid-write can't corrupt it.
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
         let text = toml::to_string_pretty(self).map_err(std::io::Error::other)?;
         if let Some(dir) = path.parent() {

@@ -1,4 +1,4 @@
-//! RustyHunt：怪物猎人的局内信息 overlay 和桌面程序。基于 HunterPie 改写。
+//! RustyHunt: an in-game overlay and desktop app for Monster Hunter. Rewritten from HunterPie.
 
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
@@ -68,7 +68,7 @@ fn main() {
     log::info!("启动 RustyHunt {}，数据目录 {}", rh_core::VERSION, paths::root().display());
 
     if args.screenshot.is_none() && !win::single_instance() {
-        // 已经有一个在运行：让它把主界面打开
+        // One is already running: ask it to open its main window
         if let Some(h) = win::own_window_any(window::TITLE) {
             win::focus_window(h);
         }

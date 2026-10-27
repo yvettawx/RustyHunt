@@ -1,5 +1,5 @@
-# 存档猎人笔记里怪物的序号（公会卡上的顺序）对应术语表的键。
-# 序号来自 Cirilla 的 misc/savedata.bt（MIT 许可）；68 号在游戏里核对过。
+# Monster index in the save's Hunter's Notes (the guild card order) to the term table key.
+# Indices from Cirilla's misc/savedata.bt (MIT license); 68 was checked in game.
 
 0 = "great_jagras"
 1 = "kulu_ya_ku"

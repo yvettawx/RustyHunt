@@ -1,5 +1,5 @@
-//! 和 Windows 打交道的零碎功能：窗口样式和位置、模糊底板窗口、单实例、
-//! 开机启动、打开文件夹、系统深浅色。
+//! Odds and ends of dealing with Windows: window style and position, the blur backing window,
+//! single instance, start at login, opening folders, system light/dark mode.
 
 use std::ffi::OsStr;
 use std::path::Path;
@@ -19,7 +19,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
     WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
 };
 
-/// overlay 窗口：不在任务栏出现，不抢焦点。
+/// Overlay window: not in the taskbar, doesn't take focus.
 pub fn style_overlay(hwnd: isize) {
     let h = hwnd as HWND;
     unsafe {
@@ -29,7 +29,7 @@ pub fn style_overlay(hwnd: isize) {
     }
 }
 
-/// 把 overlay 放到游戏客户区上（物理像素）。
+/// Places the overlay over the game's client area (physical pixels).
 pub fn place_overlay(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32)) {
     unsafe {
         SetWindowPos(hwnd as HWND, HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE | SWP_SHOWWINDOW);
@@ -67,7 +67,7 @@ unsafe extern "system" fn blur_proc(h: HWND, msg: u32, w: usize, l: isize) -> is
     unsafe { DefWindowProcW(h, msg, w, l) }
 }
 
-/// 模糊底板用的窗口：鼠标穿透、不抢焦点、不进任务栏。
+/// Window for the blur backing: click-through, doesn't take focus, not in the taskbar.
 pub fn create_blur_window() -> isize {
     let class = wide(OsStr::new("RustyHuntBacking"));
     unsafe {
@@ -116,8 +116,8 @@ struct CompositionData {
 
 type SetWca = unsafe extern "system" fn(HWND, *mut CompositionData) -> i32;
 
-/// 让系统模糊窗口后面的画面。`tint` 是叠在上面的黑色的透明度；
-/// 模糊强度 12 以上用亚克力（模糊更重），以下用普通模糊。
+/// Lets the system blur what is behind the window. `tint` is the opacity of the black on top;
+/// blur strength 12 and up uses acrylic (heavier blur), below that the plain blur.
 fn set_blur(hwnd: HWND, tint: u8, strength: f32) {
     unsafe {
         let user32 = wide(OsStr::new("user32.dll"));
@@ -146,13 +146,13 @@ pub fn place_blur_window(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32), tint: 
     let hw = hwnd as HWND;
     set_blur(hw, tint, strength);
     unsafe {
-        // 放在 overlay 正下方
+        // Directly below the overlay
         let after = overlay.map(|o| o as HWND).unwrap_or(HWND_TOPMOST);
         SetWindowPos(hw, after, x, y, w.max(1), h.max(1), SWP_NOACTIVATE | SWP_SHOWWINDOW);
     }
 }
 
-/// 本进程里按标题找窗口（主界面的子窗口没有 eframe 的 Frame 可拿句柄）。
+/// Finds a window in this process by title (the main window's child viewport has no eframe Frame to get a handle from).
 pub fn own_window(title: &str) -> Option<isize> {
     struct Ctx {
         pid: u32,
@@ -183,7 +183,7 @@ pub fn own_window(title: &str) -> Option<isize> {
     c.found
 }
 
-/// 单实例：已经有一个在运行时返回 false。
+/// Single instance: returns false when one is already running.
 pub fn single_instance() -> bool {
     let name = wide(OsStr::new("Local\\RustyHunt.SingleInstance"));
     unsafe {
@@ -215,7 +215,7 @@ fn open_run_key() -> Option<HKEY> {
     (rc == 0).then_some(h)
 }
 
-/// 开机启动：写在当前用户的 Run 键下，不需要管理员权限。
+/// Start at login: written under the current user's Run key, no admin rights needed.
 pub fn set_autostart(on: bool) {
     let Some(h) = open_run_key() else { return };
     let name = wide(OsStr::new("RustyHunt"));
@@ -231,7 +231,7 @@ pub fn set_autostart(on: bool) {
     }
 }
 
-/// 系统是不是深色模式。
+/// Whether the system is in dark mode.
 pub fn system_dark() -> bool {
     let key = wide(OsStr::new("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"));
     let val = wide(OsStr::new("AppsUseLightTheme"));
@@ -251,7 +251,7 @@ pub fn system_dark() -> bool {
     rc == 0 && data == 0
 }
 
-/// 按标题找顶层窗口（任何进程）。
+/// Finds a top-level window by title (any process).
 pub fn own_window_any(title: &str) -> Option<isize> {
     let t = wide(OsStr::new(title));
     let h = unsafe { windows_sys::Win32::UI::WindowsAndMessaging::FindWindowW(std::ptr::null(), t.as_ptr()) };

@@ -1,4 +1,4 @@
-//! 02 模块：按游戏和方案切换；模块列表、实时预览、模块设置、元素开关。
+//! 02 Modules: switch by game and profile; module list, live preview, module settings, element toggles.
 
 use egui::{Align2, Color32, CornerRadius, Rect, Sense, Stroke, Ui, pos2, vec2};
 use rh_core::i18n;
@@ -31,7 +31,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         }
     });
 
-    // 游戏页签和方案
+    // Game tabs and profiles
     ui.horizontal(|ui| {
         let tabs: Vec<(String, bool)> = Game::ALL.iter().map(|g| (i18n::t(&format!("game_short.{}", g.key())), g.supported())).collect();
         widgets::tabs(ui, pal, &tabs, 0, false);
@@ -57,7 +57,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 w.modules.new_profile = Some(String::new());
             }
             let mut sel = names.iter().position(|n| *n == active).unwrap_or(0);
-            // 默认方案的名字存的是简体中文，显示时按界面语言
+            // The default profile's name is stored in Simplified Chinese and shown in the UI language
             let shown: Vec<String> = names
                 .iter()
                 .map(|n| {
@@ -75,7 +75,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             label_mute(ui, pal, &i18n::t("label.profile"), 13.0);
         });
     });
-    // 新建或重命名方案
+    // New or renamed profile
     if let Some(name) = w.modules.new_profile.as_mut() {
         let mut done = None;
         ui.horizontal(|ui| {
@@ -139,7 +139,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let total_w = ui.available_width();
     ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 44.0;
-        // 模块列表
+        // Module list
         ui.vertical(|ui| {
             ui.set_width(220.0);
             for (i, m) in infos.iter().enumerate() {
@@ -186,7 +186,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 }
             }
         });
-        // 预览和设置
+        // Preview and settings
         ui.vertical(|ui| {
             let width = total_w - 220.0 - 44.0;
             ui.set_width(width);
@@ -224,11 +224,11 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     });
 }
 
-/// 预览框的底：深色，带一点竖向渐变，不用游戏截图。
+/// Background of the preview box: dark with a slight vertical gradient, no game screenshot.
 fn preview_backdrop(ui: &Ui, pal: &Pal, r: Rect) {
     let p = ui.painter();
     let mut mesh = egui::epaint::Mesh::default();
-    // 主题的 window.desk 做底，上面提亮一点
+    // The theme's window.desk as the base, lightened a little
     let bottom = pal.desk;
     let top = egui::lerp(egui::Rgba::from(bottom)..=egui::Rgba::from(Color32::WHITE), 0.1).into();
     mesh.colored_vertex(r.left_top(), top);
@@ -373,14 +373,14 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
     }
 }
 
-/// 增益托盘：每个托盘自选显示哪些增益；不选就是全部。
+/// Buff trays: each tray picks which buffs to show; none picked means all.
 fn trays(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let shared = w.shared.clone();
     let game = Game::World;
     field_label(ui, pal, &i18n::t("label.trays"));
     let trays = shared.settings().profile(game).buffs.trays.clone();
     let i18n_cur = i18n::current();
-    // 可选的增益：常用的和正在生效的
+    // Buffs to choose from: common ones and those active right now
     let mut options: Vec<(String, String)> = game_world::data::data()
         .abnormalities
         .iter()

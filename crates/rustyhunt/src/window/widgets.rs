@@ -1,4 +1,4 @@
-//! 主界面的控件：方角、细线、黑块只用在主按钮和名牌上。
+//! Main window widgets: square corners, thin lines; black blocks only on primary buttons and name tags.
 
 use egui::{Align2, Color32, CornerRadius, Pos2, Rect, Response, RichText, Sense, Stroke, StrokeKind, Ui, Vec2, pos2, vec2};
 use ui_kit::Font;
@@ -52,7 +52,7 @@ pub fn button(ui: &mut Ui, pal: &Pal, text: &str, kind: Btn, small: bool) -> Res
     resp
 }
 
-/// 主按钮后面带一个热键提示。
+/// Primary button followed by a hotkey hint.
 pub fn button_key(ui: &mut Ui, pal: &Pal, text: &str, key: &str) -> Response {
     let g1 = galley(ui, text, Font::TextBold, 13.0, pal.onblock);
     let g2 = galley(ui, key, Font::Mono, 10.0, pal.onblock);
@@ -78,7 +78,7 @@ pub fn button_key(ui: &mut Ui, pal: &Pal, text: &str, key: &str) -> Response {
     resp
 }
 
-/// 带下划线的文字链接。
+/// Underlined text link.
 pub fn link(ui: &mut Ui, pal: &Pal, text: &str) -> Response {
     let g = galley(ui, text, Font::Text, 13.0, pal.ink);
     let (rect, resp) = ui.allocate_exact_size(g.size() + vec2(0.0, 2.0), Sense::click());
@@ -95,7 +95,7 @@ pub fn link(ui: &mut Ui, pal: &Pal, text: &str) -> Response {
     resp
 }
 
-/// 方形开关，28×14。
+/// Square switch, 28x14.
 pub fn switch(ui: &mut Ui, pal: &Pal, on: &mut bool) -> Response {
     let (rect, mut resp) = ui.allocate_exact_size(vec2(28.0, 14.0), Sense::click());
     if resp.clicked() {
@@ -120,7 +120,7 @@ pub fn switch(ui: &mut Ui, pal: &Pal, on: &mut bool) -> Response {
     resp
 }
 
-/// 分段选择：黑框，选中的一格反色。
+/// Segmented choice: black frame, the selected cell inverted.
 pub fn seg(ui: &mut Ui, pal: &Pal, options: &[String], selected: &mut usize) -> bool {
     let mut changed = false;
     let widths: Vec<f32> = options.iter().map(|o| galley(ui, o, Font::Text, 12.0, pal.ink).size().x + 24.0).collect();
@@ -148,7 +148,7 @@ pub fn seg(ui: &mut Ui, pal: &Pal, options: &[String], selected: &mut usize) -> 
     changed
 }
 
-/// 页签：选中的加粗加 2px 下划线。返回点到的序号。
+/// Tabs: the selected one is bold with a 2px underline. Returns the index clicked.
 pub fn tabs(ui: &mut Ui, pal: &Pal, items: &[(String, bool)], selected: usize, big: bool) -> Option<usize> {
     let size = if big { 16.0 } else { 14.0 };
     let gap = if big { 28.0 } else { 22.0 };
@@ -183,11 +183,11 @@ pub fn tabs(ui: &mut Ui, pal: &Pal, items: &[(String, bool)], selected: usize, b
     clicked
 }
 
-/// 细线滑块：1px 轨道，10×10 方块。右边显示数值和单位。
+/// Thin slider: 1px track, 10x10 square. Value and unit on the right.
 pub fn range(ui: &mut Ui, pal: &Pal, id: &str, value: &mut f32, min: f32, max: f32, step: f32, unit: &str, width: f32) -> bool {
     let mut changed = false;
     ui.horizontal(|ui| {
-        // 总宽 = 轨道 + 66
+        // Total width = track + 66
         ui.spacing_mut().item_spacing.x = 0.0;
         let (rect, resp) = ui.allocate_exact_size(vec2(width, 14.0), Sense::click_and_drag());
         let _ = id;
@@ -224,7 +224,7 @@ pub fn range(ui: &mut Ui, pal: &Pal, id: &str, value: &mut f32, min: f32, max: f
     changed
 }
 
-/// 下拉选择：只有一条下划线。
+/// Dropdown: just an underline.
 pub fn select(ui: &mut Ui, pal: &Pal, id: &str, options: &[String], selected: &mut usize, width: f32) -> bool {
     let mut changed = false;
     let cur = options.get(*selected).cloned().unwrap_or_default();
@@ -245,7 +245,7 @@ pub fn select(ui: &mut Ui, pal: &Pal, id: &str, options: &[String], selected: &m
     changed
 }
 
-/// 区块标题：一个词加一条细线；右边可以放说明数值。
+/// Section title: one word and a thin line; an explanatory value can go on the right.
 pub fn section(ui: &mut Ui, pal: &Pal, text: &str, right: Option<&str>) {
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 20.0), Sense::hover());
     let r = text_at(ui, pos2(rect.min.x, rect.center().y), Align2::LEFT_CENTER, text, Font::TextBold, 13.0, pal.ink);
@@ -259,7 +259,7 @@ pub fn section(ui: &mut Ui, pal: &Pal, text: &str, right: Option<&str>) {
     ui.add_space(8.0);
 }
 
-/// 页面标题：大字、引线、右边的按钮。
+/// Page title: large text, a leader line, buttons on the right.
 pub fn page_header(ui: &mut Ui, pal: &Pal, title: &str, actions: impl FnOnce(&mut Ui)) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 20.0;
@@ -282,7 +282,7 @@ pub fn page_header(ui: &mut Ui, pal: &Pal, title: &str, actions: impl FnOnce(&mu
     ui.add_space(22.0);
 }
 
-/// 设置行：左边文字，右边控件，下面一条细线。
+/// Settings row: text on the left, control on the right, a thin line below.
 pub fn setting_row(ui: &mut Ui, pal: &Pal, label: &str, extra: Option<&str>, control: impl FnOnce(&mut Ui)) {
     let w = ui.available_width().min(640.0);
     let (rect, _) = ui.allocate_exact_size(vec2(w, 52.0), Sense::hover());
@@ -312,7 +312,7 @@ pub fn setting_row(ui: &mut Ui, pal: &Pal, label: &str, extra: Option<&str>, con
     );
 }
 
-/// 紧凑的开关行（模块页的"显示内容"）。
+/// Compact switch row (the "Show" list on the Modules page).
 pub fn toggle_row(ui: &mut Ui, pal: &Pal, label: &str, on: &mut bool) -> bool {
     let w = ui.available_width();
     let (rect, _) = ui.allocate_exact_size(vec2(w, 33.0), Sense::hover());
@@ -337,7 +337,7 @@ pub fn toggle_row(ui: &mut Ui, pal: &Pal, label: &str, on: &mut bool) -> bool {
     changed
 }
 
-/// 热键框：等宽字，细框。
+/// Hotkey box: monospace text, thin frame.
 pub fn key_box(ui: &mut Ui, pal: &Pal, text: &str, active: bool) -> Response {
     let g = galley(ui, text, Font::Mono, 12.0, pal.ink);
     let (rect, resp) = ui.allocate_exact_size(vec2((g.size().x + 20.0).max(130.0), 26.0), Sense::click());
@@ -356,7 +356,7 @@ pub fn key_box(ui: &mut Ui, pal: &Pal, text: &str, active: bool) -> Response {
     resp
 }
 
-/// 只有下划线的输入框。
+/// Input box with just an underline.
 pub fn text_input(ui: &mut Ui, pal: &Pal, value: &mut String, hint: &str, width: f32) -> Response {
     let resp = ui.add(
         egui::TextEdit::singleline(value)
@@ -372,7 +372,7 @@ pub fn text_input(ui: &mut Ui, pal: &Pal, value: &mut String, hint: &str, width:
     resp
 }
 
-/// 黑底名牌。
+/// Name tag on black.
 pub fn tag(ui: &mut Ui, pal: &Pal, text: &str, size: f32) -> Response {
     let g = galley(ui, text, Font::TextBold, size, pal.onblock);
     let pad = vec2(size * 0.5, size * 0.2);
@@ -382,7 +382,7 @@ pub fn tag(ui: &mut Ui, pal: &Pal, text: &str, size: f32) -> Response {
     resp
 }
 
-/// 小菱形，用来标"使用中""当前"。
+/// Small diamond marking "in use" or "current".
 pub fn diamond(ui: &Ui, center: Pos2, size: f32, color: Color32) {
     let h = size / 2.0;
     ui.painter().add(egui::Shape::convex_polygon(
@@ -392,7 +392,7 @@ pub fn diamond(ui: &Ui, center: Pos2, size: f32, color: Color32) {
     ));
 }
 
-/// 一行事实：上面小字标签，下面粗数字。
+/// One fact: small label above, bold number below.
 pub fn fact(ui: &mut Ui, pal: &Pal, label: &str, value: &str, big: f32, accent: bool) {
     ui.vertical(|ui| {
         ui.spacing_mut().item_spacing.y = 2.0;
@@ -406,13 +406,13 @@ pub fn label_mute(ui: &mut Ui, pal: &Pal, text: &str, size: f32) -> Response {
     label(ui, text, Font::Text, size, pal.mute)
 }
 
-/// 一条水平细线。
+/// A thin horizontal line.
 pub fn hline(ui: &mut Ui, pal: &Pal) {
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 1.0), Sense::hover());
     ui.painter().rect_filled(r, CornerRadius::ZERO, pal.line);
 }
 
-/// 进度：细线条。
+/// Progress: a thin bar.
 pub fn thin_bar(ui: &mut Ui, color: Color32, track: Color32, ratio: f32, size: Vec2) {
     let (r, _) = ui.allocate_exact_size(size, Sense::hover());
     ui.painter().rect_filled(r, CornerRadius::ZERO, track);

@@ -1,8 +1,9 @@
-//! 示例插件：分段计时。
+//! Example plugin: split timer.
 //!
-//! 演示插件接口的各个部分：订阅事件、收数据快照、注册局内模块、热键动作、
-//! 设置、读写自己的文件夹、往狩猎记录写字段、注册导出器。接口说明见
-//! 仓库里的 `docs/plugins.md`。
+//! Shows every part of the plugin interface: subscribing to events, receiving data snapshots,
+//! registering an in-game module, hotkey actions, settings, reading and writing its own folder,
+//! writing fields to hunt records, and registering an exporter. The interface is documented in
+//! `docs/plugins.md` in the repository.
 
 use std::cell::RefCell;
 
@@ -17,16 +18,16 @@ unsafe extern "C" {
     fn fs_write(pp: *const u8, pl: i32, dp: *const u8, dl: i32) -> i32;
 }
 
-// ---- 和宿主交换数据 ----
+// ---- Exchanging data with the host ----
 
-/// 宿主往插件里写数据前先调用它要一块内存；这块内存归插件，用完由插件释放。
+/// The host calls this for a block of memory before writing data into the plugin; the block belongs to the plugin, which frees it when done.
 #[unsafe(no_mangle)]
 pub extern "C" fn rh_alloc(len: i32) -> *mut u8 {
     let b = vec![0u8; len.max(0) as usize].into_boxed_slice();
     Box::into_raw(b) as *mut u8
 }
 
-/// 取回宿主写进来的字节并释放。
+/// Takes back the bytes the host wrote and frees them.
 fn take(ptr: *mut u8, len: i32) -> Vec<u8> {
     unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len.max(0) as usize)) }.into_vec()
 }
@@ -35,7 +36,7 @@ fn take_str(ptr: *mut u8, len: i32) -> String {
     String::from_utf8_lossy(&take(ptr, len)).into_owned()
 }
 
-/// 宿主函数返回的 (ptr << 32) | len；负数表示失败。
+/// (ptr << 32) | len returned by host functions; negative means failure.
 fn unpack(r: i64) -> Option<Vec<u8>> {
     (r >= 0).then(|| take((r >> 32) as usize as *mut u8, (r & 0xFFFF_FFFF) as i32))
 }
@@ -59,7 +60,7 @@ fn record_field(key: &str, value: &str) {
     unsafe { set_record_field(key.as_ptr(), key.len() as i32, value.as_ptr(), value.len() as i32) }
 }
 
-// ---- 分段 ----
+// ---- Splits ----
 
 struct Split {
     name: String,
@@ -72,11 +73,11 @@ struct Timer {
     running: bool,
     elapsed: f64,
     splits: Vec<Split>,
-    /// 这个任务最好成绩的各段时间
+    /// Split times of this quest's best run
     best: Vec<f64>,
     stage_split: bool,
     rows: usize,
-    /// 导出器返回的内容，留到下次调用再释放
+    /// What the exporter returned, freed on the next call
     export: Vec<u8>,
 }
 
@@ -103,7 +104,7 @@ impl Timer {
         self.publish();
     }
 
-    /// 把要显示的几行交给宿主；宿主按当前主题画出来。
+    /// Hands the lines to display to the host, which draws them in the current theme.
     fn publish(&self) {
         let start = self.splits.len().saturating_sub(self.rows);
         let rows: Vec<Value> = self.splits[start..]
@@ -158,7 +159,7 @@ fn apply_settings(v: &Value) {
     });
 }
 
-// ---- 宿主调用的入口 ----
+// ---- Entry points called by the host ----
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rh_init(ptr: *mut u8, len: i32) {
@@ -194,7 +195,7 @@ pub extern "C" fn rh_event(ptr: *mut u8, len: i32) {
     });
 }
 
-/// 数据快照：字段和主题模板里的一样，这里只用任务时间（给手动分段用）。
+/// Data snapshot: same fields as theme templates; only the quest time is used here (for manual splits).
 #[unsafe(no_mangle)]
 pub extern "C" fn rh_frame(ptr: *mut u8, len: i32) {
     let f: Value = serde_json::from_slice(&take(ptr, len)).unwrap_or_default();
@@ -217,7 +218,7 @@ pub extern "C" fn rh_action(ptr: *mut u8, len: i32) {
     }
 }
 
-/// 导出器：输入 `{"exporter": 编号, "hunts": [...]}`，返回文件内容。
+/// Exporter: takes `{"exporter": id, "hunts": [...]}` and returns the file contents.
 #[unsafe(no_mangle)]
 pub extern "C" fn rh_export(ptr: *mut u8, len: i32) -> i64 {
     let v: Value = serde_json::from_slice(&take(ptr, len)).unwrap_or_default();

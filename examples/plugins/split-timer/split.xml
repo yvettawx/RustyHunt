@@ -1,7 +1,7 @@
-<!-- 分段计时的界面描述，格式和主题的模块模板相同；data 是插件交来的数据 -->
+<!-- UI description of the split timer, same format as a theme's module templates; data is what the plugin sends -->
 <column gap="6">
   <row gap="10" align="center">
-    <tag text="分段"/>
+    <tag text="Splits"/>
     <text text="{quest.elapsed | time}" font="number" size="22"/>
   </row>
   <for each="s in data.rows" gap="2">

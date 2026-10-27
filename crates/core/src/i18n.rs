@@ -1,10 +1,10 @@
-//! 界面文案和游戏术语。
+//! UI copy and game terms.
 //!
-//! - 界面文案：`locales/ui/<语言>.toml`，键是 ASCII，值是文案。
-//! - 游戏术语：`locales/terms/world.toml`（怪物、地图，来自游戏内文本）和
-//!   `locales/game/<语言>.toml`（部位、异常、增益等）。
+//! - UI copy: `locales/ui/<lang>.toml`, ASCII keys, text values.
+//! - Game terms: `locales/terms/world.toml` (monsters and maps, from in-game text) and
+//!   `locales/game/<lang>.toml` (parts, ailments, buffs and so on).
 //!
-//! 某种语言缺一条时退回简体中文，再退回键本身。
+//! A missing entry falls back to Simplified Chinese, then to the key itself.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -51,12 +51,12 @@ impl Lang {
     }
 }
 
-/// 一种语言的键值表。
+/// Key-value table for one language.
 #[derive(Debug, Default, Clone)]
 pub struct Table(HashMap<String, String>);
 
 impl Table {
-    /// 把嵌套的 TOML 展平成 `a.b.c = "..."`。
+    /// Flattens nested TOML into `a.b.c = "..."`.
     pub fn parse(text: &str) -> Result<Table, toml::de::Error> {
         let value: toml::Table = toml::from_str(text)?;
         let mut map = HashMap::new();
@@ -102,12 +102,12 @@ fn flatten(prefix: &str, v: &toml::Value, out: &mut HashMap<String, String>) {
     }
 }
 
-/// 一个游戏的术语表：怪物、地图、设施，按键查四种语言。
+/// Term table for one game: monsters, maps and facilities, looked up by key in four languages.
 #[derive(Debug, Default, Clone)]
 pub struct Terms {
-    /// 键 -> (语言 -> 名字)
+    /// key -> (language -> name)
     entries: HashMap<String, HashMap<Lang, String>>,
-    /// 怪物键 -> 是否大型
+    /// monster key -> is large
     large: HashMap<String, bool>,
 }
 
@@ -151,7 +151,7 @@ impl Terms {
         v
     }
 
-    /// 按英文名找键，用来把游戏内部编号对到术语表。
+    /// Finds a key by English name; used to map in-game IDs to the term table.
     pub fn find_by_english(&self, section: &str, english: &str) -> Option<String> {
         let head = format!("{section}.");
         self.entries.iter().find_map(|(k, names)| {
@@ -164,7 +164,7 @@ impl Terms {
 #[derive(Debug, Default)]
 pub struct I18n {
     pub ui_lang: Lang,
-    /// 游戏术语用的语言；None 表示跟随界面语言
+    /// Language for game terms; None follows the UI language
     pub term_lang: Option<Lang>,
     ui: HashMap<Lang, Table>,
     game: HashMap<Lang, Table>,
@@ -180,8 +180,8 @@ impl I18n {
         self.ui.entry(lang).or_default().merge(table);
     }
 
-    /// 游戏字符串按 `[part]`、`[ailment]` 等分节存放，查的时候不带节名，
-    /// 所以载入时同时按原键存一份。
+    /// Game strings are grouped in sections such as `[part]` and `[ailment]`, but lookups don't
+    /// include the section name, so loading also stores each entry under its bare key.
     pub fn load_game(&mut self, lang: Lang, table: Table) {
         let bare: HashMap<String, String> = table
             .0
@@ -219,7 +219,7 @@ impl I18n {
             .to_string()
     }
 
-    /// 带参数的文案，`{name}` 换成对应的值。
+    /// Copy with parameters: `{name}` is replaced by its value.
     pub fn tf(&self, key: &str, args: &[(&str, &str)]) -> String {
         let mut s = self.t(key);
         for (k, v) in args {
@@ -228,7 +228,7 @@ impl I18n {
         s
     }
 
-    /// 部位、异常、增益等游戏字符串。
+    /// Game strings: parts, ailments, buffs and so on.
     pub fn game(&self, key: &str) -> String {
         let lang = self.term_lang();
         self.game
@@ -284,7 +284,7 @@ pub fn tf(key: &str, args: &[(&str, &str)]) -> String {
     current().tf(key, args)
 }
 
-/// 程序自带的四种语言和术语表。
+/// The four bundled languages and the term tables.
 pub fn load_bundled(dir: &Path, ui_lang: Lang, term_lang: Option<Lang>) -> I18n {
     let mut i = I18n {
         ui_lang,

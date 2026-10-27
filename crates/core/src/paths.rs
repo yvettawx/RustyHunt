@@ -1,5 +1,5 @@
-//! 数据目录。安装版放在 `%APPDATA%\RustyHunt`；程序旁边有 `portable`
-//! 标记文件时是便携版，放在程序旁边的 `data\`。
+//! Data directory. The installed build uses `%APPDATA%\RustyHunt`; with a `portable` marker
+//! file next to the program it is the portable build and uses `data\` next to the program.
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -17,7 +17,7 @@ pub fn is_portable() -> bool {
     exe_dir().join("portable").exists()
 }
 
-/// 只在启动时调用一次；测试里可以指定别的目录。
+/// Call once at startup; tests can point it at another directory.
 pub fn init(root: Option<PathBuf>) -> &'static Path {
     ROOT.get_or_init(|| {
         root.unwrap_or_else(|| {
@@ -80,8 +80,8 @@ pub fn cache() -> PathBuf {
     sub("cache")
 }
 
-/// 程序自带的资源目录（地址表、数据文件），和 exe 放在一起。
-/// 开发时从工作区根目录找。
+/// Directory of bundled resources (address maps, data files), next to the exe.
+/// During development it is found from the workspace root.
 pub fn bundled(name: &str) -> PathBuf {
     let beside = exe_dir().join(name);
     if beside.exists() {

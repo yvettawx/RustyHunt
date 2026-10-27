@@ -3,7 +3,7 @@ name = "rustyhunt-setup"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "安装版的安装和卸载程序：装在当前用户目录，不需要管理员权限"
+description = "Installer and uninstaller: installs into the current user's folder without admin rights"
 
 [[bin]]
 name = "rustyhunt-setup"

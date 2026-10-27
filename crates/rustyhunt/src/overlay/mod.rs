@@ -1,6 +1,6 @@
-//! 局内 overlay：透明、置顶、鼠标穿透的窗口，盖在游戏客户区上。
-//! 画面按 1080 高的参考坐标设计，按游戏窗口的高度缩放，宽屏时按锚点左右对齐。
-//! 画面静止时不重绘，只有数据变化或动画进行中才画下一帧。
+//! In-game overlay: a transparent, topmost, click-through window over the game's client area.
+//! Designed on a 1080-high reference frame, scaled by the game window's height, and aligned by anchor on wide screens.
+//! Nothing is redrawn while the picture is still; only data changes or running animations draw the next frame.
 
 mod backing;
 mod hunter;
@@ -27,7 +27,7 @@ use crate::state::{Connection, Live, Shared};
 pub use layout::LayoutState;
 pub use misc::SLOT_COLORS;
 
-/// 画模块时用到的这一帧的数据。
+/// This frame's data used when drawing modules.
 pub struct Frame<'a> {
     pub snap: &'a Snapshot,
     pub live: &'a Live,
@@ -39,7 +39,7 @@ pub struct Frame<'a> {
     pub game: Game,
     pub target: Option<&'a Monster>,
     pub frame_us: u32,
-    /// 布局模式或预览：不受显示条件限制
+    /// Layout mode or preview: ignore the display conditions
     pub preview: bool,
 }
 
@@ -67,12 +67,12 @@ pub struct Toast {
     pub style: ToastStyle,
 }
 
-/// overlay 在帧与帧之间保留的状态。
+/// Overlay state kept between frames.
 #[derive(Default)]
 pub struct State {
     pub activity: Activity,
     prev: Option<Arc<Snapshot>>,
-    /// 怪物血量残影
+    /// Monster HP trail
     pub ghost: HashMap<u64, f32>,
     pub player_ghost: f32,
     pub player_hit_at: f64,
@@ -81,12 +81,12 @@ pub struct State {
     last_event: f64,
     last_frame: f64,
     pub dt: f32,
-    /// 本帧有动画，需要继续重绘
+    /// Something animated this frame, keep redrawing
     pub animating: bool,
-    /// 每个模块在画面上的矩形（参考坐标）
+    /// Each module's rect on screen (reference coordinates)
     pub rects: BTreeMap<String, Rect>,
     pub images: Images,
-    /// 模板模块的数据：每帧生成一次
+    /// Data for template modules, built once per frame
     pub context: Option<serde_json::Value>,
 }
 
@@ -167,7 +167,7 @@ fn module_layer(id: &str) -> LayerId {
     LayerId::new(Order::Foreground, Id::unique((LAYER_ROOT, id)))
 }
 
-/// 模块是否该显示。
+/// Whether a module should be shown.
 fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
     if !cfg.enabled {
         return false;
@@ -216,7 +216,7 @@ impl Overlay {
         }
     }
 
-    /// overlay 应该盖住哪一块屏幕（物理像素）。没有可显示的内容时返回 None。
+    /// Which part of the screen the overlay should cover (physical pixels). None when there is nothing to show.
     fn target_geometry(&self, live: &Live, layout: bool) -> Option<(i32, i32, i32, i32)> {
         if let Some(r) = live.game_rect
             && live.connected()
@@ -244,7 +244,7 @@ impl Overlay {
         let i18n = i18n::current();
         let now = shared.now();
 
-        // 窗口位置和穿透
+        // Window position and click-through
         let geometry = self.target_geometry(&live, layout_on);
         let want = geometry.unwrap_or((-32000, -32000, 1, 1));
         // Moving onto a monitor with a different scale makes winit resize the window
@@ -271,7 +271,7 @@ impl Overlay {
             self.preview_snap = None;
             live.snapshot.clone()
         } else {
-            // 没连游戏时进布局模式，用一帧演示数据摆位置
+            // Entering layout mode without the game: place modules using one frame of demo data
             self.preview_snap
                 .get_or_insert_with(|| Arc::new(game_world::demo::Demo::new().step(0.1)))
                 .clone()
@@ -312,7 +312,7 @@ impl Overlay {
             layout::backdrop(&ctx, screen, s, &self.layout, game);
         }
 
-        // 自身模块的底板（盖住原生血条）
+        // Backing of the player module (covers the native health bar)
         let player_cfg = profile.module(modules::PLAYER).cloned().unwrap_or_default();
         if visible(&f, &player_cfg) {
             self.backing.draw(&ctx, &f, &theme, screen, s, self.hwnd);
@@ -321,7 +321,7 @@ impl Overlay {
         }
 
         let mut ids: Vec<String> = profile.modules.keys().cloned().collect();
-        // 怪物模块画在最上面
+        // Monster modules go on top
         ids.sort_by_key(|id| id == modules::MONSTER);
         let mut rects = BTreeMap::new();
         for id in ids {
@@ -363,7 +363,7 @@ impl Overlay {
             .frame_us
             .store(if prev == 0 { us } else { (prev * 7 + us) / 8 }, std::sync::atomic::Ordering::Relaxed);
 
-        // 有动画时按帧率上限继续画；静止时不再请求重绘
+        // While animating keep drawing up to the frame cap; when still, stop requesting repaints
         if self.state.animating || layout_on || !self.state.toasts.is_empty() {
             let fps = settings.perf.fps_cap.clamp(30, 144) as f32;
             ctx.request_repaint_after(std::time::Duration::from_secs_f32(1.0 / fps));
@@ -382,13 +382,13 @@ impl Overlay {
     }
 }
 
-/// 画一个模块；overlay 和主界面"模块"页的预览共用。
+/// Draws one module; shared by the overlay and the preview on the main window's Modules page.
 pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Theme, ctx: &egui::Context, st: &mut State) -> Vec2 {
     {
-        // 主题给这个模块写了模板，就按模板画
+        // If the theme has a template for this module, draw from it
         if let Some(t) = theme.modules.get(id) {
             let mut data = st.context.get_or_insert_with(|| template_context(f, &st.activity)).clone();
-            // 主题也可以给插件模块写模板，插件的数据照样放在 data 里
+            // Themes can also template plugin modules; the plugin's data is under data as usual
             if id.contains('.') {
                 data["data"] = crate::plugins::module_data(id).unwrap_or_default();
             }
@@ -413,13 +413,13 @@ pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Th
     }
 }
 
-/// 模板里的 `module.show.<元素>`：模块页里这个元素开着没有。
+/// `module.show.<element>` in templates: whether this element is on in the Modules page.
 pub fn module_context(elements: &[rh_core::modules::ElementInfo], cfg: &ModuleConfig) -> serde_json::Value {
     let show: serde_json::Map<String, serde_json::Value> = elements.iter().map(|e| (e.key.clone(), serde_json::Value::Bool(cfg.shows(&e.key)))).collect();
     serde_json::json!({ "show": show })
 }
 
-/// 主界面里的预览：在 `rect` 里按比例画一个模块，用实时数据，没有就用演示数据。
+/// Preview in the main window: draws a module scaled into `rect`, with live data or demo data when there is none.
 pub struct Preview {
     pub state: State,
     demo: Option<game_world::demo::Demo>,
@@ -479,7 +479,7 @@ impl Preview {
             scale: 1.0,
             ..cfg
         };
-        // 先量尺寸（画到看不见的区域），再按比例画到预览框里
+        // Measure first (by drawing off-screen), then draw scaled into the preview box
         let hidden = ui.painter().with_clip_rect(Rect::NOTHING);
         let probe = Canvas::new(hidden, Pos2::ZERO, 1.0, &theme);
         let size = draw_any(id, &probe, &f, &cfg, &theme, ui.ctx(), &mut self.state);
@@ -514,7 +514,7 @@ pub fn template_context(f: &Frame, activity: &Activity) -> serde_json::Value {
     ui_kit::fields::context(f.snap, &o)
 }
 
-/// 时间显示：一小时以内 m:ss，超过 h:mm:ss。
+/// Time display: m:ss under an hour, h:mm:ss above.
 pub fn mmss(secs: f32) -> String {
     let s = secs.max(0.0) as i64;
     if s >= 3600 {
@@ -524,7 +524,7 @@ pub fn mmss(secs: f32) -> String {
     }
 }
 
-/// 千分位。
+/// Thousands separators.
 pub fn thousands(v: f32) -> String {
     let n = v.round() as i64;
     let s = n.abs().to_string();
@@ -538,7 +538,7 @@ pub fn thousands(v: f32) -> String {
     if n < 0 { format!("-{out}") } else { out }
 }
 
-/// 增益的剩余时间：一分钟以上 m:ss，以下 N s。
+/// Buff time left: m:ss for a minute or more, N s below.
 pub fn buff_time(t: f32, infinite: bool) -> String {
     if infinite {
         "∞".into()

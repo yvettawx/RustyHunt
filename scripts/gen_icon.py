@@ -1,5 +1,5 @@
-# 生成 assets/icon.ico：和程序里 window::icon_rgba 画的是同一个标记（深色方块加橙色菱形），
-# 先画 4 倍大再缩小做抗锯齿。python scripts/gen_icon.py assets/icon.ico
+# Generates assets/icon.ico: the same mark window::icon_rgba draws in the app (a dark square with an orange diamond),
+# drawn at 4x and scaled down for antialiasing.python scripts/gen_icon.py assets/icon.ico
 import sys
 from PIL import Image, ImageDraw
 

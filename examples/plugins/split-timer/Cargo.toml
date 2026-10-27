@@ -17,5 +17,5 @@ lto = true
 strip = true
 panic = "abort"
 
-# 不属于主工作区，单独编译：cargo build --release --target wasm32-unknown-unknown
+# Not part of the main workspace; build it on its own: cargo build --release --target wasm32-unknown-unknown
 [workspace]

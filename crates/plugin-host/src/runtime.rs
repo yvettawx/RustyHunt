@@ -1,18 +1,18 @@
-//! WebAssembly 运行时（wasmtime）。每个插件一个线程、一个 Store；
-//! 单次调用超过时限或者出错（trap）时只停掉这个插件。
+//! WebAssembly runtime (wasmtime). One thread and one Store per plugin; a call that runs
+//! past its time limit or traps stops only that plugin.
 //!
-//! 插件导出：
-//! - `memory`、`rh_alloc(len) -> ptr`（必需）
-//! - `rh_init(ptr, len)`：启动时收到设置（JSON）
-//! - `rh_event(ptr, len)`：订阅的事件（JSON）
-//! - `rh_frame(ptr, len)`：数据快照（JSON，字段同主题模板）
-//! - `rh_action(ptr, len)`：热键动作编号
-//! - `rh_settings(ptr, len)`：设置改了
-//! - `rh_export(ptr, len) -> i64`：导出器，输入狩猎记录 JSON，返回文件内容
-//! - `rh_notify(ptr, len)`：通知渠道收到的通知
+//! Plugin exports:
+//! - `memory`, `rh_alloc(len) -> ptr` (required)
+//! - `rh_init(ptr, len)`: settings (JSON) at startup
+//! - `rh_event(ptr, len)`: subscribed events (JSON)
+//! - `rh_frame(ptr, len)`: data snapshot (JSON, same fields as theme templates)
+//! - `rh_action(ptr, len)`: hotkey action ID
+//! - `rh_settings(ptr, len)`: settings changed
+//! - `rh_export(ptr, len) -> i64`: exporter; takes the hunt records JSON and returns the file contents
+//! - `rh_notify(ptr, len)`: a notification sent to its channel
 //!
-//! 插件能调用的宿主函数在 `rh` 模块里，见 `docs/plugins.md`。插件拿不到
-//! 游戏进程，也没有写游戏内存的函数。
+//! The host functions a plugin can call are in the `rh` module; see `docs/plugins.md`. Plugins
+//! never get the game process, and there is no function to write game memory.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -24,14 +24,14 @@ use wasmtime::{AsContextMut, Caller, Config, Engine, Extern, Instance, Linker, M
 
 use crate::manifest::{Manifest, Permission};
 
-/// 单次调用的时限
+/// Time limit of a single call
 pub const CALL_TIMEOUT: Duration = Duration::from_millis(500);
 const TICK: Duration = Duration::from_millis(10);
-/// 插件内存上限
+/// Plugin memory limit
 pub const MEMORY_LIMIT: usize = 64 * 1024 * 1024;
 const MAX_FILE: usize = 4 * 1024 * 1024;
 
-/// 宿主发给插件线程的消息。
+/// Messages from the host to a plugin thread.
 pub enum Msg {
     Event(String),
     Frame(String),
@@ -42,7 +42,7 @@ pub enum Msg {
     Stop,
 }
 
-/// 插件线程发回宿主的消息。
+/// Messages from a plugin thread back to the host.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Out {
     Log {
@@ -65,7 +65,7 @@ pub enum Out {
         port: u16,
         json: String,
     },
-    /// 插件出错或超时，已停止
+    /// The plugin failed or timed out and has been stopped
     Failed(String),
 }
 
@@ -91,7 +91,7 @@ pub fn engine() -> &'static Engine {
 
 static SAVE_READER: OnceLock<fn() -> String> = OnceLock::new();
 
-/// 设置 `save_read` 返回的内容（图鉴 JSON）。
+/// Sets what `save_read` returns (Hunter's Notes JSON).
 pub fn set_save_reader(f: fn() -> String) {
     let _ = SAVE_READER.set(f);
 }
@@ -102,7 +102,7 @@ fn deadline_ticks() -> u64 {
 
 pub struct HostCtx {
     pub plugin: String,
-    /// 插件自己的数据文件夹
+    /// The plugin's own data folder
     pub data_dir: PathBuf,
     pub granted: HashSet<Permission>,
     pub out: Sender<(String, Out)>,
@@ -130,7 +130,7 @@ fn read_str(caller: &mut Caller<'_, HostCtx>, ptr: i32, len: i32) -> Option<Stri
     read_bytes(caller, ptr, len).map(|b| String::from_utf8_lossy(&b).into_owned())
 }
 
-/// 把字节写进插件内存（调用插件的 rh_alloc），返回 (ptr << 32) | len；失败返回 -1。
+/// Writes bytes into plugin memory (via the plugin's rh_alloc) and returns (ptr << 32) | len; -1 on failure.
 fn give(caller: &mut Caller<'_, HostCtx>, bytes: &[u8]) -> i64 {
     let Some(alloc) = caller.get_export("rh_alloc").and_then(Extern::into_func) else {
         return -1;
@@ -146,7 +146,7 @@ fn give(caller: &mut Caller<'_, HostCtx>, bytes: &[u8]) -> i64 {
     ((ptr as i64) << 32) | bytes.len() as i64
 }
 
-/// 插件文件夹里的相对路径；不能跳出去。
+/// A relative path inside the plugin folder; it can't escape it.
 fn sandbox(dir: &Path, rel: &str) -> Option<PathBuf> {
     if rel.contains("..") || rel.starts_with(['/', '\\']) || rel.contains(':') {
         return None;
@@ -219,7 +219,7 @@ fn link(linker: &mut Linker<HostCtx>) -> wasmtime::Result<()> {
         if !url.starts_with("https://") && !url.starts_with("http://") {
             return -1;
         }
-        // 网络请求不算进调用时限
+        // Network requests don't count toward the call time limit
         c.as_context_mut().set_epoch_deadline(deadline_ticks() + 600);
         let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(5))).build().into();
         match agent
@@ -275,7 +275,7 @@ impl Guest {
         Ok((ptr, s.len() as i32))
     }
 
-    /// 调用一个 (ptr, len) 参数的导出；插件没有导出这个函数时什么也不做。
+    /// Calls an export taking (ptr, len); does nothing if the plugin doesn't export it.
     fn call(&mut self, name: &str, arg: &str) -> wasmtime::Result<()> {
         let Ok(f) = self.instance.get_typed_func::<(i32, i32), ()>(&mut self.store, name) else {
             return Ok(());
@@ -315,7 +315,7 @@ fn describe(e: &wasmtime::Error) -> String {
     s.lines().next().unwrap_or(&s).to_string()
 }
 
-/// 启动一个插件。编译、实例化失败时直接返回错误；之后的错误通过 `Out::Failed` 报告。
+/// Starts a plugin. Compile and instantiation failures are returned directly; later errors are reported through `Out::Failed`.
 pub fn spawn(
     manifest: &Manifest,
     plugin_dir: &Path,
@@ -502,7 +502,7 @@ mod tests {
         let (otx, orx) = channel();
         let r = spawn(&m, &dir, &dir.join("data"), HashSet::new(), "{}".into(), otx).unwrap();
         r.tx.send(Msg::Event("{}".into())).unwrap();
-        // 没权限时 fs_write 返回 -2，log 的长度就是 0
+        // Without the permission fs_write returns -2, so the log length is 0
         let (_, o) = orx.recv_timeout(Duration::from_secs(5)).unwrap();
         assert_eq!(o, Out::Log { level: 1, text: String::new() });
         assert!(!dir.join("data").join("split").exists());

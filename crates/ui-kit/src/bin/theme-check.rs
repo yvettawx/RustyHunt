@@ -1,7 +1,7 @@
-//! 主题包校验工具。
+//! Theme package checker.
 //!
-//! 用法：theme-check <主题文件夹> [更多文件夹...]
-//! 全部通过时退出码为 0。
+//! Usage: theme-check <theme folder> [more folders...]
+//! Exits with 0 when everything passes.
 
 use std::path::Path;
 use std::process::ExitCode;

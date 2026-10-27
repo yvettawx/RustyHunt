@@ -1,4 +1,4 @@
-//! 按模板画模块：先量尺寸，再按位置画。数据是 [`crate::fields`] 生成的 JSON。
+//! Draws modules from templates: measure first, then draw in place. Data is the JSON produced by [`crate::fields`].
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
@@ -14,7 +14,7 @@ use crate::fonts::Font;
 use crate::template::{Animation, Kind, Node, Template};
 use crate::theme::{BarShape, Pattern, resolve_color};
 
-/// 模板用到的图片，按需载入成纹理。
+/// Images used by templates, loaded into textures on demand.
 #[derive(Default)]
 pub struct Images {
     dir: Option<PathBuf>,
@@ -87,7 +87,7 @@ impl Scope for Env<'_> {
     }
 }
 
-/// 节点在这一帧的有效属性：基础属性加上成立的 state。
+/// A node's effective attributes this frame: base attributes plus the states that apply.
 struct Eff {
     vals: BTreeMap<String, Value>,
     anim_alpha: f32,
@@ -127,9 +127,9 @@ pub struct Renderer<'a, 'c> {
     pub canvas: &'a Canvas<'c>,
     pub images: &'a mut Images,
     pub ctx: egui::Context,
-    /// 动画用的时间（秒）
+    /// Time for animations (seconds)
     pub time: f64,
-    /// 本帧用到了动画，需要继续重绘
+    /// Something animated this frame, keep redrawing
     pub animating: bool,
 }
 
@@ -189,7 +189,7 @@ impl Renderer<'_, '_> {
         }
     }
 
-    /// 节点的尺寸（设计单位，未缩放）。
+    /// Node size (design units, unscaled).
     fn measure(&mut self, n: &Node, env: &mut Env) -> Vec2 {
         let e = self.eff(n, env);
         if !e.flag("visible", true) {
@@ -416,7 +416,7 @@ impl Renderer<'_, '_> {
                 }
                 layers.push(Layer::fill(e.num("value", 0.0), self.color(&e, "fill", "text")));
                 let kind = e.text("kind");
-                // 没有覆盖样式时直接用当前主题画；复制主题要连模板一起复制，很贵
+                // Without overrides draw with the current theme; copying the theme means copying its templates too, which is expensive
                 let custom = ["shape", "segments", "gap", "skew", "radius", "caps", "edge", "glow", "empty", "track"]
                     .iter()
                     .any(|k| e.has(k));
@@ -592,7 +592,7 @@ impl Renderer<'_, '_> {
                     flip_points(p, &e.text("flip"), (b.x, b.y));
                 }
                 if e.has("value") {
-                    // 沿路径的进度条：先画整条轨道，再画前面一段
+                    // Progress along a path: draw the whole track, then the leading part
                     let width = e.num("stroke-width", 3.0);
                     if e.has("track") {
                         let col = self.color(&e, "track", "track");
@@ -726,7 +726,7 @@ fn flip_points(pts: &mut [(f32, f32)], flip: &str, size: (f32, f32)) {
     }
 }
 
-/// SVG path 展平成折线，每段带"是否闭合"。
+/// Flattens an SVG path into polylines, each with a "closed" flag.
 fn flatten_path(d: &str) -> Vec<(Vec<(f32, f32)>, bool)> {
     let Ok(path) = kurbo::BezPath::from_svg(d) else {
         return Vec::new();
@@ -807,7 +807,7 @@ fn fill_and_stroke(cv: &Canvas, subs: &[(Vec<(f32, f32)>, bool)], e: &Eff, r: &R
     }
 }
 
-/// 简单多边形的耳切三角剖分，支持凹多边形（不支持洞）。
+/// Ear-clipping triangulation of simple polygons, concave ones included (no holes).
 pub fn triangulate(pts: &[(f32, f32)]) -> Vec<[usize; 3]> {
     let n = pts.len();
     if n < 3 {
@@ -881,7 +881,7 @@ fn nine_slice(cv: &Canvas, tex: &TextureHandle, size: Vec2, m: (f32, f32, f32, f
     }
 }
 
-/// 量模板的尺寸。
+/// Measures a template.
 pub fn measure(t: &Template, canvas: &Canvas, images: &mut Images, ctx: &egui::Context, data: &Value) -> Vec2 {
     let mut env = Env { root: data, vars: Vec::new() };
     let mut r = Renderer {
@@ -894,7 +894,7 @@ pub fn measure(t: &Template, canvas: &Canvas, images: &mut Images, ctx: &egui::C
     r.measure(&t.root, &mut env)
 }
 
-/// 画模板，返回（尺寸，是否有动画需要继续重绘）。
+/// Draws a template and returns (size, whether an animation needs more repaints).
 pub fn render(t: &Template, canvas: &Canvas, images: &mut Images, ctx: &egui::Context, data: &Value, time: f64) -> (Vec2, bool) {
     let mut env = Env { root: data, vars: Vec::new() };
     let mut r = Renderer {
@@ -915,7 +915,7 @@ mod tests {
 
     #[test]
     fn triangulates_concave_polygon() {
-        // L 形，6 个点，4 个三角形
+        // L shape: 6 points, 4 triangles
         let pts = [(0.0, 0.0), (2.0, 0.0), (2.0, 1.0), (1.0, 1.0), (1.0, 2.0), (0.0, 2.0)];
         assert_eq!(triangulate(&pts).len(), 4);
         let rev: Vec<_> = pts.iter().rev().copied().collect();

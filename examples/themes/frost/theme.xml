@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  示例主题：冰原。浅色主界面，冷色强调；只改令牌和组件样式，模块保持默认结构。
+  Example theme: Frost. Light main window, cool accents; changes only tokens and component styles, modules keep their default structure.
 -->
 <theme xmlns="urn:rustyhunt:theme:1"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="urn:rustyhunt:theme:1 ../../../docs/theme.xsd"
-       id="frost" name="冰原" version="1.0.0" author="RustyHunt" app="1.0" base="light"
-       description="浅色主界面，冷色强调，圆角组件" tags="light,cool">
+       id="frost" name="Frost" version="1.0.0" author="RustyHunt" app="1.0" base="light"
+       description="Light main window, cool accents, rounded components" tags="light,cool">
 
   <tokens>
     <color name="accent" value="#5cb8ff"/>

@@ -1,7 +1,7 @@
-//! 每一帧从游戏内存读出 [`Snapshot`]。偏移和逻辑照上游
-//! `HunterPie.Integrations/Datasources/MonsterHunterWorld`。
+//! Reads a [`Snapshot`] from game memory every frame. Offsets and logic follow upstream
+//! `HunterPie.Integrations/Datasources/MonsterHunterWorld`.
 //!
-//! 每一部分单独读：某一部分读失败时沿用上一帧的值，只写日志。
+//! Each part is read separately: when one part fails, it keeps last frame's value and only logs.
 
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
@@ -12,7 +12,7 @@ use rh_core::model::*;
 
 use crate::data::{MonsterDef, data};
 
-/// 地址表里缺了某一项。
+/// An entry is missing from the address map.
 #[derive(Debug, Clone)]
 pub struct MissingKey(pub String);
 
@@ -44,28 +44,28 @@ fn read_buf<M: Memory>(mem: &M, address: u64, len: usize) -> ReadResult<Vec<u8>>
     Ok(b)
 }
 
-/// 上游 `ApproximateHigh`：取第一个不小于 `v` 的候选值。
+/// Upstream `ApproximateHigh`: the first candidate not less than `v`.
 fn approximate_high(v: u32, values: &[u32]) -> u32 {
     values.iter().copied().find(|&c| c >= v).unwrap_or(v)
 }
 
-/// 每只怪物在读取之间保留的状态。
+/// Per-monster state kept between reads.
 #[derive(Default)]
 struct MonsterCache {
-    /// 部位结构的地址，按定义里的顺序；0 表示还没找到
+    /// Addresses of the part structs, in definition order; 0 means not found yet
     part_addresses: Vec<u64>,
-    /// 异常结构的地址和键
+    /// Addresses and keys of the ailment structs
     ailments: Option<Vec<(u64, String)>>,
     list_index: i32,
     breaks: BreakHistory,
 }
 
-/// 一场狩猎里每个部位见过的最大破坏次数。
+/// Highest break count seen for each part in one hunt.
 ///
-/// 当客人时游戏不同步部位耐久，读到的次数可能回落；已经破坏的部位不该再变回未破坏。
+/// As a guest the game doesn't sync part durability, so the count read can drop; a broken part shouldn't turn unbroken again.
 #[derive(Default)]
 struct BreakHistory {
-    /// （任务编号，怪物编号）；不在任务里时任务编号是 0
+    /// (quest ID, monster ID); quest ID is 0 outside quests
     hunt: (i32, i32),
     best: Vec<i32>,
 }
@@ -77,7 +77,7 @@ impl BreakHistory {
             self.best.clear();
         }
         self.best.resize(defs.len(), 0);
-        // 没找到的切断部位会被跳过，`parts` 和 `defs` 不一定一一对应
+        // Severable parts that weren't found are skipped, so `parts` and `defs` don't always line up
         for p in parts.iter_mut() {
             let Some(i) = defs.iter().position(|pd| pd.id == p.id && pd.key == p.key) else {
                 continue;
@@ -105,17 +105,17 @@ pub struct WorldReader<M: Memory> {
     base: u64,
     monsters: HashMap<u64, MonsterCache>,
     sharpness: SharpnessCache,
-    /// 每个增益见过的最大剩余时间，用作条的满格
+    /// Longest remaining time seen for each buff, used as the full bar
     abnormality_max: HashMap<String, f32>,
     skills: Vec<u8>,
     save_address: u64,
     roam_start: Option<Instant>,
     sa_charge_max: f32,
     sa_awake_max: f32,
-    /// 单人离线时用怪物掉血估算自己的伤害
+    /// Solo offline: estimate own damage from the monsters' HP loss
     hp_seen: HashMap<u64, f32>,
     solo_damage: f32,
-    /// 当前任务编号，不在任务里时是 0
+    /// Current quest ID, 0 outside quests
     quest_id: i32,
     pub warnings: Vec<String>,
 }
@@ -153,7 +153,7 @@ impl<M: Memory> WorldReader<M> {
         self.base
     }
 
-    /// 地址表里的地址加上模块基址。
+    /// An address from the map plus the module base.
     pub fn abs(&self, name: &str) -> u64 {
         self.base + self.map.address(name).unwrap_or(0)
     }
@@ -162,7 +162,7 @@ impl<M: Memory> WorldReader<M> {
         self.map.offsets(name).unwrap_or(&[])
     }
 
-    /// 地址表缺少读取所需的项时返回缺的名字。
+    /// Returns the missing name when the map lacks an entry needed for reading.
     pub fn check_map(&self) -> Result<(), MissingKey> {
         const ADDRS: &[&str] = &[
             "ZONE_OFFSET",
@@ -185,7 +185,7 @@ impl<M: Memory> WorldReader<M> {
         self.warnings.push(format!("{what}：{e}"));
     }
 
-    /// 读一帧。`prev` 是上一帧，读失败的部分沿用它。
+    /// Reads one frame. `prev` is the previous frame; parts that fail to read keep its values.
     pub fn read(&mut self, prev: &Snapshot, time: f64) -> Snapshot {
         self.warnings.clear();
         let mut s = Snapshot {
@@ -265,7 +265,7 @@ impl<M: Memory> WorldReader<M> {
         if p == 0 {
             return Ok(());
         }
-        // 每个技能 24 字节，第 8 字节是装备提供的等级
+        // 24 bytes per skill; byte 8 is the level granted by gear
         let b = read_buf(&self.mem, p, 226 * 24)?;
         for (i, lvl) in self.skills.iter_mut().enumerate() {
             *lvl = b[i * 24 + 8];
@@ -277,7 +277,7 @@ impl<M: Memory> WorldReader<M> {
         self.skills.get(id).copied().unwrap_or(0) as i32
     }
 
-    /// 力量延长的倍率。
+    /// Multiplier of Power Prolonger.
     fn prolonger(&self, weapon: Weapon) -> f32 {
         let lvl = self.skill(0x35).min(3);
         if lvl <= 0 {
@@ -325,7 +325,7 @@ impl<M: Memory> WorldReader<M> {
         let recoverable = self.mem.read::<f32>(a + 0x2DD4)?;
         p.hp_recoverable = recoverable.max(p.hp);
 
-        // 回复中的四段：第一阶段的上限要乘 2.5
+        // The four healing stages: the first stage's cap is multiplied by 2.5
         let mut heal = 0.0;
         let mut heal_max = 0.0;
         if heal_array != 0
@@ -558,7 +558,7 @@ impl<M: Memory> WorldReader<M> {
             s.quest = None;
         }
 
-        // 任务中用任务计时；自由探索时从进入狩猎区域开始计时
+        // In a quest use the quest timer; when roaming, time from entering the hunting area
         if s.in_quest() {
             self.roam_start = None;
             s.elapsed = (time_max - time_left).max(0.0);
@@ -598,7 +598,7 @@ impl<M: Memory> WorldReader<M> {
             match self.read_monster(addr, id, old) {
                 Ok(m) => out.push(m),
                 Err(e) => {
-                    // 读失败沿用上一帧这只怪物
+                    // On a read failure keep last frame's copy of this monster
                     if let Some(o) = old {
                         out.push(o.clone());
                     }
@@ -758,7 +758,7 @@ impl<M: Memory> WorldReader<M> {
             if cached[i] != 0 {
                 raw = Some(read_buf(&self.mem, cached[i], PART_STRUCT_SIZE)?);
             } else if pd.severable {
-                // 切断部位在另一块数组里，按部位编号找（上游的循环没有上限，这里限制 64 步）
+                // Severable parts are in another array, found by part ID (upstream's loop has no bound; here it is capped at 64 steps)
                 for _ in 0..64 {
                     if self.mem.read::<i32>(sever_addr)? <= 0xA0 {
                         sever_addr += 0x8;
@@ -766,7 +766,7 @@ impl<M: Memory> WorldReader<M> {
                     let b = read_buf(&self.mem, sever_addr, PART_STRUCT_SIZE)?;
                     if u32_at(&b, 108) == pd.id && f32_at(&b, 12) > 0.0 {
                         cached[i] = sever_addr;
-                        // 跳过紧跟着的重复项
+                        // Skip the duplicate entries right after it
                         for _ in 0..16 {
                             sever_addr += 0x78;
                             let next = read_buf(&self.mem, sever_addr, PART_STRUCT_SIZE)?;
@@ -787,7 +787,7 @@ impl<M: Memory> WorldReader<M> {
             }
 
             let Some(mut b) = raw else { continue };
-            // 煌黑龙的属性爆发次数在另一处
+            // Alatreon's elemental explosion counter is elsewhere
             if id == 87 && u32_at(&b, 108) == 3 {
                 let counter = self.mem.read::<i32>(addr + 0x20920)?;
                 b[24..28].copy_from_slice(&counter.to_le_bytes());
@@ -868,7 +868,7 @@ impl<M: Memory> WorldReader<M> {
         let size = self.mem.deref::<i32>(self.abs("SESSION_OFFSET"), self.offs("SESSION_PARTY_OFFSETS"))?;
         s.online = size > 0;
 
-        // 单人离线：游戏不记录伤害，用大型怪物掉的血估算
+        // Solo offline: the game doesn't record damage, so estimate it from large monsters' HP loss
         if size == 0 {
             if s.in_quest() || s.in_hunt_zone {
                 for m in &s.monsters {
@@ -950,7 +950,7 @@ impl<M: Memory> WorldReader<M> {
         }
         let gear = self.mem.follow(self.abs("ABNORMALITY_ADDRESS"), self.offs("ABNORMALITY_GEAR_OFFSETS"))?;
         let canteen = self.mem.follow(self.abs("CANTEEN_ADDRESS"), self.offs("ABNORMALITY_CANTEEN_OFFSETS"))?;
-        // 狩猎笛和随从的效果是一段连续的 float
+        // Hunting Horn and Palico effects are one contiguous run of floats
         let songs = self.mem.read_vec::<f32>(base + 0x38, 75)?;
 
         let mut out = Vec::new();
@@ -983,7 +983,7 @@ impl<M: Memory> WorldReader<M> {
                     if sub != def.with_value {
                         0.0
                     } else if def.infinite {
-                        // 鬼人药这类按标志位判断，没有倒计时
+                        // Things like Demondrug are flags without a timer
                         1.0
                     } else {
                         self.mem.read::<f32>(base + def.offset as u64)?
@@ -1104,7 +1104,7 @@ fn part_from_raw(pd: &crate::data::PartDef, b: &[u8]) -> Part {
         p.kind = PartKind::Breakable;
         p.flinch = hp;
         p.flinch_max = max;
-        // 世界的破坏是"累计硬直几次"：下一档阈值减去已有次数，换算成耐久
+        // In World a break means "N accumulated flinches": next threshold minus the current count, converted to durability
         p.breaks = pd.thresholds.iter().filter(|&&t| count >= t).count() as i32;
         match pd.thresholds.iter().find(|&&t| t > count) {
             Some(&t) => {
@@ -1124,7 +1124,7 @@ fn part_from_raw(pd: &crate::data::PartDef, b: &[u8]) -> Part {
     p
 }
 
-/// 把部位的破坏次数提到 `breaks`，耐久按刚好达到这个次数时的状态算。
+/// Raises a part's break count to `breaks`, with durability as it was just when that count was reached.
 fn hold_breaks(p: &mut Part, pd: &crate::data::PartDef, breaks: i32) {
     p.breaks = breaks.min(p.breaks_max);
     if p.kind != PartKind::Breakable {
@@ -1144,7 +1144,7 @@ fn hold_breaks(p: &mut Part, pd: &crate::data::PartDef, breaks: i32) {
     }
 }
 
-/// 上游 `GetCurrentSharpness`：当前值落在哪一段颜色里。
+/// Upstream `GetCurrentSharpness`: which color segment the current value falls in.
 pub fn current_sharpness(thresholds: &[i32], current: i32) -> Option<SharpnessLevel> {
     for i in (1..thresholds.len()).rev() {
         let end = thresholds[i];
@@ -1159,7 +1159,7 @@ pub fn current_sharpness(thresholds: &[i32], current: i32) -> Option<SharpnessLe
     Some(SharpnessLevel::Red)
 }
 
-/// 上游 `MaximumSharpness`：武器在匠的加成下最多能到多少。
+/// Upstream `MaximumSharpness`: the most a weapon can reach with Handicraft.
 pub fn maximum_sharpness(thresholds: &[i32], minimum: &[i32], level: usize, max_level: i32, handicraft: i32) -> i32 {
     let bonus = 10 * handicraft.clamp(0, 5);
     let upper = thresholds.get(level).copied().unwrap_or(0);
@@ -1210,7 +1210,7 @@ fn fertilizer_key(id: i32) -> &'static str {
     }
 }
 
-/// 地点编号对应术语表里地图的键；城镇、房间等不在术语表里。
+/// Stage ID to the map key in the term table; towns, rooms and the like aren't in it.
 pub fn stage_key(id: i32) -> &'static str {
     match id {
         101 | 406 => "ancient_forest",
@@ -1240,7 +1240,7 @@ mod tests {
     fn maximum_sharpness_adds_handicraft_on_last_level() {
         let t = [50, 90, 130, 190, 260, 320, 0];
         let min = [10, 20, 30, 40, 50, 60, 300, 400];
-        // 最大等级 6 对应的实际上限 300 小于白段的上限 320，加上匠 5 级的 50
+        // Max level 6 gives an actual cap of 300, below white's 320, so add Handicraft 5's 50
         assert_eq!(maximum_sharpness(&t, &min, 5, 6, 5), 350);
         assert_eq!(maximum_sharpness(&t, &min, 5, 7, 5), 320);
     }
@@ -1295,7 +1295,7 @@ mod tests {
         h.hold((101, 7), &defs, &mut parts);
         assert_eq!(parts[0].breaks, 1);
 
-        // 客人这边读到的次数回落了
+        // The count the guest reads dropped
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
         h.hold((101, 7), &defs, &mut parts);
         assert_eq!(parts[0].breaks, 1);
@@ -1319,14 +1319,14 @@ mod tests {
         h.hold((101, 7), &defs, &mut parts);
         assert!(parts[0].broken());
 
-        // 任务结束
+        // Quest ended
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
         h.hold((0, 7), &defs, &mut parts);
         assert_eq!(parts[0].breaks, 0);
 
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(5))];
         h.hold((0, 7), &defs, &mut parts);
-        // 同一个地址换了一只怪
+        // A different monster at the same address
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
         h.hold((0, 9), &defs, &mut parts);
         assert_eq!(parts[0].breaks, 0);

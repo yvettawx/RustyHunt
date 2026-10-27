@@ -1,5 +1,5 @@
-//! 插件：扫描 `plugins/` 文件夹、按权限启动、把快照和事件发给插件、
-//! 收插件交回来的模块数据、记录字段和通知。运行时在 `plugin-host` 里。
+//! Plugins: scans the `plugins/` folder, starts plugins according to their permissions, sends them
+//! snapshots and events, and receives their module data, record fields and notifications. The runtime is in `plugin-host`.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::io::{Read, Write};
@@ -29,11 +29,11 @@ use crate::state::Shared;
 pub enum Status {
     Off,
     Running,
-    /// 运行出错或超时，已停用
+    /// Failed or timed out while running; disabled
     Failed(String),
-    /// 版本不兼容
+    /// Incompatible version
     Incompatible(String),
-    /// 清单读不出来
+    /// The manifest can't be read
     Broken(String),
 }
 
@@ -42,7 +42,7 @@ pub struct Plugin {
     pub dir: PathBuf,
     pub status: Status,
     running: Option<Running>,
-    /// 按主题解析好的模块模板；主题换了重新解析
+    /// Module templates parsed for the current theme; parsed again when the theme changes
     templates: HashMap<String, Result<Template, String>>,
     templates_for: usize,
     data: HashMap<String, Value>,
@@ -62,7 +62,7 @@ impl Plugin {
     }
 }
 
-/// 锁的顺序：先 REG，后设置锁。拿着设置锁的时候不能调用这里的函数。
+/// Lock order: REG first, then the settings lock. Never call these functions while holding the settings lock.
 struct Registry {
     plugins: Vec<Plugin>,
     out: Option<Sender<(String, Out)>>,
@@ -80,7 +80,7 @@ fn reg() -> std::sync::MutexGuard<'static, Registry> {
     REG.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-/// 程序版本和插件 API 版本都满足才能启动（8.2）。
+/// Starts only when both the app version and the plugin API version are satisfied (8.2).
 fn compatible(m: &Manifest) -> Result<(), String> {
     if !ui_kit::theme::version_ok(&m.app, rh_core::VERSION) {
         return Err(i18n::tf("plugin.needs_app", &[("need", &m.app), ("current", rh_core::VERSION)]));
@@ -100,7 +100,7 @@ fn setting_default(s: &SettingDecl) -> Value {
     }
 }
 
-/// 插件设置的当前值；没改过的用清单里的默认值。
+/// Current values of a plugin's settings; unchanged ones use the manifest defaults.
 pub fn setting_value(st: Option<&PluginState>, s: &SettingDecl) -> Value {
     st.and_then(|st| st.settings.get(&s.key))
         .and_then(|v| serde_json::to_value(v).ok())
@@ -131,7 +131,7 @@ fn module_info(m: &Manifest, d: &plugin_host::manifest::ModuleDecl) -> ModuleInf
     }
 }
 
-/// 读取插件文件夹，启动已启用的插件。程序启动时调用一次。
+/// Reads the plugin folder and starts enabled plugins. Called once at startup.
 pub fn init(shared: Arc<Shared>) {
     if SHARED.set(shared.clone()).is_err() {
         return;
@@ -192,7 +192,7 @@ fn load_dir(dir: &Path) -> Plugin {
     }
 }
 
-/// 重新扫描插件文件夹。
+/// Rescans the plugin folder.
 pub fn scan() {
     let Some(shared) = SHARED.get() else { return };
     let mut dirs: Vec<PathBuf> = std::fs::read_dir(paths::plugins())
@@ -233,7 +233,7 @@ fn start(shared: &Shared, p: &mut Plugin, out: Sender<(String, Out)>) {
             p.status = Status::Running;
             p.data.clear();
             log::info!(target: "plugin", "{} 已启动", p.label());
-            // 插件模块加进每个方案
+            // Add plugin modules to every profile
             let infos: Vec<ModuleInfo> = m.modules.iter().map(|d| module_info(&m, d)).collect();
             shared.edit_settings(|s| {
                 for l in s.games.values_mut() {
@@ -254,7 +254,7 @@ fn start(shared: &Shared, p: &mut Plugin, out: Sender<(String, Out)>) {
 
 fn stop(p: &mut Plugin) {
     p.send(Msg::Stop);
-    // 不等线程结束：卡住的插件会被超时打断
+    // Don't wait for the thread: a stuck plugin gets interrupted by the timeout
     p.running = None;
     p.data.clear();
     if p.status == Status::Running {
@@ -316,7 +316,7 @@ fn handle(shared: &Arc<Shared>, id: &str, o: Out) {
     }
 }
 
-/// 插件申请的本机只读端口：127.0.0.1 上回应最新的一份 JSON（权限 port）。
+/// A local read-only port requested by a plugin: serves the latest JSON on 127.0.0.1 (permission port).
 fn serve(id: &str, port: u16, json: String) {
     let mut r = reg();
     if let Some(slot) = r.servers.get(&port) {
@@ -353,7 +353,7 @@ fn serve(id: &str, port: u16, json: String) {
     });
 }
 
-/// 扫描线程把每帧快照和事件交过来。
+/// The scanner thread hands over each frame's snapshot and events.
 pub struct Bridge;
 
 impl Bridge {
@@ -392,7 +392,7 @@ impl Sink for Bridge {
                 if p.manifest.events.iter().any(|x| x == e.name())
                     && let Ok(mut j) = serde_json::to_value(e)
                 {
-                    // 事件发生时的任务时间
+                    // Quest time when the event happened
                     j["elapsed"] = serde_json::json!(snap.elapsed);
                     p.send(Msg::Event(j.to_string()));
                 }
@@ -411,7 +411,7 @@ fn split_key(id: &str) -> Option<(&str, &str)> {
     id.split_once('.')
 }
 
-/// 插件模块交上来的数据，放进模板上下文的 `data` 里。
+/// Data sent by plugin modules, placed under `data` in the template context.
 pub fn module_data(id: &str) -> Option<Value> {
     let (pid, mid) = split_key(id)?;
     reg()
@@ -423,7 +423,7 @@ pub fn module_data(id: &str) -> Option<Value> {
         .cloned()
 }
 
-/// 画插件模块：按当前主题解析插件给的模板，数据是快照字段加插件交来的 `data`。
+/// Draws a plugin module: parses the plugin's template for the current theme; data is the snapshot fields plus the plugin's `data`.
 pub fn draw_module(id: &str, cv: &ui_kit::Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State, ctx: &egui::Context) -> egui::Vec2 {
     let Some((pid, mid)) = split_key(id) else { return egui::Vec2::ZERO };
     let mut r = reg();
@@ -455,14 +455,14 @@ pub fn draw_module(id: &str, cv: &ui_kit::Canvas, f: &Frame, cfg: &ModuleConfig,
     size
 }
 
-/// 内置模块加插件注册的模块。
+/// Built-in modules plus modules registered by plugins.
 pub fn all_modules() -> Vec<ModuleInfo> {
     let mut v = rh_core::modules::builtin();
     v.extend(module_infos());
     v
 }
 
-/// 插件注册的局内模块（只算已启用的）。
+/// In-game modules registered by plugins (enabled plugins only).
 pub fn module_infos() -> Vec<ModuleInfo> {
     reg()
         .plugins
@@ -516,7 +516,7 @@ pub fn actions() -> Vec<ActionInfo> {
         .collect()
 }
 
-/// 插件动作的默认热键，热键线程在用户没改过时用它。
+/// Default hotkey of a plugin action, used by the hotkey thread when the user hasn't changed it.
 pub fn default_keys() -> Vec<(String, String)> {
     actions()
         .into_iter()
@@ -548,7 +548,7 @@ pub fn channels() -> Vec<ChannelInfo> {
         .collect()
 }
 
-/// 把通知转给打开了的插件渠道（8.1 通知方式）。
+/// Forwards a notification to the plugin channels that are on (8.1 notification methods).
 pub fn forward(n: &Notification, enabled: &std::collections::BTreeMap<String, bool>) {
     let r = reg();
     for p in r.plugins.iter().filter(|p| p.running.is_some()) {
@@ -589,7 +589,7 @@ pub fn exporters() -> Vec<ExporterInfo> {
         .collect()
 }
 
-/// 插件导出器：输入是狩猎记录 JSON，插件返回文件内容，再让用户选保存位置。
+/// Plugin exporter: takes the hunt records JSON, the plugin returns the file contents, then the user picks where to save.
 pub fn run_exporter(e: &ExporterInfo, hunts: &[crate::records::Hunt]) {
     let input = serde_json::json!({ "exporter": e.id, "hunts": serde_json::from_str::<Value>(&crate::records::to_json(hunts)).unwrap_or(Value::Null) });
     let (tx, rx) = channel();
@@ -622,9 +622,9 @@ pub fn run_exporter(e: &ExporterInfo, hunts: &[crate::records::Hunt]) {
     }
 }
 
-// ---- 插件页用 ----
+// ---- For the Plugins page ----
 
-/// 插件页显示用的一份副本。
+/// A copy for display on the Plugins page.
 #[derive(Clone)]
 pub struct View {
     pub manifest: Manifest,
@@ -679,7 +679,7 @@ pub fn set_enabled(id: &str, on: bool) {
     }
 }
 
-/// 授予或收回一项权限；插件在运行就重启让它生效。
+/// Grants or revokes a permission; a running plugin is restarted so it takes effect.
 pub fn set_permission(id: &str, perm: Permission, on: bool) {
     let Some(shared) = SHARED.get() else { return };
     shared.edit_settings(|s| {
@@ -720,7 +720,7 @@ pub fn set_setting(id: &str, key: &str, value: toml::Value) {
     }
 }
 
-/// 删除插件：停掉、删文件夹、从方案里去掉它的模块。
+/// Deletes a plugin: stops it, deletes its folder and removes its modules from the profiles.
 pub fn uninstall(id: &str) -> Result<(), String> {
     let Some(shared) = SHARED.get() else { return Ok(()) };
     let dir = {
@@ -732,7 +732,7 @@ pub fn uninstall(id: &str) -> Result<(), String> {
         stop(&mut p);
         p.dir
     };
-    // 线程退出前文件可能还开着
+    // Files may still be open until the thread exits
     let mut last = Ok(());
     for _ in 0..10 {
         last = std::fs::remove_dir_all(&dir);
@@ -756,12 +756,12 @@ pub fn uninstall(id: &str) -> Result<(), String> {
     last.map_err(|e| e.to_string())
 }
 
-/// 从 zip 或文件夹读出的插件，装之前先给用户看权限。
+/// A plugin read from a zip or folder; its permissions are shown to the user before installing.
 pub struct Staged {
     pub manifest: Manifest,
-    /// plugin.toml 所在的文件夹
+    /// Folder containing plugin.toml
     root: PathBuf,
-    /// 解压用的临时文件夹
+    /// Temporary folder used for extraction
     dir: PathBuf,
     temp: bool,
 }
@@ -801,7 +801,7 @@ fn unzip(file: &Path, to: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// 找清单：包的根目录，或者根目录下唯一的一个文件夹。
+/// Finds the manifest: at the package root, or in the only folder under the root.
 fn manifest_root(dir: &Path) -> Option<PathBuf> {
     if dir.join("plugin.toml").exists() {
         return Some(dir.to_path_buf());
@@ -860,8 +860,8 @@ fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// 用户确认权限后装进 `plugins/<id>`，授予清单里的全部权限并启用。同 id 的旧版本被替换，
-/// 旧版本的 `data` 文件夹保留。
+/// After the user confirms the permissions, installs into `plugins/<id>`, grants all permissions in the
+/// manifest and enables it. An older version with the same id is replaced; its `data` folder is kept.
 pub fn install(staged: Staged) -> Result<(), String> {
     let Some(shared) = SHARED.get() else {
         return Err("插件系统没有启动".into());
@@ -934,7 +934,7 @@ mod tests {
     #[test]
     fn prepare_reads_zip_and_rejects_bad_packages() {
         let tmp = std::env::temp_dir().join(format!("rh-plugins-{}", std::process::id()));
-        // 数据目录只能设一次；别的测试先设过了就不跑，免得写进真正的数据目录
+        // The data directory can be set only once; skip if another test set it first, so nothing is written to the real data directory
         if paths::init(Some(tmp.clone())) != tmp.as_path() {
             return;
         }

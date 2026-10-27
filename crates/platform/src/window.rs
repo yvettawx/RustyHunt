@@ -1,4 +1,4 @@
-//! 游戏窗口：标题、客户区位置、前台状态。
+//! Game window: title, client area position, foreground state.
 
 use windows_sys::Win32::Foundation::{HWND, LPARAM, POINT, RECT};
 use windows_sys::Win32::Graphics::Gdi::ClientToScreen;
@@ -16,7 +16,7 @@ pub struct Rect {
     pub h: i32,
 }
 
-/// 一个顶层窗口的句柄。
+/// Handle of a top-level window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Window(pub isize);
 
@@ -45,7 +45,7 @@ impl Window {
         pid
     }
 
-    /// 客户区在屏幕上的位置，物理像素。
+    /// Client area position on screen, in physical pixels.
     pub fn client_rect(self) -> Option<Rect> {
         let mut r: RECT = unsafe { std::mem::zeroed() };
         if unsafe { GetClientRect(self.hwnd(), &mut r) } == 0 {
@@ -71,7 +71,7 @@ impl Window {
         unsafe { IsIconic(self.hwnd()) != 0 }
     }
 
-    /// 窗口所在显示器的缩放比例，100% 为 1.0。
+    /// Scale of the monitor the window is on; 100% is 1.0.
     pub fn dpi_scale(self) -> f32 {
         let dpi = unsafe { GetDpiForWindow(self.hwnd()) };
         if dpi == 0 { 1.0 } else { dpi as f32 / 96.0 }
@@ -83,7 +83,7 @@ pub fn foreground() -> Option<Window> {
     (!h.is_null()).then_some(Window(h as isize))
 }
 
-/// 进程的主窗口：可见、没有所有者、标题不为空的第一个顶层窗口。
+/// A process's main window: the first visible, unowned top-level window with a non-empty title.
 pub fn main_window(pid: u32) -> Option<Window> {
     struct Ctx {
         pid: u32,

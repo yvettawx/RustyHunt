@@ -1,5 +1,5 @@
-// 安装包的内容在打包时由 scripts/package.ps1 通过 RH_PAYLOAD 指定（便携版的 zip）。
-// 平时编译工作区时没有这个变量，放一个空包，运行时会提示。
+// The installer payload (the portable zip) is given by scripts/package.ps1 through RH_PAYLOAD when packaging.
+// Ordinary workspace builds don't set it, so an empty payload is embedded and the installer says so at runtime.
 fn main() {
     let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("payload.zip");
     println!("cargo:rerun-if-env-changed=RH_PAYLOAD");

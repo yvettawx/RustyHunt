@@ -1,4 +1,4 @@
-//! 猎人自己的模块：自身（生命、耐力、斩味、自身异常）、增益、武器专用槽。
+//! The hunter's own modules: player (HP, stamina, sharpness, status effects), buffs, weapon gauge.
 
 use egui::{Align2, Color32, Vec2, vec2};
 use rh_core::model::{AbnormalityKind, SharpnessLevel, WeaponState};
@@ -19,7 +19,7 @@ const SHARP_COLORS: [Color32; 7] = [
     Color32::from_rgb(0xa0, 0x66, 0xd3),
 ];
 
-/// 模块标题：一个词加一条细线，右边可以放一个数值（不画底板）。
+/// Module title: one word and a thin line, with an optional value on the right (no backing).
 pub fn module_header(cv: &Canvas, label: &str, w: f32, right: &str, rule_w: Option<f32>) -> f32 {
     let mute = cv.tok("text-mute");
     let sz = cv.text_ex(0.0, 0.0, label, Font::TextBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
@@ -48,7 +48,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
     let low = p.hp / p.hp_max < f.profile.player.low_hp / 100.0;
     let wmax = p.hp_max.max(p.stamina_max);
 
-    // 残影跟上当前生命
+    // The trailing bar catches up with current HP
     if st.player_ghost < p.hp {
         st.player_ghost = p.hp;
     }
@@ -59,7 +59,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         st.animating = true;
     }
 
-    // 第一行：名牌、回复中、红血量、数值
+    // First row: name tag, healing, red HP, value
     let header_h = 22.0;
     if f.density != rh_core::settings::Density::Minimal && !p.name.is_empty() {
         cv.tag(0.0, header_h - 19.0, &p.name, Font::TextBold, 12.0, (7.0, 3.0, 7.0, 2.0), cv.tok("ink"), text);
@@ -109,7 +109,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         }
     }
 
-    // 生命条：残影、红血、回复中、当前
+    // HP bar: trail, red HP, healing, current
     let y = header_h + 5.0;
     let w = px(p.hp_max);
     let r = |v: f32| (v / p.hp_max).clamp(0.0, 1.0);
@@ -140,7 +140,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
     cv.bar_ex("player-hp", 0.0, y, w, 14.0, &layers, false, true);
     let mut bottom = y + 14.0;
 
-    // 耐力条和数值
+    // Stamina bar and value
     if cfg.shows("p-st") && p.stamina_max > 0.0 {
         let sy = bottom + 5.0;
         let tired = p.stamina < p.stamina_max * 0.25;
@@ -170,7 +170,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         bottom = sy + 6.0;
     }
 
-    // 刻度：每 25 点一短格，每 50 点一长格
+    // Ticks: a short one every 25 points, a long one every 50
     if cfg.shows("p-ruler") && f.density != rh_core::settings::Density::Minimal {
         let ry = bottom + 3.0;
         let c = fade(text, 0.55);
@@ -184,7 +184,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
     }
     let col_w = px(wmax) + 64.0;
 
-    // 自身异常：贴在血条右侧
+    // Status effects: next to the right end of the HP bar
     let mut right = col_w;
     if cfg.shows("p-ails") {
         let mut ax = col_w + 16.0;
@@ -210,7 +210,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         }
     }
 
-    // 斩味
+    // Sharpness
     if cfg.shows("p-sharp")
         && let Some(sh) = &p.sharpness
     {
@@ -226,7 +226,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
             }
             let len = (end - start) as f32 / total * seg_w;
             let color = SHARP_COLORS[i.min(6)];
-            // 已经用掉的部分盖暗
+            // Darken the part that's used up
             let used = ((sh.current - start) as f32 / (end - start) as f32).clamp(0.0, 1.0);
             cv.rect(x, sy, (len - 1.0).max(0.0), 4.0, color);
             if used < 1.0 {
@@ -316,7 +316,7 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
         w = w.max(x);
         y += row_h + 6.0;
     }
-    // 关掉自身模块时，自身异常显示在这里
+    // With the player module off, status effects show here
     if cfg.shows("b-debuff") && !player_on {
         let mut x = 0.0;
         let mut row_h = 0.0f32;

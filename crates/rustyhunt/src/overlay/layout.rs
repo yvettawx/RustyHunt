@@ -1,5 +1,5 @@
-//! 布局模式：overlay 接收鼠标，游戏画面变暗，显示网格和原生 HUD 区域；
-//! 拖动模块按 8px 吸附，滚轮缩放，双击复位，Ctrl Z 撤销，Esc 或热键退出并保存。
+//! Layout mode: the overlay takes the mouse, the game dims, and a grid and the native HUD areas show.
+//! Modules snap to 8px when dragged; scroll to resize, double-click to reset, Ctrl Z to undo, Esc or the hotkey to finish and save.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -45,7 +45,7 @@ fn top_layer() -> LayerId {
     LayerId::new(Order::Tooltip, Id::unique("layout-top"))
 }
 
-/// 变暗、网格、原生 HUD 区域，画在模块下面。
+/// Dimming, grid and native HUD areas, drawn under the modules.
 pub fn backdrop(ctx: &egui::Context, screen: Rect, s: f32, st: &LayoutState, game: Game) {
     let p = ctx.layer_painter(LayerId::new(Order::Background, Id::unique("layout-back")));
     p.rect_filled(screen, CornerRadius::ZERO, rgba(8, 8, 8, 0.55));
@@ -75,7 +75,7 @@ pub fn backdrop(ctx: &egui::Context, screen: Rect, s: f32, st: &LayoutState, gam
 }
 
 fn zones(game: Game, frame_w: f32) -> Vec<(Rect, String)> {
-    // 原生 HUD 的坐标按 1920 宽量的，宽屏时右半边的区域跟着右边走
+    // Native HUD coordinates were measured at 1920 wide; on wide screens the right-hand areas follow the right edge
     modules::native_zones(game)
         .iter()
         .map(|&(x, y, w, h, key)| {
@@ -99,7 +99,7 @@ pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, r
     let to_screen = |r: Rect| Rect::from_min_max(screen.min + r.min.to_vec2() * s, screen.min + r.max.to_vec2() * s);
     let zone_list = zones(game, frame_w);
 
-    // 原生 HUD 区域
+    // Native HUD areas
     let mut zone_hit = vec![false; zone_list.len()];
     let mut module_hit = BTreeMap::new();
     for (id, r) in rects {
@@ -125,7 +125,7 @@ pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, r
         }
     }
 
-    // 先放开设置锁再查插件模块的名字：插件那边持有自己的锁时会写设置
+    // Release the settings lock before looking up plugin module names: the plugin side writes settings while holding its own lock
     let ids: Vec<String> = shared.settings().profile(game).modules.keys().cloned().collect();
     let names: BTreeMap<String, String> = ids
         .into_iter()
@@ -213,7 +213,7 @@ pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, r
         });
     }
 
-    // 键盘：Ctrl Z 撤销，Esc 完成
+    // Keyboard: Ctrl Z undo, Esc done
     let (undo, esc) = ctx.input(|i| (i.modifiers.ctrl && i.key_pressed(egui::Key::Z), i.key_pressed(egui::Key::Escape)));
     if undo {
         pop_undo(shared, st, game);
@@ -288,7 +288,7 @@ fn toolbar(ctx: &egui::Context, shared: &Arc<Shared>, st: &mut LayoutState, scre
                             .line_segment([tr.right_top(), tr.right_bottom()], Stroke::new(1.0, Color32::from_rgb(0x33, 0x33, 0x33)));
                         let _ = r;
 
-                        // 方案
+                        // Profiles
                         let (profiles, active) = {
                             let set = shared.settings();
                             let l = set.layouts(game);

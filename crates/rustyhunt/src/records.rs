@@ -1,5 +1,5 @@
-//! 狩猎记录：每场狩猎在任务结束时写进本地的 `records.db`。
-//! SQLite 开 WAL，写入中途断电也不会写坏；插件写的自定义字段单独一张表。
+//! Hunt records: each hunt is written to the local `records.db` when the quest ends.
+//! SQLite in WAL mode, so a power cut mid-write can't corrupt it; custom fields from plugins have their own table.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
@@ -91,7 +91,7 @@ pub struct Player {
 pub struct EventRow {
     pub t: f32,
     pub kind: String,
-    /// 本地化键或者文本，例如 PART_HEAD、AILMENT_POISON
+    /// Localization key or text, e.g. PART_HEAD, AILMENT_POISON
     pub label: String,
     pub accent: bool,
 }
@@ -113,7 +113,7 @@ pub struct Hunt {
     pub size: f32,
     pub map: String,
     pub players: Vec<Player>,
-    /// (秒, 栏位, DPS)
+    /// (seconds, slot, DPS)
     pub curve: Vec<(f32, i32, f32)>,
     pub events: Vec<EventRow>,
     pub fields: BTreeMap<String, String>,
@@ -125,7 +125,7 @@ impl Hunt {
     }
 }
 
-/// 列表页用的摘要：不带曲线和事件。
+/// Summary for the list page: without curves or events.
 pub fn list(conn: &Connection, game: Option<&str>, limit: usize) -> rusqlite::Result<Vec<Hunt>> {
     let mut stmt = conn.prepare(
         "SELECT id, game, quest_id, stars, rank, monster, monsters, started_at, duration, result, crown, size, map
@@ -153,7 +153,7 @@ pub fn list(conn: &Connection, game: Option<&str>, limit: usize) -> rusqlite::Re
         })
     })?;
     let mut out: Vec<Hunt> = rows.collect::<Result<_, _>>()?;
-    // 摘要里也带上玩家，列表要显示自己的 DPS
+    // The summary includes the players too; the list shows our own DPS
     let mut pstmt = conn.prepare("SELECT slot, name, weapon, damage, is_self, crit FROM hunt_players WHERE hunt_id = ?1 ORDER BY damage DESC")?;
     for h in &mut out {
         h.players = pstmt
@@ -251,7 +251,7 @@ pub fn delete(conn: &Connection, id: i64) -> rusqlite::Result<()> {
     Ok(())
 }
 
-/// 插件往当前这场狩猎写的字段，任务结束时一起保存。
+/// Fields plugins write for the current hunt, saved together when the quest ends.
 pub static PENDING_FIELDS: Mutex<BTreeMap<String, String>> = Mutex::new(BTreeMap::new());
 
 struct Running {
@@ -263,7 +263,7 @@ struct Running {
     events: Vec<EventRow>,
     curve: Vec<(f32, i32, f32)>,
     last_sample: f32,
-    /// 每只怪物开始时的血量，用来判断主目标
+    /// Each monster's HP at the start, used to find the main target
     hp_start: HashMap<u64, f32>,
     last: Option<Arc<Snapshot>>,
 }
@@ -289,7 +289,7 @@ impl Recorder {
         let Some(r) = self.running.take() else { return };
         let Some(last) = r.last.clone() else { return };
         let fields = std::mem::take(&mut *PENDING_FIELDS.lock().unwrap());
-        // 主目标：这一场掉血最多的大型怪物
+        // Main target: the large monster that lost the most HP in this hunt
         let main = last
             .large_monsters()
             .max_by(|a, b| {
@@ -371,7 +371,7 @@ impl Default for Recorder {
 
 impl Sink for Recorder {
     fn frame(&mut self, shared: &Shared, snap: &Arc<Snapshot>, events: &[Event]) {
-        // 演示数据不记录
+        // Demo data isn't recorded
         if matches!(shared.live().connection, crate::state::Connection::Demo) {
             return;
         }
@@ -438,7 +438,7 @@ impl Sink for Recorder {
     }
 
     fn detached(&mut self, shared: &Shared) {
-        // 游戏中途关掉：按放弃记录
+        // The game closed mid-quest: record it as abandoned
         if let Some(r) = &self.running {
             let elapsed = r.last.as_ref().map_or(0.0, |s| s.elapsed);
             self.finish(shared, QuestStatus::Quit, elapsed);
@@ -446,7 +446,7 @@ impl Sink for Recorder {
     }
 }
 
-/// 导出 CSV：每场一行，玩家展开成列。
+/// Exports CSV: one row per hunt, players spread into columns.
 pub fn to_csv(hunts: &[Hunt]) -> String {
     let i = rh_core::i18n::current();
     let mut out = String::from("\u{feff}id,date,game,monster,rank,stars,duration_s,result,crown,size,player,weapon,damage,dps,share\n");

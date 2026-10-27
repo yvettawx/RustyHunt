@@ -1,7 +1,7 @@
-//! 热键：解析 "Ctrl Shift H" 这样的写法，查询按键状态。
+//! Hotkeys: parses strings like "Ctrl Shift H" and queries key state.
 //!
-//! 不用 `RegisterHotKey`：那会在全系统抢占按键（比如 Ctrl Tab）。
-//! 程序只在游戏或 overlay 在前台时轮询按键状态。
+//! `RegisterHotKey` isn't used because it grabs the keys system-wide (Ctrl Tab, for example).
+//! Key state is only polled while the game or the overlay is in the foreground.
 
 use std::fmt;
 
@@ -10,7 +10,7 @@ pub struct Hotkey {
     pub ctrl: bool,
     pub shift: bool,
     pub alt: bool,
-    /// Windows 虚拟键码；单独的修饰键（如 Left Alt）也放在这里
+    /// Windows virtual-key codes; standalone modifiers (such as Left Alt) are here too
     pub key: u16,
 }
 
@@ -99,14 +99,14 @@ impl Hotkey {
         Hotkey { ctrl, shift, alt, key }
     }
 
-    /// 解析 "Ctrl Shift H"、"Left Alt"、"Ctrl Tab"、"F9"。用空格或加号分隔。
+    /// Parses "Ctrl Shift H", "Left Alt", "Ctrl Tab", "F9". Separated by spaces or plus signs.
     pub fn parse(s: &str) -> Option<Hotkey> {
         let words: Vec<&str> = s.split([' ', '+']).filter(|w| !w.is_empty()).collect();
         let mut hk = Hotkey::default();
         let mut i = 0;
         while i < words.len() {
             let w = words[i];
-            // "Left Alt" 这类两个词的键名
+            // Two-word key names such as "Left Alt"
             if i + 1 < words.len()
                 && let Some(k) = parse_key(&format!("{} {}", w, words[i + 1]))
             {
@@ -125,7 +125,7 @@ impl Hotkey {
         (hk.key != 0).then_some(hk)
     }
 
-    /// 只是一个修饰键本身（例如 Left Alt），用于"按住"类动作。
+    /// Just a modifier on its own (e.g. Left Alt), for hold-type actions.
     pub fn is_modifier_only(&self) -> bool {
         matches!(self.key, 0xA0..=0xA5 | VK_CONTROL | VK_SHIFT | VK_MENU)
     }
@@ -159,7 +159,7 @@ pub fn is_down(_vk: u16) -> bool {
     false
 }
 
-/// 组合键现在是否完整按下。修饰键要求精确匹配，避免 Ctrl Shift H 也触发 Shift H。
+/// Whether the whole combination is held right now. Modifiers must match exactly, so Ctrl Shift H doesn't also trigger Shift H.
 pub fn chord_down(hk: &Hotkey) -> bool {
     if hk.is_modifier_only() {
         return is_down(hk.key);
@@ -167,14 +167,14 @@ pub fn chord_down(hk: &Hotkey) -> bool {
     is_down(hk.key) && is_down(VK_CONTROL) == hk.ctrl && is_down(VK_SHIFT) == hk.shift && is_down(VK_MENU) == hk.alt
 }
 
-/// 记录每个热键上一次的状态，得到"刚按下"的边沿。
+/// Remembers each hotkey's previous state to detect the "just pressed" edge.
 #[derive(Default)]
 pub struct EdgeDetector {
     last: std::collections::HashMap<Hotkey, bool>,
 }
 
 impl EdgeDetector {
-    /// 返回 (现在是否按住, 是否刚按下)。
+    /// Returns (held now, just pressed).
     pub fn poll(&mut self, hk: &Hotkey) -> (bool, bool) {
         let down = chord_down(hk);
         let was = self.last.insert(*hk, down).unwrap_or(false);
@@ -186,7 +186,7 @@ impl EdgeDetector {
     }
 }
 
-/// 现在按下的第一个非修饰键，加上修饰键状态。设置热键时用来"录制"。
+/// The first non-modifier key held now, plus modifier state. Used to "record" a hotkey in settings.
 pub fn capture() -> Option<Hotkey> {
     let ctrl = is_down(VK_CONTROL);
     let shift = is_down(VK_SHIFT);
@@ -197,7 +197,7 @@ pub fn capture() -> Option<Hotkey> {
             return Some(Hotkey { ctrl, shift, alt, key: vk });
         }
     }
-    // 只按了一个修饰键：记录成单键（例如 Left Alt）
+    // Only a modifier was pressed: record it as a single key (e.g. Left Alt)
     for vk in 0xA0u16..=0xA5 {
         if is_down(vk) {
             return Some(Hotkey { key: vk, ..Default::default() });

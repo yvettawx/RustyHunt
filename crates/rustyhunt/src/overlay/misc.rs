@@ -1,4 +1,4 @@
-//! 其余模块：伤害统计、本区域怪物、时钟、据点、性能。
+//! Other modules: damage meter, monsters in the area, clock, base, performance.
 
 use egui::{Align2, Color32, Vec2, vec2};
 use rh_core::model::{Crown, Target};
@@ -9,7 +9,7 @@ use ui_kit::{Canvas, Font, Layer};
 use super::hunter::module_header;
 use super::{Frame, State, mmss, thousands};
 
-/// 队员的颜色，按栏位
+/// Party member colors, by slot
 pub const SLOT_COLORS: [Color32; 4] = [
     Color32::from_rgb(0xe5, 0x48, 0x4d),
     Color32::from_rgb(0x3e, 0x82, 0xf7),

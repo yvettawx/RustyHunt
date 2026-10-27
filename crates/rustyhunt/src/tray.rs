@@ -1,5 +1,5 @@
-//! 托盘图标：单击打开主界面；右键菜单有显示或隐藏 overlay、布局模式、
-//! 密度、打开日志、退出。
+//! Tray icon: click to open the main window; the right-click menu shows or hides the overlay and
+//! has layout mode, density, open log and quit.
 
 use std::sync::Arc;
 
@@ -70,7 +70,7 @@ impl Tray {
         Some(t)
     }
 
-    /// 菜单里的状态文字跟着设置变。
+    /// Status text in the menu follows the settings.
     pub fn refresh(&self, shared: &Shared) {
         let s = shared.settings();
         let state = if s.overlay_visible {

@@ -1,9 +1,9 @@
-//! Steam 安装位置、游戏库、本机登录过的账号。
+//! Steam install location, libraries, and accounts that have logged in on this machine.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-/// Valve KeyValues 文本格式（.vdf / .acf）的最小解析器。
+/// A minimal parser for Valve's KeyValues text format (.vdf / .acf).
 #[derive(Debug, Clone, PartialEq)]
 pub enum Vdf {
     Str(String),
@@ -154,7 +154,7 @@ fn registry_string(_subkey: &str, _value: &str) -> Option<String> {
     None
 }
 
-/// Steam 的安装目录。
+/// Steam's install directory.
 pub fn steam_dir() -> Option<PathBuf> {
     if let Some(p) = registry_string("Software\\Valve\\Steam", "SteamPath") {
         let p = PathBuf::from(p.replace('/', "\\"));
@@ -166,7 +166,7 @@ pub fn steam_dir() -> Option<PathBuf> {
     fallback.is_dir().then_some(fallback)
 }
 
-/// 所有游戏库目录（每个目录下都有 steamapps）。
+/// All library directories (each has a steamapps folder).
 pub fn library_dirs(steam: &Path) -> Vec<PathBuf> {
     let mut dirs = vec![steam.to_path_buf()];
     let file = steam.join("steamapps").join("libraryfolders.vdf");
@@ -185,7 +185,7 @@ pub fn library_dirs(steam: &Path) -> Vec<PathBuf> {
     dirs
 }
 
-/// 按 Steam AppID 找已安装游戏的目录。
+/// Finds an installed game's directory by Steam AppID.
 pub fn app_dir(steam: &Path, app_id: u32) -> Option<PathBuf> {
     for lib in library_dirs(steam) {
         let manifest = lib.join("steamapps").join(format!("appmanifest_{app_id}.acf"));
@@ -204,18 +204,18 @@ pub fn app_dir(steam: &Path, app_id: u32) -> Option<PathBuf> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Account {
-    /// userdata 下的目录名，即 32 位账号 ID
+    /// Directory name under userdata, i.e. the 32-bit account ID
     pub account_id: u32,
     pub persona: String,
     pub account_name: String,
-    /// 最近一次登录的 Unix 时间
+    /// Unix time of the most recent login
     pub timestamp: u64,
     pub most_recent: bool,
 }
 
 const STEAM_ID64_BASE: u64 = 76561197960265728;
 
-/// 本机登录过的 Steam 账号，最近登录的排前面。
+/// Steam accounts that have logged in on this machine, most recent first.
 pub fn accounts(steam: &Path) -> Vec<Account> {
     let file = steam.join("config").join("loginusers.vdf");
     let mut out = Vec::new();
@@ -234,7 +234,7 @@ pub fn accounts(steam: &Path) -> Vec<Account> {
             });
         }
     }
-    // loginusers.vdf 里没有、但 userdata 里有的账号也列出来
+    // Also list accounts that are in userdata but not in loginusers.vdf
     if let Ok(entries) = std::fs::read_dir(steam.join("userdata")) {
         for e in entries.flatten() {
             if let Some(id) = e.file_name().to_str().and_then(|n| n.parse::<u32>().ok())
@@ -255,7 +255,7 @@ pub fn accounts(steam: &Path) -> Vec<Account> {
     out
 }
 
-/// 某个账号下某个游戏的云存档目录。
+/// Cloud save directory of a game under an account.
 pub fn remote_dir(steam: &Path, account_id: u32, app_id: u32) -> PathBuf {
     steam.join("userdata").join(account_id.to_string()).join(app_id.to_string()).join("remote")
 }

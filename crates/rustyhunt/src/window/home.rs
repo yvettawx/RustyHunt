@@ -1,4 +1,4 @@
-//! 01 总览：连接状态、当前狩猎、游戏列表、最近狩猎。
+//! 01 Home: connection status, current hunt, games, recent hunts.
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, Ui, pos2, vec2};
 use rh_core::i18n;
@@ -23,7 +23,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let live = shared.live().clone();
     let snap = live.snapshot.clone();
 
-    // 连接状态
+    // Connection status
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             let (dot, status, warn) = match &live.connection {
@@ -99,7 +99,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     });
     ui.add_space(36.0);
 
-    // 当前狩猎
+    // Current hunt
     let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
     if live.has_data()
         && (snap.in_quest() || snap.in_hunt_zone)
@@ -163,7 +163,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ui.add_space(36.0);
     }
 
-    // 游戏和最近狩猎两列
+    // Two columns: games and recent hunts
     if w.home.loaded_at.is_none_or(|t| t.elapsed().as_secs() > 5) {
         w.home.loaded_at = Some(std::time::Instant::now());
         w.home.recent = crate::records::open().and_then(|c| crate::records::list(&c, None, 6)).unwrap_or_default();
@@ -286,7 +286,7 @@ fn live_name(m: &rh_core::model::Monster) -> String {
     rh_core::i18n::current().monster(&m.key)
 }
 
-/// 斜线填充的轨道（血条的空槽）。
+/// Hatched track (the empty part of a bar).
 pub fn hatch(ui: &Ui, r: Rect, pal: &Pal) {
     let p = ui.painter().with_clip_rect(r);
     let c = pal.ink.gamma_multiply(if pal.dark { 0.42 } else { 0.5 });

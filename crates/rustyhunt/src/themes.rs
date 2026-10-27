@@ -1,5 +1,5 @@
-//! 主题管理：内置浅色和深色，本地主题放在数据目录的 themes 下，
-//! 每个主题一个文件夹。当前主题的文件保存后自动重新载入。
+//! Theme management: built-in light and dark, plus local themes under themes in the data directory,
+//! one folder per theme. The current theme reloads automatically when its files are saved.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -11,7 +11,7 @@ use ui_kit::theme::{MAX_PACK_BYTES, ThemeError, version_ok};
 
 use crate::state::Shared;
 
-/// 当前主题最近一次的错误，overlay 角落和日志页用。
+/// The current theme's latest error, for the overlay corner and the Log page.
 pub static LAST_ERROR: Mutex<Option<String>> = Mutex::new(None);
 
 pub struct Entry {
@@ -54,7 +54,7 @@ pub fn list() -> Vec<Entry> {
         let id = dir.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
         match load_checked(&dir) {
             Ok(t) => out.push(Entry {
-                // 用文件夹名：设置里存的、apply 找的都是它
+                // Use the folder name: it is what settings store and what apply looks up
                 id: id.clone(),
                 error: t.module_errors.first().map(|e| e.to_string()),
                 theme: Some(t),
@@ -71,7 +71,7 @@ pub fn list() -> Vec<Entry> {
     out
 }
 
-/// 读主题并检查程序版本（8.2：不兼容的停用并写明原因）。
+/// Reads a theme and checks the app version (8.2: incompatible themes are disabled with the reason).
 pub fn load_checked(dir: &Path) -> Result<Theme, String> {
     let t = Theme::load_dir(dir).map_err(|e| e.to_string())?;
     if !version_ok(&t.manifest.app, rh_core::VERSION) {
@@ -132,7 +132,7 @@ pub fn apply(shared: &Shared, id: &str) {
     log::info!("应用主题 {id}");
 }
 
-/// 按设置重新载入当前主题。
+/// Reloads the current theme according to settings.
 pub fn reload(shared: &Shared) {
     let t = load_active(&shared.settings());
     if let Some(ctx) = shared.ctx.get() {
@@ -165,7 +165,7 @@ fn walk(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// 当前主题的文件改动后自动重新载入。
+/// Reloads the current theme when its files change.
 pub fn watch(shared: Arc<Shared>) {
     std::thread::Builder::new()
         .name("theme-watch".into())
@@ -174,7 +174,7 @@ pub fn watch(shared: Arc<Shared>) {
             let mut last_dark: Option<bool> = None;
             while !shared.quit.load(std::sync::atomic::Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(700));
-                // 跟随系统深浅色：系统切换时换内置主题
+                // Follow the system light/dark mode: switch built-in themes when the system switches
                 if shared.settings().theme_follow_system {
                     let dark = crate::win::system_dark();
                     if last_dark.is_some_and(|d| d != dark) {
@@ -210,7 +210,7 @@ fn dir_size(dir: &Path) -> u64 {
     walk(dir).iter().filter_map(|p| std::fs::metadata(p).ok()).map(|m| m.len()).sum()
 }
 
-/// 从 .zip 或文件夹导入主题包。返回主题编号。
+/// Imports a theme package from a .zip or a folder. Returns the theme ID.
 pub fn import(src: &Path) -> Result<String, String> {
     let tmp = rh_core::paths::cache().join(format!("theme-import-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);

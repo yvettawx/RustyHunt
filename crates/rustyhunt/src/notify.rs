@@ -1,4 +1,4 @@
-//! 通知：窗口右下角弹出，标题栏的铃铛里能看历史。
+//! Notifications: pop up in the bottom-right corner; history is under the bell in the title bar.
 
 use std::path::PathBuf;
 
@@ -24,7 +24,7 @@ pub struct Notification {
     pub kind: Kind,
     pub title: String,
     pub body: String,
-    /// Unix 秒
+    /// Unix seconds
     pub time: i64,
     pub read: bool,
     #[serde(skip)]
@@ -47,7 +47,7 @@ impl Notification {
 #[derive(Default)]
 pub struct Notifications {
     pub items: Vec<Notification>,
-    /// 正在右下角显示的那一条
+    /// The one currently shown in the bottom-right corner
     pub toast: Option<(Notification, std::time::Instant)>,
 }
 
@@ -73,7 +73,7 @@ impl Notifications {
     }
 
     pub fn push(&mut self, n: Notification) {
-        // 同一类的旧通知（比如同一个新版本）不重复
+        // Don't repeat an older notification of the same kind (the same new version, say)
         self.items.retain(|o| o.kind != n.kind || matches!(n.kind, Kind::Info | Kind::Plugin { .. }));
         if n.toast {
             self.toast = Some((n.clone(), std::time::Instant::now()));

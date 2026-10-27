@@ -1,5 +1,5 @@
-//! 程序的根：eframe 的根窗口就是 overlay（一直存在，透明、穿透），
-//! 主界面是另一个窗口，关掉后缩到托盘，需要时再打开。
+//! Program root: eframe's root window is the overlay (always there, transparent, click-through);
+//! the main window is a separate window that goes to the tray when closed and reopens on demand.
 
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -23,7 +23,7 @@ pub struct App {
 }
 
 impl App {
-    /// 截图用：主窗口切到某一页
+    /// For screenshots: switch the main window to a page
     pub fn open_onboarding(&self, step: usize) {
         let mut m = self.main.lock().unwrap();
         m.open_onboarding();
@@ -97,7 +97,7 @@ impl App {
     fn set_layout(&mut self, on: bool) {
         let was = self.shared.layout_mode.swap(on, std::sync::atomic::Ordering::Relaxed);
         if was && !on {
-            // 退出布局模式时保存
+            // Save when leaving layout mode
             self.shared.save_settings();
             log::info!("布局已保存");
         }

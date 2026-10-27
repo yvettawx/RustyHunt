@@ -1,4 +1,4 @@
-//! 从窗口标题取版本号，按版本挑地址表。
+//! Reads the version from the window title and picks the address map for it.
 
 use std::path::{Path, PathBuf};
 
@@ -6,7 +6,7 @@ use address_map::{AddressMap, LoadError};
 
 pub const MAP_PREFIX: &str = "MonsterHunterWorld";
 
-/// 标题形如 `MONSTER HUNTER: WORLD(421810)`。
+/// The title looks like `MONSTER HUNTER: WORLD(421810)`.
 pub fn version_from_title(title: &str) -> Option<String> {
     if !title.to_uppercase().starts_with("MONSTER HUNTER: WORLD") {
         return None;
@@ -15,12 +15,12 @@ pub fn version_from_title(title: &str) -> Option<String> {
     v.parse::<u64>().ok().map(|_| v.to_string())
 }
 
-/// 冰原之前的测试版本号段，上游对它们用最新的地址表。
+/// Version range of the pre-Iceborne test builds; upstream uses the latest map for them.
 pub fn is_legacy_ice(version: &str) -> bool {
     version.parse::<u64>().is_ok_and(|v| (300_000..=400_000).contains(&v))
 }
 
-/// 按顺序在几个目录里找这个版本的地址表；前面的目录优先（单独更新的地址表放在前面）。
+/// Looks for this version's map in several directories in order; earlier directories win (separately updated maps come first).
 pub fn load_map(dirs: &[PathBuf], version: &str) -> Result<(AddressMap, PathBuf), LoadError> {
     for dir in dirs {
         let path = address_map::map_path(dir, MAP_PREFIX, version);
@@ -43,7 +43,7 @@ pub fn load_map(dirs: &[PathBuf], version: &str) -> Result<(AddressMap, PathBuf)
     })
 }
 
-/// 所有目录里能找到的版本，去重后从小到大。
+/// Versions found in all directories, deduplicated and ascending.
 pub fn known_versions(dirs: &[&Path]) -> Vec<String> {
     let mut v: Vec<String> = dirs.iter().flat_map(|d| address_map::available_versions(d, MAP_PREFIX)).collect();
     v.sort_by_key(|x| x.parse::<u64>().unwrap_or(0));

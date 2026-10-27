@@ -1,4 +1,4 @@
-//! 进程查找、打开、读写内存、注入 DLL。
+//! Finding and opening processes, reading and writing memory, injecting DLLs.
 
 use std::ffi::c_void;
 use std::io;
@@ -22,7 +22,7 @@ use windows_sys::Win32::System::Threading::{
 use crate::memory::{Memory, ReadError, ReadResult};
 use crate::wide;
 
-/// 一个正在运行的进程。
+/// A running process.
 #[derive(Debug, Clone)]
 pub struct ProcessEntry {
     pub pid: u32,
@@ -69,7 +69,7 @@ pub fn processes() -> io::Result<Vec<ProcessEntry>> {
     Ok(out)
 }
 
-/// 按可执行文件名找进程，不区分大小写。
+/// Finds a process by executable name, case-insensitive.
 pub fn find_process(exe: &str) -> Option<u32> {
     processes().ok()?.into_iter().find(|p| p.exe.eq_ignore_ascii_case(exe)).map(|p| p.pid)
 }
@@ -100,14 +100,14 @@ pub fn modules(pid: u32) -> io::Result<Vec<ModuleEntry>> {
     Ok(out)
 }
 
-/// 打开的进程句柄。只读打开时只申请 `PROCESS_VM_READ | PROCESS_QUERY_INFORMATION`。
+/// An open process handle. Read-only opens only ask for `PROCESS_VM_READ | PROCESS_QUERY_INFORMATION`.
 pub struct Process {
     handle: usize,
     pid: u32,
     writable: bool,
 }
 
-// 句柄只是一个内核对象编号，跨线程使用是安全的
+// A handle is just a kernel object number; using it across threads is safe
 unsafe impl Send for Process {}
 unsafe impl Sync for Process {}
 
@@ -116,7 +116,7 @@ impl Process {
         Self::open_with(pid, false)
     }
 
-    /// 写内存、改保护属性、建远程线程需要的权限。只在注入和打补丁时用。
+    /// Access needed to write memory, change protection and create remote threads. Only used for injection and patching.
     pub fn open_writable(pid: u32) -> io::Result<Process> {
         Self::open_with(pid, true)
     }
@@ -165,7 +165,7 @@ impl Process {
         Ok(())
     }
 
-    /// 改写代码段：临时改成可写可执行，写完恢复原来的保护属性并刷新指令缓存。
+    /// Rewrites code: temporarily makes it writable and executable, then restores the old protection and flushes the instruction cache.
     pub fn patch_code(&self, address: u64, bytes: &[u8]) -> io::Result<()> {
         self.require_writable()?;
         let mut old = 0u32;
@@ -182,7 +182,7 @@ impl Process {
         result
     }
 
-    /// 用 `LoadLibraryW` 远程线程把 DLL 载入目标进程，等它返回。
+    /// Loads a DLL into the target process with a `LoadLibraryW` remote thread and waits for it to return.
     pub fn inject_dll(&self, dll: &Path) -> io::Result<()> {
         self.require_writable()?;
         let path = wide(dll.as_os_str());
@@ -237,7 +237,7 @@ impl Process {
         if wait != WAIT_OBJECT_0 {
             return Err(io::Error::new(io::ErrorKind::TimedOut, "LoadLibraryW 超时"));
         }
-        // 线程返回值是模块句柄的低 32 位，0 表示载入失败
+        // The thread's exit code is the low 32 bits of the module handle; 0 means the load failed
         if code == 0 {
             return Err(io::Error::other("LoadLibraryW 返回 0"));
         }
@@ -273,7 +273,7 @@ impl Drop for Process {
     }
 }
 
-/// 最近一次 Win32 错误码。
+/// The last Win32 error code.
 pub fn last_error() -> u32 {
     unsafe { GetLastError() }
 }

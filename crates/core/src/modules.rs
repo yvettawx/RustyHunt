@@ -1,12 +1,12 @@
-//! 局内模块的元信息：编号、名字、可以单独开关的元素、各作的默认位置。
-//! 内置模块和插件模块用同一套描述（`ModuleInfo`），主界面"模块"页和
-//! overlay 的显示设置都从这里取。
+//! Metadata of in-game modules: ID, name, elements that can be toggled one by one, and default
+//! positions per game. Built-in and plugin modules share one description (`ModuleInfo`); the
+//! Modules page of the main window and the overlay display settings both read from here.
 
 use serde::{Deserialize, Serialize};
 
 use crate::model::Game;
 
-/// 模块接口的版本，改了模块描述的格式时升版本。
+/// Version of the module interface; bump it when the module description format changes.
 pub const MODULE_API_VERSION: &str = "1.0";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
@@ -26,13 +26,13 @@ pub enum VAnchor {
     Bottom,
 }
 
-/// 模块的位置，按 1080 高的参考画面计算。宽屏时左、中、右锚定，
-/// 底部锚定的模块内容变多时向上长。
+/// Module position, computed on a 1080-high reference frame. On wide screens modules anchor
+/// left, center or right; bottom-anchored modules grow upward as their content grows.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Placement {
     pub h: HAnchor,
     pub v: VAnchor,
-    /// 到锚定边的距离；居中时是模块中心相对画面中心的偏移
+    /// Distance to the anchored edge; when centered, the offset of the module center from the frame center
     pub dx: f32,
     pub dy: f32,
 }
@@ -83,7 +83,7 @@ impl Placement {
         }
     }
 
-    /// 左上角在画面里的坐标。`frame_w` 是参考画面的宽（高固定 1080）。
+    /// Top-left position in the frame. `frame_w` is the reference frame width (height is fixed at 1080).
     pub fn to_top_left(&self, frame_w: f32, size: (f32, f32)) -> (f32, f32) {
         let x = match self.h {
             HAnchor::Left => self.dx,
@@ -97,7 +97,7 @@ impl Placement {
         (x, y)
     }
 
-    /// 由左上角坐标反推：按模块所在的区域选锚点。布局模式拖动结束时用。
+    /// Derives the anchor from a top-left position, by the region the module is in. Used when a drag ends in layout mode.
     pub fn from_top_left(x: f32, y: f32, frame_w: f32, size: (f32, f32)) -> Placement {
         let cx = x + size.0 / 2.0;
         let h = if cx < frame_w / 3.0 {
@@ -121,11 +121,11 @@ impl Placement {
     }
 }
 
-/// 模块里一个可以单独开关的元素。
+/// An element of a module that can be toggled on its own.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ElementInfo {
     pub key: String,
-    /// 界面文案键
+    /// UI copy key
     pub name: String,
     pub default_on: bool,
 }
@@ -133,12 +133,12 @@ pub struct ElementInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ModuleInfo {
     pub id: String,
-    /// 内置模块是文案键，插件模块是插件给的名字
+    /// A copy key for built-in modules, the plugin's name for plugin modules
     pub name: String,
     pub default_on: bool,
     pub elements: Vec<ElementInfo>,
     pub games: Vec<Game>,
-    /// 来自哪个插件；内置模块为空
+    /// The plugin it comes from; empty for built-in modules
     pub plugin: Option<String>,
 }
 
@@ -231,7 +231,7 @@ pub fn builtin() -> Vec<ModuleInfo> {
     ]
 }
 
-/// 各作的默认位置，按 1920×1080 设计，避开原生 HUD。
+/// Default positions per game, designed at 1920x1080 and clear of the native HUD.
 pub fn default_placement(game: Game, id: &str, monster_side: bool) -> Placement {
     match (game, id) {
         (_, MONSTER) if monster_side => Placement::top_right(40.0, 230.0),
@@ -244,12 +244,12 @@ pub fn default_placement(game: Game, id: &str, monster_side: bool) -> Placement 
         (_, WEAPON) => Placement::top_left(60.0, 236.0),
         (_, BASE) => Placement::top_right(140.0, 330.0),
         (_, PERF) => Placement::bottom_right(20.0, 186.0),
-        // 插件模块：放在任务时钟下面，那里内置模块不用
+        // Plugin modules: under the quest clock, an area built-in modules don't use
         _ => Placement::top_center(0.0, 110.0),
     }
 }
 
-/// 原生 HUD 的大致区域（布局模式里画出来，模块拖进去时提示）。
+/// Rough areas of the native HUD (drawn in layout mode, with a hint when a module is dragged in).
 pub fn native_zones(game: Game) -> &'static [(f32, f32, f32, f32, &'static str)] {
     match game {
         Game::World => &[
@@ -271,7 +271,7 @@ pub fn native_zones(game: Game) -> &'static [(f32, f32, f32, f32, &'static str)]
     }
 }
 
-/// 自身模块：每点生命对应的像素（量的原生血条）和原生血条区域。
+/// Player module: pixels per HP point (measured on the native health bar) and the native bar's area.
 pub fn player_metrics(game: Game) -> (f32, [f32; 4]) {
     match game {
         Game::World => (3.65, [86.0, 30.0, 690.0, 116.0]),

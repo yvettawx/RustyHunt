@@ -1,5 +1,5 @@
-//! 开发用：`--screenshot main[:页面]|overlay|layout <文件>` 用演示数据跑几十帧，
-//! 把画面存成 PNG，用来检查界面。
+//! For development: `--screenshot main[:page]|overlay|layout <file>` runs a few dozen frames of demo data
+//! and saves the picture as a PNG for checking the UI.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -35,7 +35,7 @@ fn save(img: &egui::ColorImage, path: &std::path::Path) {
     let mut buf = image::RgbaImage::new(w as u32, h as u32);
     for (i, p) in img.pixels.iter().enumerate() {
         let [r, g, b, a] = p.to_srgba_unmultiplied();
-        // overlay 是透明的，垫一层深灰再存
+        // The overlay is transparent, so put dark gray behind it before saving
         let bg = 46u32;
         let mix = |c: u8| ((c as u32 * a as u32 + bg * (255 - a as u32)) / 255) as u8;
         buf.put_pixel((i % w) as u32, (i / w) as u32, image::Rgba([mix(r), mix(g), mix(b), 255]));
@@ -48,7 +48,7 @@ impl eframe::App for Shot {
         self.app.ui(ui, frame);
         let ctx = ui.ctx().clone();
         self.frames += 1;
-        // main:页面[:页签]
+        // main:page[:tab]
         if self.frames == 1
             && let Some(rest) = self.what.strip_prefix("main:")
         {

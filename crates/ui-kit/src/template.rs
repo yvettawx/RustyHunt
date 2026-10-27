@@ -1,9 +1,9 @@
-//! 模块模板：用 XML 写的界面描述。主题用它替换内置模块，
-//! 插件用它描述自己的局内模块。
+//! Module templates: UI descriptions written in XML. Themes use them to replace built-in modules,
+//! plugins to describe their own in-game modules.
 //!
-//! 元素：容器 `column` `row` `stack` `for` `if`；图元 `text` `tag` `bar` `arc`
-//! `rect` `circle` `polygon` `path` `image` `pips` `line` `spacer`。
-//! 任何元素下可以放 `<state when="表达式" .../>`，条件成立时覆盖属性或加动画。
+//! Elements: containers `column` `row` `stack` `for` `if`; primitives `text` `tag` `bar` `arc`
+//! `rect` `circle` `polygon` `path` `image` `pips` `line` `spacer`.
+//! Any element can contain `<state when="expression" .../>`, which overrides attributes or adds an animation while the condition holds.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -12,11 +12,11 @@ use crate::expr::{self, Expr, Text};
 use crate::fields;
 use crate::theme::{ThemeError, Tokens};
 
-/// 单个模板的节点数上限，保证 overlay 单帧耗时
+/// Node limit per template, to bound the overlay's frame time
 pub const MAX_NODES: usize = 512;
-/// `for` 展开的项数上限
+/// Limit on items a `for` expands
 pub const MAX_ITEMS: usize = 64;
-/// 带动画的状态数上限
+/// Limit on animated states
 pub const MAX_ANIMATIONS: usize = 24;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,7 +68,7 @@ impl Kind {
         matches!(self, Kind::Column | Kind::Row | Kind::Stack | Kind::For | Kind::If)
     }
 
-    /// 每种元素允许的属性（state 里也只能写这些）。
+    /// Attributes allowed on each element (states may only use these too).
     pub fn attrs(self) -> &'static [&'static str] {
         let own: &[&str] = match self {
             Kind::Column | Kind::Row | Kind::Stack => &["gap", "align", "padding"],
@@ -134,7 +134,7 @@ pub struct Node {
     pub attrs: BTreeMap<String, Text>,
     pub states: Vec<State>,
     pub children: Vec<Node>,
-    /// `for` 的变量名和列表
+    /// A `for`'s variable name and list
     pub each: Option<(String, Expr)>,
     pub line: u32,
 }
@@ -152,7 +152,7 @@ struct Parser<'a, 'b> {
     sample: serde_json::Value,
     nodes: usize,
     animations: usize,
-    /// 当前可用的循环变量 -> 对应的列表路径
+    /// Loop variables in scope -> the list path each refers to
     vars: Vec<(String, Vec<String>)>,
 }
 
@@ -165,7 +165,7 @@ impl Parser<'_, '_> {
         }
     }
 
-    /// 检查表达式里的字段：循环变量换成它对应的列表项，再到样例数据里找。
+    /// Checks the fields in an expression: loop variables are replaced by their list items, then looked up in the sample data.
     fn check_expr(&self, node: roxmltree::Node, e: &Expr) -> Result<(), ThemeError> {
         let mut paths = Vec::new();
         expr::paths(e, &mut paths);
@@ -229,7 +229,7 @@ impl Parser<'_, '_> {
             return Err(self.err(n, "<if> 缺少 when"));
         }
 
-        // for 的变量只在它的子元素里可见
+        // A for's variable is only visible to its children
         if let Some((var, Expr::Path(segs))) = &each {
             let list: Vec<String> = segs
                 .iter()
@@ -315,7 +315,7 @@ impl Parser<'_, '_> {
     }
 }
 
-/// 解析 `<module id="...">` 下面的模板。只能有一个根元素。
+/// Parses the template under `<module id="...">`. Exactly one root element.
 pub fn parse_module(file: &Path, doc: &roxmltree::Document, module: roxmltree::Node, tokens: &Tokens) -> Result<Template, ThemeError> {
     let mut p = Parser {
         file,
@@ -335,7 +335,7 @@ pub fn parse_module(file: &Path, doc: &roxmltree::Document, module: roxmltree::N
     Ok(Template { root, nodes: p.nodes })
 }
 
-/// 单独解析一段模板文本（插件交来的界面描述）。
+/// Parses a standalone template text (a UI description sent by a plugin).
 pub fn parse_str(text: &str, tokens: &Tokens) -> Result<Template, ThemeError> {
     let file = Path::new("module.xml");
     let doc = roxmltree::Document::parse(text).map_err(|e| ThemeError {

@@ -1,8 +1,9 @@
-//! rustyhunt-native.dll：只在用户开启"伤害 hook"并确认后，由主程序注入游戏进程。
+//! rustyhunt-native.dll: injected into the game process by the main program when the damage hook is on.
 //!
-//! 载入后在 127.0.0.1 上开一个端口等主程序连接（协议见 `rh_core::native`）。
-//! 主程序发来伤害函数的地址后，挂上 hook：每次本地玩家打中大型怪物，记下伤害
-//! 和是否会心。只读参数，不改游戏的计算结果。
+//! Once loaded it opens a port on 127.0.0.1 and waits for the main program (protocol in `rh_core::native`).
+//! When the main program sends the damage function's address it installs the hook: every time the local
+//! player hits a large monster it records the damage and whether it crit. It only reads the arguments and
+//! never changes the game's results.
 
 #![cfg(windows)]
 
@@ -15,14 +16,14 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use retour::RawDetour;
 use rh_core::native::{PORT, Stats};
 
-/// 游戏里的伤害函数：怪物、伤害、位置、是否软化、是否会心，后面几个参数没用到。
+/// The game's damage function: monster, damage, position, tenderized, crit; the remaining arguments are unused.
 type DealDamage = unsafe extern "C" fn(*mut u8, i32, *mut c_void, i32, i32, i32, i32, i8, i32);
 
-/// 怪物结构里怪物编号的偏移
+/// Offset of the monster ID in the monster struct
 const MONSTER_ID_OFFSET: usize = 0x12280;
 
-/// 每一位表示一个怪物编号是不是大型怪物（含训练场的柱子 59）。
-/// 数据来自上游 HunterPie 的 WorldUtils.cpp。
+/// One bit per monster ID telling whether it is a large monster (including the training area pillar, 59).
+/// Data from upstream HunterPie's WorldUtils.cpp.
 const LARGE_LO: u64 = 0xE808_00FF_FFFF_FE93;
 const LARGE_HI: u64 = 0x0000_003F_FF83_FFFF;
 
@@ -47,7 +48,7 @@ struct Hook {
     target: usize,
 }
 
-// RawDetour 里是裸指针；只在服务线程里用，加锁访问
+// RawDetour holds raw pointers; only used from the server thread, behind a lock
 unsafe impl Send for Hook {}
 
 static HOOK: Mutex<Option<Hook>> = Mutex::new(None);
@@ -65,7 +66,7 @@ unsafe extern "C" fn deal_damage(target: *mut u8, damage: i32, position: *mut c_
     if !is_large(id) {
         return;
     }
-    // 游戏线程里不能等：锁被占着就丢掉这一下
+    // Never wait on the game thread: if the lock is taken, drop this hit
     if let Ok(mut s) = STATS.try_lock() {
         s.total += damage as f64;
         s.hits += 1;
@@ -139,7 +140,7 @@ fn serve(stream: TcpStream) {
 fn server() {
     let Ok(listener) = TcpListener::bind(("127.0.0.1", PORT)) else { return };
     for stream in listener.incoming().flatten() {
-        // 只服务一个连接：主程序断开后等下一次连接
+        // Serve one connection at a time: when the main program disconnects, wait for the next one
         serve(stream);
     }
 }
@@ -149,7 +150,7 @@ fn server() {
 pub extern "system" fn DllMain(_module: *mut c_void, reason: u32, _reserved: *mut c_void) -> i32 {
     const DLL_PROCESS_ATTACH: u32 = 1;
     if reason == DLL_PROCESS_ATTACH {
-        // DllMain 里不做别的事，起一个线程就返回
+        // Do nothing else in DllMain: start a thread and return
         let _ = std::thread::Builder::new().name("rustyhunt-native".into()).spawn(server);
     }
     1
@@ -161,7 +162,7 @@ mod tests {
 
     static CALLS: AtomicUsize = AtomicUsize::new(0);
 
-    /// 签名和游戏的伤害函数一样的替身
+    /// Stand-in with the same signature as the game's damage function
     #[inline(never)]
     unsafe extern "C" fn fake_damage(target: *mut u8, damage: i32, _: *mut c_void, _: i32, _: i32, _: i32, _: i32, _: i8, _: i32) {
         CALLS.fetch_add(1, Ordering::SeqCst);
@@ -199,14 +200,14 @@ mod tests {
     #[test]
     #[allow(clippy::unusual_byte_groupings)]
     fn bitsets_match_upstream() {
-        // 上游写成二进制，按十个一组对着怪物编号排
+        // Upstream writes this in binary, in groups of ten by monster ID
         assert_eq!(LARGE_LO, 0b1110_1000000010_0000000000_1111111111_1111111111_1111111111_1010010011);
         assert_eq!(LARGE_HI, 0b00000000_0000000000_0000000011_1111111111_1110000011_1111111111_111111);
     }
 
     #[test]
     fn large_monsters() {
-        // 编号 0、1、7 是大型怪物，2 不是；超出位表的都不算
+        // IDs 0, 1 and 7 are large monsters, 2 isn't; anything past the bit table isn't
         assert!(is_large(0));
         assert!(is_large(7));
         assert!(!is_large(2));
