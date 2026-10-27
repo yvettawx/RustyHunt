@@ -26,11 +26,11 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
     let w = modules::width(modules::DAMAGE, false, cfg.width);
     let text = cv.tok("text");
     let accent = cv.tok("accent");
-    let elapsed = s.elapsed.max(1.0);
+    let clock = &f.live.combat;
     let total: f32 = s.party.iter().map(|p| p.damage).sum();
     let top = s.party.iter().map(|p| p.damage).fold(1.0, f32::max);
     let team = if cfg.shows("d-team") {
-        format!("{} DPS", thousands(total / elapsed))
+        format!("{} DPS", thousands(clock.dps(total)))
     } else {
         String::new()
     };
@@ -65,7 +65,7 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
             m.name.clone()
         };
         c.text(nx + 11.0, y, &name, Font::Text, 12.0, if m.is_self { accent } else { text }, Align2::LEFT_TOP);
-        let v = thousands(m.damage / elapsed);
+        let v = thousands(clock.dps(m.damage));
         let vs = c.measure(&v, Font::Num, 13.0, 0.0);
         c.text(w - vs.x, y - 1.0, &v, Font::Num, 13.0, text, Align2::LEFT_TOP);
         y += 17.0;
@@ -94,10 +94,10 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
                 x += ls.x + 3.0 + vs.x + 10.0;
             };
             if let Some(phys) = split.physical {
-                item(&f.t("label.physical"), thousands(phys / elapsed));
+                item(&f.t("label.physical"), thousands(clock.dps(phys)));
             }
             if let Some(el) = split.elemental {
-                item(&f.t("label.elemental"), thousands(el / elapsed));
+                item(&f.t("label.elemental"), thousands(clock.dps(el)));
             }
             item(&f.t("label.critical"), format!("{}%", (split.crit_rate() * 100.0).round()));
             y += 14.0;

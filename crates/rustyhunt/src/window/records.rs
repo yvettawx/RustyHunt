@@ -403,7 +403,7 @@ fn detail(ui: &mut Ui, pal: &Pal, h: &Hunt) -> bool {
         let mut x = rr.min.x;
         let vals = [
             pl.name.clone(),
-            format!("{}", (pl.damage / h.duration.max(1.0)).round()),
+            format!("{}", h.dps(pl.damage).round()),
             crate::overlay::thousands(pl.damage),
             format!("{}%", (pl.damage / total * 100.0).round()),
             pl.crit.map(|c| format!("{}%", (c * 100.0).round())).unwrap_or_else(|| "—".into()),

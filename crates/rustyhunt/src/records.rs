@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS hunts (
     result TEXT NOT NULL,
     crown TEXT NOT NULL DEFAULT 'none',
     size REAL NOT NULL DEFAULT 0,
-    map TEXT NOT NULL DEFAULT ''
+    map TEXT NOT NULL DEFAULT '',
+    fight REAL NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS hunts_by_game ON hunts(game, started_at);
 CREATE INDEX IF NOT EXISTS hunts_by_monster ON hunts(monster);
@@ -73,8 +74,21 @@ pub fn db_path() -> PathBuf {
 pub fn open() -> rusqlite::Result<Connection> {
     let c = Connection::open(db_path())?;
     c.execute_batch(SCHEMA)?;
+    migrate(&c)?;
     c.execute_batch("PRAGMA foreign_keys = ON;")?;
     Ok(c)
+}
+
+/// Columns added after 1.0 go onto existing databases here.
+fn migrate(c: &Connection) -> rusqlite::Result<()> {
+    let has = |col: &str| -> rusqlite::Result<bool> {
+        let mut s = c.prepare("SELECT 1 FROM pragma_table_info('hunts') WHERE name = ?1")?;
+        s.exists([col])
+    };
+    if !has("fight")? {
+        c.execute_batch("ALTER TABLE hunts ADD COLUMN fight REAL NOT NULL DEFAULT 0;")?;
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -107,6 +121,9 @@ pub struct Hunt {
     pub monsters: Vec<String>,
     pub started_at: i64,
     pub duration: f32,
+    /// Fight time (see `rh_core::combat`); 0 for hunts recorded before it existed
+    #[serde(default)]
+    pub fight: f32,
     /// slay、capture、fail、quit
     pub result: String,
     pub crown: String,
@@ -121,14 +138,20 @@ pub struct Hunt {
 
 impl Hunt {
     pub fn self_dps(&self) -> f32 {
-        self.players.iter().find(|p| p.is_self).map_or(0.0, |p| p.damage / self.duration.max(1.0))
+        self.players.iter().find(|p| p.is_self).map_or(0.0, |p| self.dps(p.damage))
+    }
+
+    /// DPS over the fight time, or over the whole quest for older hunts without one.
+    pub fn dps(&self, damage: f32) -> f32 {
+        let secs = if self.fight >= 1.0 { self.fight } else { self.duration };
+        damage / secs.max(1.0)
     }
 }
 
 /// Summary for the list page: without curves or events.
 pub fn list(conn: &Connection, game: Option<&str>, limit: usize) -> rusqlite::Result<Vec<Hunt>> {
     let mut stmt = conn.prepare(
-        "SELECT id, game, quest_id, stars, rank, monster, monsters, started_at, duration, result, crown, size, map
+        "SELECT id, game, quest_id, stars, rank, monster, monsters, started_at, duration, result, crown, size, map, fight
          FROM hunts WHERE (?1 IS NULL OR game = ?1) ORDER BY started_at DESC LIMIT ?2",
     )?;
     let rows = stmt.query_map(params![game, limit as i64], |r| {
@@ -146,6 +169,7 @@ pub fn list(conn: &Connection, game: Option<&str>, limit: usize) -> rusqlite::Re
             crown: r.get(10)?,
             size: r.get(11)?,
             map: r.get(12)?,
+            fight: r.get(13)?,
             players: Vec::new(),
             curve: Vec::new(),
             events: Vec::new(),
@@ -199,8 +223,8 @@ pub fn detail(conn: &Connection, id: i64) -> rusqlite::Result<Option<Hunt>> {
 pub fn insert(conn: &mut Connection, h: &Hunt) -> rusqlite::Result<i64> {
     let tx = conn.transaction()?;
     tx.execute(
-        "INSERT INTO hunts (game, quest_id, stars, rank, monster, monsters, started_at, duration, result, crown, size, map)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+        "INSERT INTO hunts (game, quest_id, stars, rank, monster, monsters, started_at, duration, result, crown, size, map, fight)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         params![
             h.game,
             h.quest_id,
@@ -213,7 +237,8 @@ pub fn insert(conn: &mut Connection, h: &Hunt) -> rusqlite::Result<i64> {
             h.result,
             h.crown,
             h.size,
-            h.map
+            h.map,
+            h.fight
         ],
     )?;
     let id = tx.last_insert_rowid();
@@ -262,6 +287,7 @@ struct Running {
     map: String,
     events: Vec<EventRow>,
     curve: Vec<(f32, i32, f32)>,
+    combat: rh_core::combat::CombatClock,
     last_sample: f32,
     /// Each monster's HP at the start, used to find the main target
     hp_start: HashMap<u64, f32>,
@@ -324,6 +350,7 @@ impl Recorder {
             monsters: last.large_monsters().map(|m| m.key.clone()).collect(),
             started_at: r.started_at,
             duration: elapsed.max(1.0),
+            fight: r.combat.seconds(),
             result: result.into(),
             crown: match main.crown {
                 Crown::Gold => "gold",
@@ -387,6 +414,7 @@ impl Sink for Recorder {
                         map: snap.stage_key.clone(),
                         events: Vec::new(),
                         curve: Vec::new(),
+                        combat: Default::default(),
                         last_sample: -5.0,
                         hp_start: snap.large_monsters().map(|m| (m.uid, m.hp)).collect(),
                         last: None,
@@ -404,6 +432,7 @@ impl Sink for Recorder {
         }
         let Some(r) = self.running.as_mut() else { return };
         let t = snap.elapsed;
+        r.combat.update(t, snap.party.iter().map(|p| p.damage).sum());
         for m in snap.large_monsters() {
             r.hp_start.entry(m.uid).or_insert(m.hp_max);
         }
@@ -431,7 +460,7 @@ impl Sink for Recorder {
         if t - r.last_sample >= 5.0 {
             r.last_sample = t;
             for p in &snap.party {
-                r.curve.push((t, p.slot, p.damage / t.max(1.0)));
+                r.curve.push((t, p.slot, r.combat.dps(p.damage)));
             }
         }
         r.last = Some(snap.clone());
@@ -471,7 +500,7 @@ pub fn to_csv(hunts: &[Hunt]) -> String {
                 p.name.replace('"', "\"\""),
                 p.weapon,
                 p.damage,
-                p.damage / h.duration.max(1.0),
+                h.dps(p.damage),
                 p.damage / total
             ));
         }
@@ -498,6 +527,7 @@ mod tests {
             monsters: vec!["raging_brachydios".into()],
             started_at: 1_700_000_000,
             duration: 680.0,
+            fight: 0.0,
             result: "slay".into(),
             crown: "gold".into(),
             size: 1.23,
@@ -533,7 +563,12 @@ mod tests {
         assert_eq!(d.curve.len(), 2);
         assert_eq!(d.events[0].label, "PART_HEAD");
         assert_eq!(d.fields.get("speedrun.split").map(String::as_str), Some("1:23"));
-        assert!((d.self_dps() - 28000.0 / 680.0).abs() < 0.01);
+        assert!((d.self_dps() - 28000.0 / 680.0).abs() < 0.01, "no fight time: over the quest");
+        let mut h = sample();
+        h.fight = 400.0;
+        let id2 = insert(&mut c, &h).unwrap();
+        assert!((detail(&c, id2).unwrap().unwrap().self_dps() - 28000.0 / 400.0).abs() < 0.01);
+        delete(&c, id2).unwrap();
         delete(&c, id).unwrap();
         assert!(list(&c, None, 10).unwrap().is_empty());
     }

@@ -1,6 +1,7 @@
 //! Data structures, events, settings, copy and module descriptions shared by the three games.
 //! Upper layers depend only on this crate, never directly on one game's reader.
 
+pub mod combat;
 pub mod events;
 pub mod i18n;
 pub mod model;

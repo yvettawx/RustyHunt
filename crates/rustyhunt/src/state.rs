@@ -45,6 +45,8 @@ pub struct Live {
     pub actual_hz: f32,
     /// Our DPS every 2 seconds, for the curve
     pub dps_history: Vec<f32>,
+    /// Fight time this quest, which DPS is measured over
+    pub combat: rh_core::combat::CombatClock,
     /// Current target monster
     pub target: Option<u64>,
     /// Damage of the latest attack chain (on the target monster)
@@ -69,6 +71,7 @@ impl Default for Live {
             read_ms: 0.0,
             actual_hz: 0.0,
             dps_history: Vec::new(),
+            combat: Default::default(),
             target: None,
             combo_damage: 0.0,
             combo_at: -100.0,

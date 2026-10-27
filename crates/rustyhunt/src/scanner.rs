@@ -384,10 +384,14 @@ impl Scanner {
             }
             if !arc.in_quest() && !arc.in_hunt_zone {
                 live.dps_history.clear();
+                live.combat = Default::default();
                 self.last_dps_sample = 0.0;
-            } else if arc.elapsed as f64 - self.last_dps_sample >= 2.0 {
+            } else {
+                live.combat.update(arc.elapsed, arc.party.iter().map(|p| p.damage).sum());
+            }
+            if (arc.in_quest() || arc.in_hunt_zone) && arc.elapsed as f64 - self.last_dps_sample >= 2.0 {
                 self.last_dps_sample = arc.elapsed as f64;
-                let mine = arc.self_member().map_or(0.0, |m| m.damage) / arc.elapsed.max(1.0);
+                let mine = live.combat.dps(arc.self_member().map_or(0.0, |m| m.damage));
                 live.dps_history.push(mine);
                 if live.dps_history.len() > 600 {
                     live.dps_history.remove(0);
