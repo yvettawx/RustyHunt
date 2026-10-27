@@ -5,7 +5,7 @@
 Released. Fixed since the release:
 
 - On a multi-monitor setup with different scaling (for example a 150% primary screen and the game on a 100% screen), the overlay window shrank to 1280x720 and drew in the wrong place.
-- The integrity patch and the damage hook are now on by default.
+- The integrity patch and the damage hook are now on by default, and our own integrity patch is applied even when Stracker's Loader is installed.
 
 Still not tested in the real game:
 
@@ -17,8 +17,9 @@ Still not tested in the real game:
 **Hunter's notes**
 
 - Save slots 59, 66, 67 and 70+ are not mapped to monsters yet, so Furious Rajang, Raging Brachydios, Fatalis and Scarred Yian Garuga don't appear in the notes. Each one needs checking in the in-game Hunter's Notes.
-- Research level caps follow the community rule (introduced in Low Rank 9, High Rank 7, new in Iceborne 4; Zorah Magdaros and Xeno'jiiva 4). Not verified yet: Kirin, Bazelgeuse, Nergigante, Xeno'jiiva, Kulve Taroth, Behemoth, Leshen, Ancient Leshen.
-- Crown quest column: done, from Kiranico game data (`data/world/crown_quests.toml`). Two event quests that community lists mark as guaranteed, ノラの深奥 (Deviljho) and 試練 (Anjanath), aren't in Kiranico's quest database and aren't included.
+- Research level caps: checked against the in-game research list. Dodogama, Lavasioth, Uragaan, Bazelgeuse and Nergigante were corrected to 7. Not seen in the list yet: Kulve Taroth, Behemoth, Ancient Leshen, and Leshen's Master Rank stars.
+- Crown quest column: done, from Kiranico game data (`data/world/crown_quests.toml`). The Heart of the Nora (Deviljho) and The Proving (Anjanath), which community lists mark as guaranteed, are PS4-only Horizon Zero Dawn collaboration quests and aren't included.
+- Done: navigation levels are read from the save; monsters are listed in the in-game research list order; the header shows when the game last saved, and the notes reread the save after the game writes it.
 
 **Multiplayer**
 
