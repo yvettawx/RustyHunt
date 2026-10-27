@@ -30,7 +30,7 @@ Still not tested in the real game:
 **Other**
 
 - Memory: the target is 80 MB. With OpenGL the overlay used about 110 MB; with wgpu on DX12 (needed for the 4K fix) about 190 MB working set and 350 MB private. Fewer swapchain buffers, low-power adapter or immediate present change it by under 5 MB, and an empty 400x300 wgpu window already takes 340 MB private: the cost is the GPU driver itself (on NVIDIA, nvgpucomp64.dll and nvwgf2umx.dll alone are 180 MB of images), so smaller or fewer GPU windows won't help. Reaching the target needs an overlay that doesn't touch the GPU: draw egui on the CPU and hand each module's bitmap to a small layered window with UpdateLayeredWindow, the way WPF transparent windows (HunterPie) work.
-- The backing blur strength is an approximation. The blur window is solid black on the 1080p monitor.
+- Player backing: done. It follows the player module and fades out over a wide margin; blur is built from nested acrylic windows (default 60%) because the plain blur effect showed solid black and acrylic has a hard edge. Layout mode now runs in its own window.
 
 ## 1.1.1: UI and copy
 
