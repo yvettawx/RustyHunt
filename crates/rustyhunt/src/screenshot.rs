@@ -93,7 +93,7 @@ impl eframe::App for Shot {
         self.app.clear_color(v)
     }
 
-    fn on_exit(&mut self, gl: Option<&eframe::glow::Context>) {
-        self.app.on_exit(gl);
+    fn on_exit(&mut self) {
+        self.app.on_exit();
     }
 }

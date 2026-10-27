@@ -116,10 +116,18 @@ fn main() {
         .with_inner_size([1.0, 1.0])
         .with_position([-32000.0, -32000.0])
         .with_icon(Arc::new(crate::window::icon()));
+    // OpenGL into a layered (click-through) window shows nothing on some monitors, and DX12 presented
+    // straight to the window has no alpha. DX12 through DirectComposition is transparent everywhere.
+    let mut wgpu_setup = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
+    wgpu_setup.instance_descriptor.backends = eframe::wgpu::Backends::DX12;
+    wgpu_setup.instance_descriptor.backend_options.dx12.presentation_system = eframe::wgpu::Dx12SwapchainKind::DxgiFromVisual;
     let options = eframe::NativeOptions {
         viewport,
-        renderer: eframe::Renderer::Glow,
-        multisampling: 0,
+        renderer: eframe::Renderer::Wgpu,
+        wgpu_options: eframe::egui_wgpu::WgpuConfiguration {
+            wgpu_setup: wgpu_setup.into(),
+            ..Default::default()
+        },
         ..Default::default()
     };
     let shot = args.screenshot.clone();

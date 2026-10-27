@@ -16,7 +16,7 @@ plugin-host = { path = "../plugin-host" }
 rustyhunt-core = { path = "../core" }
 ui-kit = { path = "../ui-kit" }
 chrono = "0.4"
-eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "clipboard", "accesskit"] }
+eframe = { version = "0.37", default-features = false, features = ["wgpu", "default_fonts", "clipboard", "accesskit"] }
 egui = "0.37"
 image = { version = "0.25", default-features = false, features = ["png"] }
 log = "0.4"

@@ -189,6 +189,8 @@ pub struct Overlay {
     pub state: State,
     pub layout: LayoutState,
     geometry: Option<(i32, i32, i32, i32)>,
+    /// Keep repainting until then after a move: a resize drops a frame while the swapchain is reconfigured
+    settle_until: Option<std::time::Instant>,
     passthrough: Option<bool>,
     hwnd: Option<isize>,
     backing: backing::Backing,
@@ -202,6 +204,7 @@ impl Overlay {
             state: State::default(),
             layout: LayoutState::default(),
             geometry: None,
+            settle_until: None,
             passthrough: None,
             hwnd: None,
             backing: backing::Backing::default(),
@@ -249,11 +252,16 @@ impl Overlay {
         let want = geometry.unwrap_or((-32000, -32000, 1, 1));
         // Moving onto a monitor with a different scale makes winit resize the window
         // to keep its logical size, so check the real rect, not just what was last asked for.
-        if let Some(h) = self.hwnd
-            && (self.geometry != Some(want) || (geometry.is_some() && crate::win::window_rect(h) != Some(want)))
-        {
-            crate::win::place_overlay(h, want);
-            self.geometry = Some(want);
+        if let Some(h) = self.hwnd {
+            let real = crate::win::window_rect(h);
+            if self.geometry != Some(want) || (geometry.is_some() && real != Some(want)) {
+                crate::win::place_overlay(h, want);
+                self.geometry = Some(want);
+                self.settle_until = Some(std::time::Instant::now() + std::time::Duration::from_secs(1));
+            }
+        }
+        if self.settle_until.is_some_and(|t| std::time::Instant::now() < t) {
+            ctx.request_repaint();
         }
         if self.passthrough != Some(!layout_on) {
             ctx.send_viewport_cmd(egui::ViewportCommand::MousePassthrough(!layout_on));
