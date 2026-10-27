@@ -31,7 +31,7 @@ New-Item -ItemType Directory -Force (Join-Path $stage 'docs') | Out-Null
 foreach ($f in 'fields.md', 'events.md', 'theme.md', 'plugins.md', 'theme.xsd') {
     Copy-Item (Join-Path docs $f) (Join-Path $stage 'docs')
 }
-Copy-Item LICENSE, NOTICE, README.md $stage
+Copy-Item LICENSE, NOTICE, README.md, README.zh-CN.md $stage
 
 $examples = Join-Path $stage 'examples'
 New-Item -ItemType Directory -Force (Join-Path $examples 'themes') | Out-Null
