@@ -364,10 +364,15 @@ impl Overlay {
             layout::backdrop(&ctx, screen, s, &self.layout, game);
         }
 
-        // Backing of the player module (covers the native health bar)
+        // Backing of the player module, around where it was drawn last frame
         let player_cfg = profile.module(modules::PLAYER).cloned().unwrap_or_default();
         if visible(&f, &player_cfg) {
-            self.backing.draw(&ctx, &f, &theme, screen, s, self.hwnd);
+            let module = self
+                .state
+                .rects
+                .get(modules::PLAYER)
+                .map(|r| Rect::from_min_max(screen.min + r.min.to_vec2() * s, screen.min + r.max.to_vec2() * s));
+            self.backing.draw(&ctx, &f, module, screen, s, self.hwnd);
         } else {
             self.backing.hide();
         }

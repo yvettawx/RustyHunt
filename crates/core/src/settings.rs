@@ -134,8 +134,9 @@ pub struct PlayerOptions {
     /// Low-HP threshold, percent
     pub low_hp: f32,
     pub backing: Backing,
-    pub blur: f32,
-    /// Backing opacity 0..1
+    /// How opaque the blur gets inside its soft edge, 0..1
+    pub blur_strength: f32,
+    /// Solid backing opacity 0..1
     pub backing_opacity: f32,
     pub backing_w: f32,
     pub backing_h: f32,
@@ -146,7 +147,7 @@ impl Default for PlayerOptions {
         PlayerOptions {
             low_hp: 30.0,
             backing: Backing::Blur,
-            blur: 12.0,
+            blur_strength: 0.6,
             backing_opacity: 0.55,
             backing_w: 1.0,
             backing_h: 1.0,

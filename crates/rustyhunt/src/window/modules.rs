@@ -328,19 +328,21 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
             ui.add_space(18.0);
             if po.backing == Backing::Blur {
                 field_label(ui, pal, &i18n::t("label.blur"));
-                let mut v = po.blur;
-                if widgets::range(ui, pal, "blur", &mut v, 2.0, 30.0, 1.0, "px", rw) {
-                    set(&|p| p.blur = v);
+                let mut v = (po.blur_strength * 100.0).round();
+                if widgets::range(ui, pal, "blur", &mut v, 10.0, 100.0, 5.0, "%", rw) {
+                    set(&|p| p.blur_strength = v / 100.0);
                 }
                 ui.add_space(18.0);
             }
-            if po.backing != Backing::None {
+            if po.backing == Backing::Solid {
                 field_label(ui, pal, &i18n::t("label.backing_op"));
                 let mut v = (po.backing_opacity * 100.0).round();
                 if widgets::range(ui, pal, "bop", &mut v, 0.0, 100.0, 1.0, "%", rw) {
                     set(&|p| p.backing_opacity = v / 100.0);
                 }
                 ui.add_space(18.0);
+            }
+            if po.backing != Backing::None {
                 field_label(ui, pal, &i18n::t("label.backing_w"));
                 let mut v = (po.backing_w * 100.0).round();
                 if widgets::range(ui, pal, "bw", &mut v, 60.0, 140.0, 1.0, "%", rw) {

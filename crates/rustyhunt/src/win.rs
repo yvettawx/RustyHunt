@@ -116,9 +116,8 @@ struct CompositionData {
 
 type SetWca = unsafe extern "system" fn(HWND, *mut CompositionData) -> i32;
 
-/// Lets the system blur what is behind the window. `tint` is the opacity of the black on top;
-/// blur strength 12 and up uses acrylic (heavier blur), below that the plain blur.
-fn set_blur(hwnd: HWND, tint: u8, strength: f32) {
+/// Gives the window the system acrylic blur with a faint dark-gray tint (AABBGGRR).
+fn set_blur(hwnd: HWND) {
     unsafe {
         let user32 = wide(OsStr::new("user32.dll"));
         let m = GetModuleHandleW(user32.as_ptr());
@@ -127,10 +126,9 @@ fn set_blur(hwnd: HWND, tint: u8, strength: f32) {
         };
         let f: SetWca = std::mem::transmute(f);
         let mut accent = AccentPolicy {
-            state: if strength >= 12.0 { 4 } else { 3 },
+            state: 4,
             flags: 2,
-            // AABBGGRR
-            gradient: (tint as u32) << 24 | 0x000a0a0a,
+            gradient: 0x2020_2020,
             animation: 0,
         };
         let mut data = CompositionData {
@@ -142,11 +140,12 @@ fn set_blur(hwnd: HWND, tint: u8, strength: f32) {
     }
 }
 
-pub fn place_blur_window(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32), tint: u8, strength: f32, overlay: Option<isize>) {
+/// Shows a blur window at `(x, y, w, h)` with overall opacity `alpha`, directly below the overlay.
+pub fn place_blur_window(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32), alpha: u8, overlay: Option<isize>) {
     let hw = hwnd as HWND;
-    set_blur(hw, tint, strength);
+    set_blur(hw);
     unsafe {
-        // Directly below the overlay
+        windows_sys::Win32::UI::WindowsAndMessaging::SetLayeredWindowAttributes(hw, 0, alpha, windows_sys::Win32::UI::WindowsAndMessaging::LWA_ALPHA);
         let after = overlay.map(|o| o as HWND).unwrap_or(HWND_TOPMOST);
         SetWindowPos(hw, after, x, y, w.max(1), h.max(1), SWP_NOACTIVATE | SWP_SHOWWINDOW);
     }
