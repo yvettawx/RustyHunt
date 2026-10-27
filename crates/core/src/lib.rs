@@ -15,7 +15,7 @@ pub use model::*;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// 检查更新用的 GitHub 仓库，可以在设置里改。
-pub const DEFAULT_REPO: &str = "RustyHunt/RustyHunt";
+pub const DEFAULT_REPO: &str = "yvettawx/RustyHunt";
 
 /// 数据字段表的版本，加字段时升小版本。
 pub const FIELDS_VERSION: &str = "1.0";

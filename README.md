@@ -17,7 +17,7 @@
 
 ## 安装
 
-在 Releases 页下载：
+在 [Releases](https://github.com/yvettawx/RustyHunt/releases) 页下载：
 
 - `RustyHunt-<版本>-setup.exe`：安装版，装在当前用户目录（`%LOCALAPPDATA%\Programs\RustyHunt`），不需要管理员权限；数据在 `%APPDATA%\RustyHunt\`。可以在系统的"设置 > 应用"里卸载。
 - `RustyHunt-<版本>-portable.zip`：便携版，解压即用，数据放在程序旁边的 `data\`。
