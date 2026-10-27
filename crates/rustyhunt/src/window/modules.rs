@@ -144,11 +144,17 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             ui.set_width(220.0);
             for (i, m) in infos.iter().enumerate() {
                 let enabled = shared.settings().profile(game).module(&m.id).is_some_and(|c| c.enabled);
-                let (r, resp) = ui.allocate_exact_size(vec2(220.0, 46.0), Sense::click());
+                let (r, resp) = ui.allocate_exact_size(vec2(220.0, 48.0), Sense::click());
                 let on = i == w.modules.selected;
-                if on {
-                    ui.painter()
-                        .rect_filled(Rect::from_min_size(pos2(r.min.x, r.min.y + 12.0), vec2(2.0, 22.0)), CornerRadius::ZERO, pal.ink);
+                let hov = widgets::ease(ui, resp.id.with("hover"), resp.hovered() && !on);
+                ui.painter().rect_filled(r, CornerRadius::ZERO, pal.tint(hov * 0.6));
+                let sel = widgets::ease(ui, resp.id.with("on"), on);
+                if sel > 0.0 {
+                    ui.painter().rect_filled(
+                        Rect::from_min_size(pos2(r.min.x, r.min.y + 12.0), vec2(3.0, 24.0 * sel)),
+                        CornerRadius::ZERO,
+                        pal.hue,
+                    );
                 }
                 text_at(
                     ui,
@@ -156,8 +162,8 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_CENTER,
                     &format!("{:02}", i + 1),
                     Font::Num,
-                    10.0,
-                    if on { pal.accent } else { pal.faint },
+                    widgets::T_SMALL - 1.0,
+                    if on { pal.hue } else { pal.faint },
                 );
                 let name = crate::plugins::module_name(&m.id);
                 let color = if !enabled { pal.faint } else { pal.ink };
@@ -167,7 +173,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     Align2::LEFT_CENTER,
                     &name,
                     if on { Font::TextBold } else { Font::Text },
-                    15.0,
+                    widgets::T_BODY + 1.0,
                     color,
                 );
                 ui.painter()

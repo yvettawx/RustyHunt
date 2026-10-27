@@ -79,7 +79,7 @@ Colors used by the overlay:
 | `frostcraft` | The Frostcraft gauge under the sharpness bar |
 | `status-poison`, `status-venom`, `status-fire`, `status-thunder`, `status-water`, `status-ice`, `status-dragon`, `status-bleed`, `status-effluvia`, `status-blast` | The hunter's health bar and status tags while that effect is on |
 
-The main window uses nine colors starting with `window.`: `paper` (background), `ink` (text), `mute`, `faint`, `line` (dividers), `block`, `onblock` (primary buttons and name tags), `accent`, `desk` (the dark area around previews).
+The main window uses colors starting with `window.`: `paper` (background), `ink` (text), `mute`, `faint`, `line` (dividers), `block`, `onblock` (name tags), `accent` (warnings), `desk` (the dark area around previews), `hue` and `onhue` (the current page, primary buttons, switches, sliders, tabs, and text on them), `nav` (sidebar background), `ok` (connected, running). It also uses the overlay's `enrage` and `cool` for monster states.
 
 Font tokens: `number`, `number-heavy`, `number-bold`, `text`, `text-bold`. Duration tokens: `fade` (fade in and out), `toast` (how long callouts stay).
 

@@ -6,7 +6,7 @@ use rh_core::model::{Game, Target};
 use ui_kit::Font;
 
 use super::style::Pal;
-use super::widgets::{self, Btn, button, label, label_mute, text_at};
+use super::widgets::{self, Btn, button, label, text_at};
 use super::{MainWindow, Page};
 use crate::overlay::{mmss, thousands};
 use crate::state::{Action, Connection};
@@ -27,8 +27,8 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             let (dot, status, warn) = match &live.connection {
-                Connection::Connected => (pal.accent, i18n::t("conn.connected"), false),
-                Connection::Demo => (pal.accent, i18n::t("conn.demo"), false),
+                Connection::Connected => (pal.ok, i18n::t("conn.connected"), false),
+                Connection::Demo => (pal.hue, i18n::t("conn.demo"), false),
                 Connection::MapMismatch { .. } => (pal.accent, i18n::t("conn.mismatch"), true),
                 Connection::Failed(_) => (pal.faint, i18n::t("conn.failed"), true),
                 Connection::Searching => (pal.faint, i18n::t("conn.searching"), false),
@@ -36,20 +36,20 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             ui.horizontal(|ui| {
                 let (r, _) = ui.allocate_exact_size(vec2(14.0, 16.0), Sense::hover());
                 if live.has_data() {
-                    ui.painter().circle_filled(r.center(), 7.5, pal.accent.gamma_multiply(0.18));
+                    ui.painter().circle_filled(r.center(), 7.5, dot.gamma_multiply(0.18));
                 }
                 ui.painter().circle_filled(r.center(), 3.5, dot);
-                label(ui, &status, Font::Text, 13.0, if warn { pal.accent } else { pal.mute });
+                label(ui, &status, Font::Text, widgets::T_BODY, if warn { pal.accent } else { pal.mute });
             });
             let game = match &live.connection {
                 Connection::Searching | Connection::Failed(_) => i18n::t("home.waiting_game"),
                 _ => i18n::t("game.world"),
             };
             ui.add_space(4.0);
-            label(ui, game, Font::TextBold, 34.0, pal.ink);
-            ui.add_space(12.0);
+            label(ui, game, Font::TextBold, widgets::T_TITLE + 4.0, pal.ink);
+            ui.add_space(16.0);
             ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 34.0;
+                ui.spacing_mut().item_spacing.x = 32.0;
                 let exe = if live.exe.is_empty() { "-".to_string() } else { live.exe.clone() };
                 widgets::fact(ui, pal, &i18n::t("home.process"), &exe, 14.0, false);
                 widgets::fact(ui, pal, &i18n::t("home.version"), live.version.as_deref().unwrap_or("-"), 14.0, false);
@@ -97,7 +97,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             }
         });
     });
-    ui.add_space(36.0);
+    ui.add_space(40.0);
 
     // Current hunt
     let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
@@ -117,11 +117,18 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             } else {
                 String::new()
             };
-            label(ui, state, Font::Text, 13.0, pal.accent);
+            let state_color = if m.enraged {
+                pal.enrage
+            } else if m.tired {
+                pal.cool
+            } else {
+                pal.ok
+            };
+            label(ui, state, Font::TextBold, widgets::T_BODY, state_color);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Max), |ui| {
-                ui.spacing_mut().item_spacing.x = 2.0;
-                label(ui, "%", Font::Num, 18.0, pal.ink);
-                label(ui, format!("{}", (m.hp_ratio() * 100.0).round()), Font::NumHeavy, 46.0, pal.ink);
+                ui.spacing_mut().item_spacing.x = 4.0;
+                label(ui, format!("/{}", thousands(m.hp_max)), Font::NumBold, widgets::T_HEAD, pal.mute);
+                label(ui, thousands(m.hp), Font::NumHeavy, widgets::T_DISPLAY, pal.ink);
             });
         });
         ui.add_space(12.0);
@@ -130,7 +137,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         ui.painter().rect_filled(
             Rect::from_min_size(r.min, vec2(r.width() * m.hp_ratio(), r.height())),
             CornerRadius::ZERO,
-            pal.ink,
+            if m.enraged { pal.enrage } else { pal.ink },
         );
         if m.capture_threshold > 0.0 {
             let x = r.min.x + r.width() * m.capture_threshold;
@@ -140,9 +147,10 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 pal.accent,
             );
         }
-        ui.add_space(5.0);
-        widgets::thin_bar(ui, pal.mute, pal.line, m.stamina_ratio(), vec2(ui.available_width(), 2.0));
-        ui.add_space(20.0);
+        ui.add_space(4.0);
+        let stamina = if m.tired { pal.cool } else { pal.mute };
+        widgets::thin_bar(ui, stamina, pal.line, m.stamina_ratio(), vec2(ui.available_width(), 2.0));
+        ui.add_space(24.0);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 56.0;
             let elapsed = snap.elapsed.max(1.0);
@@ -151,16 +159,23 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             sorted.sort_by(|a, b| b.total_cmp(a));
             let my = snap.self_member().map_or(0.0, |p| p.damage);
             let rank = sorted.iter().position(|d| *d <= my).map_or(1, |i| i + 1);
-            widgets::fact(ui, pal, &i18n::t("home.your_dps"), &thousands(me), 26.0, true);
-            widgets::fact(ui, pal, &i18n::t("home.rank"), &format!("{rank}/{}", snap.party.len().max(1)), 26.0, false);
+            widgets::fact(ui, pal, &i18n::t("home.your_dps"), &thousands(me), widgets::T_TITLE, true);
+            widgets::fact(
+                ui,
+                pal,
+                &i18n::t("home.rank"),
+                &format!("{rank}/{}", snap.party.len().max(1)),
+                widgets::T_TITLE,
+                false,
+            );
             let breaks: i32 = m.parts.iter().map(|p| p.breaks).sum();
             let breaks_max: i32 = m.parts.iter().map(|p| p.breaks_max).sum();
-            widgets::fact(ui, pal, &i18n::t("home.breaks"), &format!("{breaks}/{breaks_max}"), 26.0, false);
+            widgets::fact(ui, pal, &i18n::t("home.breaks"), &format!("{breaks}/{breaks_max}"), widgets::T_TITLE, false);
             let ails: i32 = m.ailments.iter().map(|a| a.count).sum();
-            widgets::fact(ui, pal, &i18n::t("home.ailments"), &ails.to_string(), 26.0, false);
+            widgets::fact(ui, pal, &i18n::t("home.ailments"), &ails.to_string(), widgets::T_TITLE, false);
             let _ = Target::None;
         });
-        ui.add_space(36.0);
+        ui.add_space(40.0);
     }
 
     // Two columns: games and recent hunts
@@ -177,20 +192,19 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             widgets::section(ui, pal, &i18n::t("home.games"), None);
             for g in Game::ALL {
                 let running = g == Game::World && live.connected();
-                let (r, _) = ui.allocate_exact_size(vec2(left_w, 58.0), Sense::hover());
-                let mut x = r.min.x;
+                let (r, _) = ui.allocate_exact_size(vec2(left_w, 64.0), Sense::hover());
+                // The running game is marked left of the column so the names stay aligned
                 if running {
-                    widgets::diamond(ui, pos2(x + 3.0, r.min.y + 21.0), 6.0, pal.accent);
-                    x += 15.0;
+                    widgets::diamond(ui, pos2(r.min.x - 14.0, r.min.y + 22.0), 7.0, pal.ok);
                 }
                 text_at(
                     ui,
-                    pos2(x, r.min.y + 12.0),
+                    pos2(r.min.x, r.min.y + 12.0),
                     Align2::LEFT_TOP,
                     &i18n::t(&format!("game.{}", g.key())),
                     Font::TextBold,
-                    15.0,
-                    pal.ink,
+                    widgets::T_HEAD,
+                    if g.supported() { pal.ink } else { pal.mute },
                 );
                 let ds = if !g.supported() {
                     i18n::t("home.later")
@@ -199,16 +213,25 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 } else {
                     i18n::t("home.not_running")
                 };
-                text_at(ui, pos2(r.min.x, r.min.y + 34.0), Align2::LEFT_TOP, &ds, Font::Text, 12.0, pal.mute);
+                text_at(
+                    ui,
+                    pos2(r.min.x, r.min.y + 36.0),
+                    Align2::LEFT_TOP,
+                    &ds,
+                    Font::Text,
+                    widgets::T_SMALL + 1.0,
+                    if running { pal.ok } else { pal.mute },
+                );
                 ui.painter()
                     .line_segment([pos2(r.min.x, r.max.y - 0.5), pos2(r.max.x, r.max.y - 0.5)], Stroke::new(1.0, pal.line));
                 if g.supported() {
-                    let lr = Rect::from_min_size(pos2(r.max.x - 40.0, r.center().y - 9.0), vec2(40.0, 18.0));
-                    ui.scope_builder(egui::UiBuilder::new().max_rect(lr), |ui| {
-                        if widgets::link(ui, pal, &i18n::t("nav.modules")).clicked() {
-                            w.page = Page::Modules;
-                        }
-                    });
+                    let lw = widgets::galley(ui, &i18n::t("nav.modules"), Font::Text, widgets::T_BODY, pal.ink).size().x;
+                    let lr = Rect::from_min_size(pos2(r.max.x - lw, r.center().y - 9.0), vec2(lw, 18.0));
+                    // A child that doesn't take space in the column, or the next row would start lower
+                    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(lr));
+                    if widgets::link(&mut child, pal, &i18n::t("nav.modules")).clicked() {
+                        w.page = Page::Modules;
+                    }
                 }
             }
         });
@@ -221,13 +244,38 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 .count();
             widgets::section(ui, pal, &i18n::t("home.recent"), Some(&i18n::tf("home.this_week", &[("n", &week.to_string())])));
             if w.home.recent.is_empty() {
-                label_mute(ui, pal, &i18n::t("home.no_records"), 13.0);
+                // An empty list keeps the height of a few rows, with the message in a dashed box
+                let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 128.0), Sense::hover());
+                let pts = [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom(), r.left_top()];
+                for s in pts.windows(2) {
+                    ui.painter()
+                        .extend(egui::Shape::dashed_line(&[s[0], s[1]], Stroke::new(1.0, pal.line), 4.0, 4.0));
+                }
+                text_at(
+                    ui,
+                    r.center(),
+                    Align2::CENTER_CENTER,
+                    &i18n::t("home.no_records"),
+                    Font::Text,
+                    widgets::T_BODY,
+                    pal.mute,
+                );
             }
             let width = ui.available_width();
             for h in w.home.recent.clone() {
                 let (r, resp) = ui.allocate_exact_size(vec2(width, 46.0), Sense::click());
                 let name = rh_core::i18n::current().monster(&h.monster);
-                let nr = text_at(ui, pos2(r.min.x, r.center().y), Align2::LEFT_CENTER, &name, Font::TextBold, 14.0, pal.ink);
+                let hov = widgets::ease(ui, resp.id.with("hover"), resp.hovered());
+                ui.painter().rect_filled(r.expand2(vec2(8.0, 0.0)), CornerRadius::ZERO, pal.tint(hov * 0.6));
+                let nr = text_at(
+                    ui,
+                    pos2(r.min.x, r.center().y),
+                    Align2::LEFT_CENTER,
+                    &name,
+                    Font::TextBold,
+                    widgets::T_BODY + 1.0,
+                    pal.ink,
+                );
                 if resp.hovered() {
                     ui.painter()
                         .line_segment([pos2(nr.min.x, nr.max.y + 1.0), pos2(nr.max.x, nr.max.y + 1.0)], Stroke::new(1.0, pal.ink));
@@ -250,7 +298,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     &i18n::t(&format!("result.{}", h.result)),
                     Font::Text,
                     12.0,
-                    if capture { pal.accent } else { pal.mute },
+                    if capture { pal.ok } else { pal.mute },
                 );
                 text_at(
                     ui,

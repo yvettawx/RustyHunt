@@ -14,6 +14,14 @@ pub struct Pal {
     pub onblock: Color32,
     pub accent: Color32,
     pub desk: Color32,
+    /// Selection and interaction: selected nav item, switches, sliders, tabs
+    pub hue: Color32,
+    pub onhue: Color32,
+    pub nav: Color32,
+    pub ok: Color32,
+    /// Monster states, shared with the overlay
+    pub enrage: Color32,
+    pub cool: Color32,
     pub dark: bool,
 }
 
@@ -30,8 +38,21 @@ impl Pal {
             onblock: c("window.onblock"),
             accent: c("window.accent"),
             desk: c("window.desk"),
+            hue: c("window.hue"),
+            onhue: c("window.onhue"),
+            nav: c("window.nav"),
+            ok: c("window.ok"),
+            enrage: c("enrage"),
+            cool: c("cool"),
             dark: theme.manifest.dark,
         }
+    }
+
+    /// The hover tint at strength `t` (0 to 1); pressing goes to 2
+    pub fn tint(&self, t: f32) -> Color32 {
+        let base = if self.dark { 255 } else { 0 };
+        let a = if self.dark { 12.0 } else { 14.0 } * t;
+        Color32::from_rgba_unmultiplied(base, base, base, a.round().clamp(0.0, 255.0) as u8)
     }
 
     /// Light background on hover
@@ -52,7 +73,7 @@ pub fn apply(ctx: &egui::Context, theme: &Theme) {
     v.extreme_bg_color = p.paper;
     v.faint_bg_color = p.paper;
     v.override_text_color = Some(p.ink);
-    v.selection.bg_fill = p.accent.gamma_multiply(0.35);
+    v.selection.bg_fill = p.hue.gamma_multiply(0.3);
     v.selection.stroke = egui::Stroke::new(1.0, p.ink);
     v.hyperlink_color = p.ink;
     v.window_stroke = egui::Stroke::new(1.0, p.line);

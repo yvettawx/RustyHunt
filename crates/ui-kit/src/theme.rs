@@ -131,7 +131,7 @@ pub fn overlay_defaults() -> BTreeMap<String, Color32> {
 /// Default main window tokens: a light set and a dark set.
 pub fn window_defaults(dark: bool) -> BTreeMap<String, Color32> {
     let hex = |s: &str| color::parse(s).unwrap();
-    let pairs: [(&str, &str); 9] = if dark {
+    let pairs: [(&str, &str); 13] = if dark {
         [
             ("window.paper", "#191918"),
             ("window.ink", "#ebeae4"),
@@ -142,6 +142,10 @@ pub fn window_defaults(dark: bool) -> BTreeMap<String, Color32> {
             ("window.onblock", "#141414"),
             ("window.accent", "#ff6b1a"),
             ("window.desk", "#0a0a0a"),
+            ("window.hue", "#ebeae4"),
+            ("window.onhue", "#141414"),
+            ("window.nav", "#191918"),
+            ("window.ok", "#4fbf73"),
         ]
     } else {
         [
@@ -154,6 +158,10 @@ pub fn window_defaults(dark: bool) -> BTreeMap<String, Color32> {
             ("window.onblock", "#ecebe6"),
             ("window.accent", "#ff6b1a"),
             ("window.desk", "#2b2b2a"),
+            ("window.hue", "#141414"),
+            ("window.onhue", "#ecebe6"),
+            ("window.nav", "#ecebe6"),
+            ("window.ok", "#2f9e57"),
         ]
     };
     pairs.into_iter().map(|(k, v)| (k.to_string(), hex(v))).collect()

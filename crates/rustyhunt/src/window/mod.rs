@@ -386,53 +386,64 @@ impl MainWindow {
 
         let live = self.shared.live();
         let (dot, text) = match &live.connection {
-            Connection::Connected => (pal.accent, format!("{} {}", i18n::t("conn.connected"), i18n::t("game.world"))),
-            Connection::Demo => (pal.accent, i18n::t("conn.demo")),
+            Connection::Connected => (pal.ok, format!("{} {}", i18n::t("conn.connected"), i18n::t("game.world"))),
+            Connection::Demo => (pal.hue, i18n::t("conn.demo")),
             Connection::MapMismatch { .. } => (pal.accent, i18n::t("conn.mismatch")),
             Connection::Failed(_) => (pal.faint, i18n::t("conn.failed")),
             Connection::Searching => (pal.faint, i18n::t("conn.waiting")),
         };
         drop(live);
-        let tr = text_at(ui, pos2(br.min.x - 18.0, r.center().y), Align2::RIGHT_CENTER, &text, Font::Text, 12.0, pal.mute);
+        let tr = text_at(
+            ui,
+            pos2(br.min.x - 16.0, r.center().y),
+            Align2::RIGHT_CENTER,
+            &text,
+            Font::Text,
+            widgets::T_SMALL + 1.0,
+            pal.mute,
+        );
         ui.painter().circle_filled(pos2(tr.min.x - 11.0, r.center().y), 3.0, dot);
     }
 
     fn sidebar(&mut self, ui: &mut Ui, pal: &Pal, r: Rect) {
+        ui.painter().rect_filled(r, CornerRadius::ZERO, pal.nav);
         ui.painter()
             .line_segment([pos2(r.max.x + 0.5, r.min.y), pos2(r.max.x + 0.5, r.max.y)], Stroke::new(1.0, pal.line));
-        let mut y = r.min.y + 30.0;
+        let mut y = r.min.y + 24.0;
         let new_records = false;
         for (i, page) in Page::ALL.iter().enumerate() {
             let row = Rect::from_min_size(pos2(r.min.x, y), vec2(r.width(), 40.0));
             let resp = ui.interact(row, Id::unique(("nav", i)), Sense::click());
             let on = *page == self.page;
-            let num_color = if on { pal.accent } else { pal.faint };
+            // The current page is a block in the interaction colour; it slides in when picked
+            let sel = widgets::ease(ui, resp.id.with("on"), on);
+            let hov = widgets::ease(ui, resp.id.with("hover"), resp.hovered() && !on);
+            let block = Rect::from_min_max(pos2(r.min.x + 12.0, row.min.y + 2.0), pos2(r.max.x - 12.0, row.max.y - 2.0));
+            ui.painter().rect_filled(block, CornerRadius::ZERO, pal.tint(hov));
+            if sel > 0.0 {
+                let b = Rect::from_min_max(block.min, pos2(block.min.x + block.width() * sel, block.max.y));
+                ui.painter().rect_filled(b, CornerRadius::ZERO, pal.hue);
+            }
+            let num_color = if sel > 0.5 { pal.onhue.gamma_multiply(0.6) } else { pal.faint };
             text_at(
                 ui,
-                pos2(r.min.x + 22.0, row.center().y + 1.0),
+                pos2(r.min.x + 24.0, row.center().y + 1.0),
                 Align2::LEFT_CENTER,
                 &format!("{:02}", i + 1),
                 Font::Num,
-                10.0,
+                widgets::T_SMALL - 1.0,
                 num_color,
             );
-            let color = if on || resp.hovered() { pal.ink } else { pal.mute };
+            let color = if sel > 0.5 { pal.onhue } else { pal.mute.lerp_to_gamma(pal.ink, hov) };
             let lr = text_at(
                 ui,
                 pos2(r.min.x + 52.0, row.center().y),
                 Align2::LEFT_CENTER,
                 &i18n::t(page.key()),
                 if on { Font::TextBold } else { Font::Text },
-                15.0,
+                widgets::T_BODY + 1.0,
                 color,
             );
-            if on {
-                ui.painter().rect_filled(
-                    Rect::from_min_size(pos2(r.min.x, row.min.y + 10.0), vec2(2.0, 20.0)),
-                    CornerRadius::ZERO,
-                    pal.ink,
-                );
-            }
             if *page == Page::Records && new_records {
                 ui.painter().circle_filled(pos2(lr.max.x + 9.0, row.center().y), 2.5, pal.accent);
             }
@@ -449,18 +460,26 @@ impl MainWindow {
         let mut by = r.max.y - 22.0 - 14.0;
         text_at(
             ui,
-            pos2(r.min.x + 22.0, by + 7.0),
+            pos2(r.min.x + 24.0, by + 7.0),
             Align2::LEFT_CENTER,
             rh_core::VERSION,
             Font::NumBold,
-            10.0,
+            widgets::T_SMALL - 1.0,
             pal.faint,
         );
         by -= 14.0 + 34.0;
-        let rows = [(i18n::t("action.layout"), 1), ("overlay".to_string(), 0)];
+        let rows = [(i18n::t("action.layout"), 1), (i18n::t("label.overlay"), 0)];
         for (label, which) in rows {
-            let row = Rect::from_min_size(pos2(r.min.x + 22.0, by), vec2(r.width() - 44.0, 30.0));
-            text_at(ui, pos2(row.min.x, row.center().y), Align2::LEFT_CENTER, &label, Font::Text, 13.0, pal.mute);
+            let row = Rect::from_min_size(pos2(r.min.x + 24.0, by), vec2(r.width() - 48.0, 32.0));
+            text_at(
+                ui,
+                pos2(row.min.x, row.center().y),
+                Align2::LEFT_CENTER,
+                &label,
+                Font::Text,
+                widgets::T_BODY,
+                pal.mute,
+            );
             let sr = Rect::from_min_size(pos2(row.max.x - 28.0, row.center().y - 7.0), vec2(28.0, 14.0));
             let mut on = if which == 0 {
                 self.shared.settings().overlay_visible

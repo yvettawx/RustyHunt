@@ -86,7 +86,7 @@ TOKENS_DOC = (
     "ghost, heal, track, edge, shadow, hatch, crown-gold, crown-silver, qurio, hp, stamina, monster-hp, enrage, frostcraft, "
     "status-poison, status-venom, status-fire, status-thunder, status-water, status-ice, status-dragon, status-bleed, "
     "status-effluvia, status-blast; main window colors start with window.: "
-    "paper, ink, mute, faint, line, block, onblock, accent, desk"
+    "paper, ink, mute, faint, line, block, onblock, accent, desk, hue, onhue, nav, ok"
 )
 MODULE_DOC = (
     "Module template with exactly one root element. id is monster, buffs, damage, area, player, clock, weapon, base, perf, "
