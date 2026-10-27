@@ -21,6 +21,7 @@ Still not tested in the real game:
 - Save slots 59, 66, 67 and 70+ are not mapped to monsters yet, so Furious Rajang, Raging Brachydios, Fatalis and Scarred Yian Garuga don't appear in the notes. Each one needs checking in the in-game Hunter's Notes.
 - Research level caps: checked against the in-game research list. Dodogama, Lavasioth, Uragaan, Bazelgeuse and Nergigante were corrected to 7. Not seen in the list yet: Kulve Taroth, Behemoth, Ancient Leshen, and Leshen's Master Rank stars.
 - Crown quest column: done, from Kiranico game data (`data/world/crown_quests.toml`). The Heart of the Nora (Deviljho) and The Proving (Anjanath), which community lists mark as guaranteed, are PS4-only Horizon Zero Dawn collaboration quests and aren't included.
+- Done: the monster and area modules show when a monster beats the recorded largest or smallest size, and its research and scoutfly levels.
 - Done: navigation levels are read from the save; monsters are listed in the in-game research list order; the header shows when the game last saved, and the notes reread the save after the game writes it.
 
 **Multiplayer**
