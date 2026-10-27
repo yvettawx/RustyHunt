@@ -84,6 +84,8 @@ pub struct ModuleConfig {
     pub off: BTreeSet<String>,
     /// Width set in layout mode, before scaling; None for the module's own width
     pub width: Option<f32>,
+    /// Draw the theme's backing behind it (the player module has its own backing setting instead)
+    pub panel: bool,
 }
 
 impl Default for ModuleConfig {
@@ -97,6 +99,7 @@ impl Default for ModuleConfig {
             quest_only: true,
             off: BTreeSet::new(),
             width: None,
+            panel: true,
         }
     }
 }

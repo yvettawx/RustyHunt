@@ -267,6 +267,14 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
         edit(&|c| c.scale = sc / 100.0);
     }
     ui.add_space(18.0);
+    if info.id != modules::PLAYER {
+        field_label(ui, pal, &i18n::t("label.backing"));
+        let mut on = cfg.panel;
+        if widgets::switch(ui, pal, &mut on).changed() {
+            edit(&|c| c.panel = on);
+        }
+        ui.add_space(18.0);
+    }
 
     match info.id.as_str() {
         modules::MONSTER => {

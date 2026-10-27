@@ -492,7 +492,8 @@ pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Th
             modules::PERF => misc::perf(cv, f, cfg, st),
             other => crate::plugins::draw_module(other, cv, f, cfg, st, ctx),
         };
-        if size != Vec2::ZERO {
+        // The player module's backing is its own setting (none, solid or blur), drawn in separate windows
+        if size != Vec2::ZERO && cfg.panel && id != modules::PLAYER {
             cv.panel_into(slot, 0.0, 0.0, size.x, size.y);
         }
         size
