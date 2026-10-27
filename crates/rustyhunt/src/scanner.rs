@@ -410,37 +410,26 @@ impl Scanner {
 /// For screenshots: run a fixed demo scene instead of the random hunt (`--screenshot overlay:<scene>`).
 pub static DEMO_SCENE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
-/// Picks the target monster by target mode.
+/// Picks the target monster by target mode. No monster is picked until the player selects one
+/// (locks on in game, switches manually, or hits one in last-hit mode).
 pub fn select_target(snap: &Snapshot, mode: TargetMode, manual: Option<u64>, hits: &std::collections::HashMap<u64, f64>, _cursor: &mut usize) -> Option<u64> {
     let alive: Vec<&rh_core::model::Monster> = snap.large_monsters().filter(|m| m.alive()).collect();
-    let fallback = || {
+    let locked = || {
         alive
-            .iter()
-            .find(|m| m.manual_target == Target::Own)
-            .or_else(|| alive.first())
-            .map(|m| m.uid)
-            .or_else(|| snap.large_monsters().next().map(|m| m.uid))
-    };
-    match mode {
-        TargetMode::Lock => alive
             .iter()
             .find(|m| m.target == Target::Own)
             .or_else(|| alive.iter().find(|m| m.manual_target == Target::Own))
             .map(|m| m.uid)
-            .or_else(|| {
-                hits.iter()
-                    .filter(|(uid, _)| alive.iter().any(|m| m.uid == **uid))
-                    .max_by(|a, b| a.1.total_cmp(b.1))
-                    .map(|(uid, _)| *uid)
-            })
-            .or_else(fallback),
+    };
+    match mode {
+        TargetMode::Lock => locked(),
         TargetMode::LastHit => hits
             .iter()
             .filter(|(uid, _)| alive.iter().any(|m| m.uid == **uid))
             .max_by(|a, b| a.1.total_cmp(b.1))
             .map(|(uid, _)| *uid)
-            .or_else(fallback),
-        TargetMode::Manual => manual.filter(|t| snap.monster(*t).is_some()).or_else(fallback),
+            .or_else(locked),
+        TargetMode::Manual => manual.filter(|t| snap.monster(*t).is_some()),
     }
 }
 
@@ -479,6 +468,16 @@ mod tests {
         let s = snap();
         let mut c = 0;
         assert_eq!(select_target(&s, TargetMode::Lock, None, &Default::default(), &mut c), Some(2));
+    }
+
+    #[test]
+    fn nothing_selected_means_no_target() {
+        let mut s = snap();
+        s.monsters[1].target = Target::Other;
+        let mut c = 0;
+        assert_eq!(select_target(&s, TargetMode::Lock, None, &Default::default(), &mut c), None);
+        assert_eq!(select_target(&s, TargetMode::LastHit, None, &Default::default(), &mut c), None);
+        assert_eq!(select_target(&s, TargetMode::Manual, None, &Default::default(), &mut c), None);
     }
 
     #[test]

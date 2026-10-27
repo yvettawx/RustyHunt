@@ -341,7 +341,11 @@ impl Overlay {
         if shared.show_all.load(std::sync::atomic::Ordering::Relaxed) {
             density = Density::Full;
         }
-        let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
+        // Without a selected monster the monster module stays hidden; layout mode shows one to place it
+        let target = live
+            .target
+            .and_then(|t| snap.monster(t))
+            .or_else(|| snap.large_monsters().next().filter(|_| layout_on));
         crate::bestiary::keep_fresh(&shared);
         let notes = if snap.large_monsters().next().is_some() {
             crate::bestiary::by_key()
