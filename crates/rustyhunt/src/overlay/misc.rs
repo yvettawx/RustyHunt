@@ -142,8 +142,10 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
         let ns = c.text(17.0, y + 2.0, &name, Font::Text, 12.0, text, Align2::LEFT_TOP);
         let mut x = 17.0 + ns.x + 5.0;
         if matches!(m.crown, Crown::Gold | Crown::Silver | Crown::Mini) {
-            c.crown(x, y + 5.0, 12.0, m.crown != Crown::Silver);
-            x += 17.0;
+            // As in the game: the mini crown is a small gold one, the large crowns gold or silver
+            let cw = if m.crown == Crown::Mini { 9.0 } else { 14.0 };
+            c.crown(x, y + 14.0 - cw * 0.65, cw, m.crown != Crown::Silver);
+            x += cw + 5.0;
         }
         let notes = f.notes.get(&m.key);
         if cfg.shows("a-record")

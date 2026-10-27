@@ -102,7 +102,7 @@ pub fn overlay_defaults() -> BTreeMap<String, Color32> {
         ("edge", rgba(0, 0, 0, 0.55)),
         ("shadow", rgba(0, 0, 0, 0.95)),
         ("hatch", rgba(242, 240, 233, 0.30)),
-        ("crown-gold", Color32::from_rgb(0xe9, 0xc2, 0x5b)),
+        ("crown-gold", Color32::from_rgb(0xf5, 0xbe, 0x2a)),
         ("crown-silver", Color32::from_rgb(0xd9, 0xdd, 0xe2)),
         ("qurio", Color32::from_rgb(0xc4, 0x8c, 0xff)),
         // The game's own colours: green health, yellow stamina

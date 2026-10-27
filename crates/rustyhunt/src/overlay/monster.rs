@@ -210,7 +210,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     let side = f.profile.monster.layout == MonsterLayout::Side;
     let w = rh_core::modules::width(rh_core::modules::MONSTER, side, cfg.width);
     // Cells at least about 88 wide, at most eight to a row
-    let cols = (((w + 16.0) / 104.0).floor() as usize).clamp(1, 8);
+    let cols = (((w + 16.0) / 136.0).floor() as usize).clamp(1, 8);
     let text = cv.tok("text");
     let mute = cv.tok("text-mute");
     let accent = cv.tok("accent");
@@ -268,8 +268,9 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         }
     }
     if cfg.shows("m-crown") && matches!(m.crown, Crown::Gold | Crown::Silver | Crown::Mini) {
-        let cw = if m.crown == Crown::Mini { 12.0 } else { 16.0 };
-        cv.crown(x, bottom - 3.0 - cw * 0.75, cw, m.crown != Crown::Silver);
+        // As in the game: the mini crown is a small gold one, the large crowns gold or silver
+        let cw = if m.crown == Crown::Mini { 10.0 } else { 18.0 };
+        cv.crown(x, bottom - 3.0 - cw * 0.65, cw, m.crown != Crown::Silver);
         x += cw + 10.0;
     }
     let notes = f.notes.get(&m.key);
