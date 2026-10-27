@@ -17,6 +17,8 @@ const DATA: &str = include_str!("../../../data/world/bestiary.toml");
 #[derive(Debug, Clone, Deserialize)]
 pub struct Info {
     pub species: String,
+    /// 研究等级上限
+    pub research: u8,
     #[serde(default)]
     pub maps: String,
     #[serde(default)]
@@ -169,6 +171,8 @@ pub fn rows(book: &Book) -> Vec<Row> {
             let big = largest > 0 && largest as f32 >= (gold * 100.0).round();
             let small = smallest > 0 && smallest as f32 <= (mini * 100.0).round();
             let m = book.store.world.get(key).cloned().unwrap_or_default();
+            let saved_research = r.map_or(0, |r| r.research);
+            let research = m.research.unwrap_or(saved_research);
             Row {
                 key: key.clone(),
                 species: inf.species.clone(),
@@ -176,8 +180,9 @@ pub fn rows(book: &Book) -> Vec<Row> {
                 fixed: inf.fixed,
                 big: !inf.fixed && m.big.unwrap_or(big),
                 small: !inf.fixed && m.small.unwrap_or(small),
-                research: m.research.unwrap_or(r.map_or(0, |r| r.research)),
-                research_cap: 9,
+                research,
+                // 存档里的值超过表里的上限时，以存档为准
+                research_cap: inf.research.max(saved_research).min(9),
                 nav: m.nav.unwrap_or(0),
                 slain: r.map_or(0, |r| r.slain),
                 captured: r.map_or(0, |r| r.captured),
@@ -360,6 +365,33 @@ mod tests {
         assert!(info()["zorah_magdaros"].fixed);
         assert_eq!(map_keys("AG"), vec!["ancient_forest", "guiding_lands"]);
         assert_eq!(info()["rathalos"].species, "TYPE_FLYING_WYVERN");
+    }
+
+    #[test]
+    fn research_cap_follows_table_and_save() {
+        assert_eq!(info()["rathalos"].research, 9);
+        assert_eq!(info()["teostra"].research, 7);
+        assert_eq!(info()["velkhana"].research, 4);
+        assert_eq!(info()["zorah_magdaros"].research, 4);
+        assert!(info().values().all(|i| (1..=9).contains(&i.research)));
+
+        let mut b = Book::default();
+        let r = rows(&b).into_iter().find(|r| r.key == "velkhana").unwrap();
+        assert_eq!(r.research_cap, 4);
+
+        b.save = Some(SaveFile {
+            steam_id: 0,
+            hunters: vec![Hunter {
+                monsters: vec![game_world::save::MonsterRecord {
+                    key: "velkhana".into(),
+                    research: 6,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+        });
+        let r = rows(&b).into_iter().find(|r| r.key == "velkhana").unwrap();
+        assert_eq!((r.research, r.research_cap), (6, 6));
     }
 
     #[test]

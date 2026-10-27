@@ -3,297 +3,369 @@
 # maps：探索里能遇到的地图（来自 Kiranico 各怪物页的"探索"一栏，2026-10-26 取数），
 #       A 古代树森林、W 大蚁冢荒地、C 陆珊瑚台地、R 瘴气之谷、E 龙结晶之地、H 永霜冻土，G 表示聚魔之地。
 # fixed：体型固定，不能登记金冠。
+# research：研究等级上限。下位登场的怪 9，上位登场的 7，冰原新增的 4；熔山龙、冥灯龙 4。
 
 [acidic_glavenus]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = "RG"
 
 [alatreon]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 fixed = true
 
 [ancient_leshen]
 species = "TYPE_RELICT"
+research = 7
 maps = ""
 fixed = true
 
 [anjanath]
 species = "TYPE_BRUTE_WYVERN"
+research = 9
 maps = "AG"
 
 [azure_rathalos]
 species = "TYPE_FLYING_WYVERN"
+research = 7
 maps = "AEG"
 
 [banbaro]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = "AWCREHG"
 
 [barioth]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = "HG"
 
 [barroth]
 species = "TYPE_BRUTE_WYVERN"
+research = 9
 maps = "WG"
 
 [bazelgeuse]
 species = "TYPE_FLYING_WYVERN"
+research = 9
 maps = "AWCRE"
 
 [behemoth]
 species = "TYPE_ELDER_DRAGON"
+research = 7
 maps = ""
 fixed = true
 
 [beotodus]
 species = "TYPE_PISCINE_WYVERN"
+research = 4
 maps = "H"
 
 [black_diablos]
 species = "TYPE_FLYING_WYVERN"
+research = 7
 maps = "WG"
 
 [blackveil_vaal_hazak]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = "AR"
 
 [brachydios]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = "EG"
 
 [brute_tigrex]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = ""
 
 [coral_pukei_pukei]
 species = "TYPE_BIRD_WYVERN"
+research = 4
 maps = "CG"
 
 [deviljho]
 species = "TYPE_BRUTE_WYVERN"
+research = 7
 maps = "AWCRE"
 
 [diablos]
 species = "TYPE_FLYING_WYVERN"
+research = 9
 maps = "WG"
 
 [dodogama]
 species = "TYPE_FANGED_WYVERN"
+research = 9
 maps = "EG"
 
 [ebony_odogaron]
 species = "TYPE_FANGED_WYVERN"
+research = 4
 maps = "AWCREHG"
 
 [fatalis]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 fixed = true
 
 [frostfang_barioth]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = ""
 
 [fulgur_anjanath]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = "AWCREHG"
 
 [furious_rajang]
 species = "TYPE_FANGED_BEAST"
+research = 4
 maps = ""
 
 [glavenus]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = "AWEG"
 
 [gold_rathian]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = ""
 
 [great_girros]
 species = "TYPE_FANGED_WYVERN"
+research = 9
 maps = "RG"
 
 [great_jagras]
 species = "TYPE_FANGED_WYVERN"
+research = 9
 maps = "AG"
 
 [jyuratodus]
 species = "TYPE_PISCINE_WYVERN"
+research = 9
 maps = "W"
 
 [kirin]
 species = "TYPE_ELDER_DRAGON"
+research = 9
 maps = "C"
 
 [kulu_ya_ku]
 species = "TYPE_BIRD_WYVERN"
+research = 9
 maps = "AWG"
 
 [kulve_taroth]
 species = "TYPE_ELDER_DRAGON"
+research = 7
 maps = ""
 fixed = true
 
 [kushala_daora]
 species = "TYPE_ELDER_DRAGON"
+research = 7
 maps = "AE"
 
 [lavasioth]
 species = "TYPE_PISCINE_WYVERN"
+research = 9
 maps = "EG"
 
 [legiana]
 species = "TYPE_FLYING_WYVERN"
+research = 9
 maps = "CHG"
 
 [leshen]
 species = "TYPE_RELICT"
+research = 7
 maps = ""
 fixed = true
 
 [lunastra]
 species = "TYPE_ELDER_DRAGON"
+research = 7
 maps = "WE"
 
 [namielle]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = "C"
 
 [nargacuga]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = "ACG"
 
 [nergigante]
 species = "TYPE_ELDER_DRAGON"
+research = 9
 maps = ""
 
 [nightshade_paolumu]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = "AWG"
 
 [odogaron]
 species = "TYPE_FANGED_WYVERN"
+research = 9
 maps = "CRG"
 
 [paolumu]
 species = "TYPE_FLYING_WYVERN"
+research = 9
 maps = "CG"
 
 [pink_rathian]
 species = "TYPE_FLYING_WYVERN"
+research = 7
 maps = "WCG"
 
 [pukei_pukei]
 species = "TYPE_BIRD_WYVERN"
+research = 9
 maps = "AWG"
 
 [radobaan]
 species = "TYPE_BRUTE_WYVERN"
+research = 9
 maps = "RG"
 
 [raging_brachydios]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = ""
 
 [rajang]
 species = "TYPE_FANGED_BEAST"
+research = 4
 maps = ""
 
 [rathalos]
 species = "TYPE_FLYING_WYVERN"
+research = 9
 maps = "AG"
 
 [rathian]
 species = "TYPE_FLYING_WYVERN"
+research = 9
 maps = "AWG"
 
 [ruiner_nergigante]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 
 [safijiiva]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 fixed = true
 
 [savage_deviljho]
 species = "TYPE_BRUTE_WYVERN"
+research = 4
 maps = "AWCREH"
 
 [scarred_yian_garuga]
 species = "TYPE_BIRD_WYVERN"
+research = 4
 maps = ""
 
 [seething_bazelgeuse]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = "E"
 
 [shara_ishvalda]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 fixed = true
 
 [shrieking_legiana]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = "HG"
 
 [silver_rathalos]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = ""
 
 [stygian_zinogre]
 species = "TYPE_FANGED_WYVERN"
+research = 4
 maps = ""
 
 [teostra]
 species = "TYPE_ELDER_DRAGON"
+research = 7
 maps = "WE"
 
 [tigrex]
 species = "TYPE_FLYING_WYVERN"
+research = 4
 maps = "AWREHG"
 
 [tobi_kadachi]
 species = "TYPE_FANGED_WYVERN"
+research = 9
 maps = "AG"
 
 [tzitzi_ya_ku]
 species = "TYPE_BIRD_WYVERN"
+research = 9
 maps = "CG"
 
 [uragaan]
 species = "TYPE_BRUTE_WYVERN"
+research = 9
 maps = "EG"
 
 [vaal_hazak]
 species = "TYPE_ELDER_DRAGON"
+research = 7
 maps = ""
 
 [velkhana]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = "H"
 
 [viper_tobi_kadachi]
 species = "TYPE_FANGED_WYVERN"
+research = 4
 maps = "HG"
 
 [xenojiiva]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 fixed = true
 
 [yian_garuga]
 species = "TYPE_BIRD_WYVERN"
+research = 4
 maps = ""
 
 [zinogre]
 species = "TYPE_FANGED_WYVERN"
+research = 4
 maps = "G"
 
 [zorah_magdaros]
 species = "TYPE_ELDER_DRAGON"
+research = 4
 maps = ""
 fixed = true

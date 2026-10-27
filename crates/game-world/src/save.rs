@@ -291,6 +291,7 @@ mod tests {
     fn mapping_covers_base_monsters() {
         assert_eq!(monster_key(0), Some("great_jagras"));
         assert_eq!(monster_key(14), Some("rathalos"));
+        assert_eq!(monster_key(68), Some("frostfang_barioth"));
         assert_eq!(monster_key(69), Some("alatreon"));
     }
 

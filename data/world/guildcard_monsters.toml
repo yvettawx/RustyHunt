@@ -1,5 +1,5 @@
 # 存档猎人笔记里怪物的序号（公会卡上的顺序）对应术语表的键。
-# 序号来自 Cirilla 的 misc/savedata.bt（MIT 许可）。
+# 序号来自 Cirilla 的 misc/savedata.bt（MIT 许可）；68 号在游戏里核对过。
 
 0 = "great_jagras"
 1 = "kulu_ya_ku"
@@ -66,4 +66,5 @@
 63 = "rajang"
 64 = "stygian_zinogre"
 65 = "safijiiva"
+68 = "frostfang_barioth"
 69 = "alatreon"
