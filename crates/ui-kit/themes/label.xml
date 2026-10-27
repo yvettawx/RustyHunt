@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Built-in overlay look "label": no backing, dark title blocks, thick outlined bars with hatched tracks. -->
+<theme xmlns="urn:rustyhunt:theme:1" id="label" name="theme.label" version="1.0.0" app="1.1" base="dark">
+  <tokens>
+    <color name="hp" value="#f2f0e9"/>
+    <color name="stamina" value="#f2f0e9b0"/>
+    <color name="monster-hp" value="#f2f0e9"/>
+    <color name="ghost" value="#ffc48ce6"/>
+    <color name="track" value="#000000a0"/>
+  </tokens>
+  <styles>
+    <panel shape="none"/>
+    <header shape="block" notch="#ff6b1a"/>
+    <bar edge="true" height="1.35" empty="hatch" glow="0"/>
+    <text shadow="1.6"/>
+  </styles>
+</theme>

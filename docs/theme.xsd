@@ -41,7 +41,7 @@
     </xs:complexType>
   </xs:element>
   <xs:element name="tokens">
-    <xs:annotation><xs:documentation>Tokens: colors, fonts, durations, sizes. Overlay colors: text, text-mute, text-faint, ink, accent, danger, cool, ok, ghost, heal, track, edge, shadow, hatch, crown-gold, crown-silver, qurio; main window colors start with window.: paper, ink, mute, faint, line, block, onblock, accent, desk</xs:documentation></xs:annotation>
+    <xs:annotation><xs:documentation>Tokens: colors, fonts, durations, sizes. Overlay colors: text, text-mute, text-faint, ink, accent, danger, cool, ok, ghost, heal, track, edge, shadow, hatch, crown-gold, crown-silver, qurio, hp, stamina, monster-hp, enrage, frostcraft, status-poison, status-venom, status-fire, status-thunder, status-water, status-ice, status-dragon, status-bleed, status-effluvia, status-blast; main window colors start with window.: paper, ink, mute, faint, line, block, onblock, accent, desk</xs:documentation></xs:annotation>
     <xs:complexType><xs:choice minOccurs="0" maxOccurs="unbounded">
       <xs:element name="color">
         <xs:annotation><xs:documentation>value is #rgb, #rrggbb, #rrggbbaa or another color token name</xs:documentation></xs:annotation>
@@ -117,7 +117,7 @@
         </xs:complexType>
       </xs:element>
       <xs:element name="panel">
-        <xs:annotation><xs:documentation>Module backing: none, rect, cut, round</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Module backing: shape none, rect, cut, round; fade 0 to 1 fades it out towards the right; edge is the color of a line along the top</xs:documentation></xs:annotation>
         <xs:complexType>
           <xs:attribute name="shape" type="xs:string"/>
           <xs:attribute name="fill" type="xs:string"/>
@@ -125,6 +125,15 @@
           <xs:attribute name="padding" type="xs:string"/>
           <xs:attribute name="cut" type="xs:string"/>
           <xs:attribute name="radius" type="xs:string"/>
+          <xs:attribute name="fade" type="xs:string"/>
+          <xs:attribute name="edge" type="xs:string"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="header">
+        <xs:annotation><xs:documentation>Module titles: shape line or block; notch is the color of a mark left of a block title</xs:documentation></xs:annotation>
+        <xs:complexType>
+          <xs:attribute name="shape" type="xs:string"/>
+          <xs:attribute name="notch" type="xs:string"/>
         </xs:complexType>
       </xs:element>
       <xs:element name="text">

@@ -1,4 +1,4 @@
-//! Theme management: built-in light and dark, plus local themes under themes in the data directory,
+//! Theme management: built-in light, dark and the two other overlay looks, plus local themes under themes in the data directory,
 //! one folder per theme. The current theme reloads automatically when its files are saved.
 
 use std::path::{Path, PathBuf};
@@ -42,6 +42,14 @@ pub fn list() -> Vec<Entry> {
             dir: None,
         },
     ];
+    for (id, _) in ui_kit::theme::BUILTIN_VARIANTS {
+        out.push(Entry {
+            id: id.into(),
+            theme: Theme::builtin_variant(id),
+            error: None,
+            dir: None,
+        });
+    }
     let mut dirs: Vec<PathBuf> = std::fs::read_dir(rh_core::paths::themes())
         .into_iter()
         .flatten()
@@ -92,6 +100,7 @@ pub fn load_active(settings: &Settings) -> Theme {
     match id.as_str() {
         "light" => Theme::builtin(false),
         "dark" => Theme::builtin(true),
+        other if Theme::builtin_variant(other).is_some() => Theme::builtin_variant(other).unwrap_or_else(|| Theme::builtin(true)),
         other => {
             let dir = rh_core::paths::themes().join(other);
             match load_checked(&dir) {

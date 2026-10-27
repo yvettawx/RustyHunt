@@ -474,6 +474,8 @@ hunter = "猎人"
 [theme]
 light = "浅色"
 dark = "深色"
+plate = "实底"
+label = "标签"
 follow_system = "跟随系统切换深浅色"
 needs_app = "需要程序 {need}，当前 {current}"
 too_big = "主题包超过 20 MB"

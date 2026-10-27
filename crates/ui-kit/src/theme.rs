@@ -82,6 +82,9 @@ impl Tokens {
     }
 }
 
+/// Built-in alternatives to the default overlay look.
+pub const BUILTIN_VARIANTS: [(&str, &str); 2] = [("plate", include_str!("../themes/plate.xml")), ("label", include_str!("../themes/label.xml"))];
+
 /// Default in-game (overlay) tokens.
 pub fn overlay_defaults() -> BTreeMap<String, Color32> {
     [
@@ -93,15 +96,19 @@ pub fn overlay_defaults() -> BTreeMap<String, Color32> {
         ("danger", Color32::from_rgb(0xe5, 0x48, 0x4d)),
         ("cool", Color32::from_rgb(0x8c, 0xc8, 0xff)),
         ("ok", Color32::from_rgb(0x8f, 0xe0, 0xa0)),
-        ("ghost", rgba(255, 196, 140, 0.9)),
+        ("ghost", Color32::from_rgb(0xff, 0xe0, 0x8a)),
         ("heal", rgba(140, 220, 150, 0.85)),
-        ("track", rgba(0, 0, 0, 0.42)),
+        ("track", rgba(0, 0, 0, 0.5)),
         ("edge", rgba(0, 0, 0, 0.55)),
         ("shadow", rgba(0, 0, 0, 0.95)),
         ("hatch", rgba(242, 240, 233, 0.30)),
         ("crown-gold", Color32::from_rgb(0xe9, 0xc2, 0x5b)),
         ("crown-silver", Color32::from_rgb(0xd9, 0xdd, 0xe2)),
         ("qurio", Color32::from_rgb(0xc4, 0x8c, 0xff)),
+        // The game's own colours: green health, yellow stamina
+        ("hp", Color32::from_rgb(0x62, 0xd2, 0x6f)),
+        ("stamina", Color32::from_rgb(0xe9, 0xc2, 0x3c)),
+        ("monster-hp", Color32::from_rgb(0xed, 0xe3, 0xcf)),
         ("enrage", Color32::from_rgb(0xff, 0x4a, 0x3d)),
         ("frostcraft", Color32::from_rgb(0x7f, 0xd3, 0xff)),
         // Hunter status effects, tinting the health bar like the game does
@@ -292,6 +299,10 @@ pub struct PanelStyle {
     pub padding: f32,
     pub cut: f32,
     pub radius: f32,
+    /// 0 solid, 1 fades out completely towards the right
+    pub fade: f32,
+    /// A 2px line along the top
+    pub edge: Color32,
 }
 
 impl Default for PanelStyle {
@@ -303,8 +314,18 @@ impl Default for PanelStyle {
             padding: 10.0,
             cut: 8.0,
             radius: 6.0,
+            fade: 0.0,
+            edge: Color32::TRANSPARENT,
         }
     }
+}
+
+/// Module titles: a word followed by a thin line, or a dark block.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HeaderStyle {
+    pub block: bool,
+    /// Small colored mark at the left of a block title
+    pub notch: Color32,
 }
 
 /// Layer two: component styles.
@@ -317,6 +338,7 @@ pub struct Styles {
     pub pip: PipShape,
     pub switch: SwitchShape,
     pub panel: PanelStyle,
+    pub header: HeaderStyle,
     /// Text shadow: 0 off, 1 default
     pub text_shadow: f32,
 }
@@ -356,8 +378,20 @@ impl Theme {
                 dark,
             },
             tokens: Tokens::defaults(dark),
+            // Close to the game's HUD: backings fading out to the right, outlined bars with a soft glow
             styles: Styles {
-                text_shadow: 1.0,
+                text_shadow: 1.2,
+                bar: BarStyle {
+                    glow: 1.5,
+                    ..Default::default()
+                },
+                panel: PanelStyle {
+                    shape: PanelShape::Rect,
+                    fill: rgba(0, 0, 0, 0.69),
+                    padding: 14.0,
+                    fade: 1.0,
+                    ..Default::default()
+                },
                 ..Default::default()
             },
             modules: BTreeMap::new(),
@@ -373,6 +407,14 @@ impl Theme {
 
     /// Reads a theme package directory (containing theme.xml). Returns an error when the whole file is malformed;
     /// errors in a single module template only go into `module_errors`.
+    /// The other built-in looks, by id: `plate` and `label`. Their main window is the dark one.
+    pub fn builtin_variant(id: &str) -> Option<Theme> {
+        let text = BUILTIN_VARIANTS.iter().find(|(k, _)| *k == id)?.1;
+        let mut t = parse(text, Path::new(id), None).expect("built-in theme");
+        t.builtin = true;
+        Some(t)
+    }
+
     pub fn load_dir(dir: &Path) -> Result<Theme, ThemeError> {
         let file = dir.join("theme.xml");
         let text = std::fs::read_to_string(&file).map_err(|e| ThemeError {
@@ -485,10 +527,8 @@ pub fn parse(text: &str, file: &Path, dir: Option<&Path>) -> Result<Theme, Theme
     let mut theme = Theme {
         manifest,
         tokens: Tokens::defaults(dark),
-        styles: Styles {
-            text_shadow: 1.0,
-            ..Default::default()
-        },
+        // Styles a theme leaves out are the built-in ones
+        styles: Theme::builtin(dark).styles,
         modules: BTreeMap::new(),
         dir: None,
         builtin: false,
@@ -665,6 +705,23 @@ fn parse_styles(cx: &Ctx, node: roxmltree::Node, theme: &mut Theme) -> Result<()
                 p.padding = cx.attr_f32(s, "padding", p.padding)?;
                 p.cut = cx.attr_f32(s, "cut", p.cut)?;
                 p.radius = cx.attr_f32(s, "radius", p.radius)?;
+                p.fade = cx.attr_f32(s, "fade", p.fade)?.clamp(0.0, 1.0);
+                if let Some(c) = cx.attr_color(s, "edge", &tokens)? {
+                    p.edge = c;
+                }
+            }
+            "header" => {
+                let tokens = theme.tokens.clone();
+                let h = &mut theme.styles.header;
+                h.block = match s.attribute("shape") {
+                    None => h.block,
+                    Some("line") => false,
+                    Some("block") => true,
+                    Some(v) => return Err(cx.err(s, format!("shape=\"{v}\" should be line or block"))),
+                };
+                if let Some(c) = cx.attr_color(s, "notch", &tokens)? {
+                    h.notch = c;
+                }
             }
             "text" => {
                 theme.styles.text_shadow = cx.attr_f32(s, "shadow", theme.styles.text_shadow)?.clamp(0.0, 3.0);
@@ -758,5 +815,15 @@ mod tests {
         assert!(version_ok("0.3", "1.0.0"));
         assert!(!version_ok("1.2", "1.0.0"));
         assert!(!version_ok("2.0", "1.9"));
+    }
+
+    #[test]
+    fn builtin_variants_parse() {
+        for (id, _) in BUILTIN_VARIANTS {
+            let t = Theme::builtin_variant(id).unwrap();
+            assert!(t.builtin && t.manifest.dark, "{id}");
+        }
+        assert_eq!(Theme::builtin_variant("plate").unwrap().styles.panel.fade, 0.0);
+        assert!(Theme::builtin_variant("label").unwrap().styles.header.block);
     }
 }

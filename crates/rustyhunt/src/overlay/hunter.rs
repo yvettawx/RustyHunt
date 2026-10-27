@@ -40,20 +40,9 @@ fn status_color(cv: &Canvas, key: &str) -> Option<Color32> {
     STATUS_TINTS.iter().find(|(k, _)| *k == key).map(|(_, t)| cv.tok(t))
 }
 
-/// Module title: one word and a thin line, with an optional value on the right (no backing).
+/// Module title in the theme's header style.
 pub fn module_header(cv: &Canvas, label: &str, w: f32, right: &str, rule_w: Option<f32>) -> f32 {
-    let mute = cv.tok("text-mute");
-    let sz = cv.text_ex(0.0, 0.0, label, Font::TextBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
-    let mut end = w;
-    if !right.is_empty() {
-        let rs = cv.measure(right, Font::NumBold, 10.0, 0.06);
-        cv.text_ex(w - rs.x, 0.0, right, Font::NumBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
-        end = w - rs.x - 8.0;
-    }
-    let x0 = sz.x + 8.0;
-    let x1 = rule_w.map_or(end, |rw| x0 + rw);
-    cv.rule(x0, x1, sz.y / 2.0, cv.tok("text-faint"));
-    sz.y + 7.0
+    cv.header(label, w, right, rule_w)
 }
 
 pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 {
@@ -82,21 +71,18 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
 
     // First row: name tag, healing, red HP, value
     let header_h = 22.0;
+    let mut hx = 0.0;
     if f.density != rh_core::settings::Density::Minimal && !p.name.is_empty() {
-        cv.tag(0.0, header_h - 19.0, &p.name, Font::TextBold, 12.0, (7.0, 3.0, 7.0, 2.0), cv.tok("ink"), text);
+        let nsz = cv.tag(0.0, header_h - 19.0, &p.name, Font::TextBold, 12.0, (7.0, 3.0, 7.0, 2.0), cv.tok("ink"), text);
+        hx = nsz.x + 8.0;
+        if p.mr > 0 {
+            let s = cv.text(hx, header_h - 15.0, &format!("MR {}", p.mr), Font::NumBold, 11.0, mute, Align2::LEFT_TOP);
+            hx += s.x + 10.0;
+        }
     }
     let healing = p.hp_healing_to > p.hp + 0.5;
     if healing {
-        let nsz = cv.tag_size(&p.name, Font::TextBold, 12.0, (7.0, 3.0, 7.0, 2.0));
-        cv.text(
-            nsz.x + 10.0,
-            header_h - 16.0,
-            &f.t("state.healing"),
-            Font::TextBold,
-            11.0,
-            cv.tok("ok"),
-            Align2::LEFT_TOP,
-        );
+        cv.text(hx, header_h - 16.0, &f.t("state.healing"), Font::TextBold, 11.0, cv.tok("ok"), Align2::LEFT_TOP);
     }
     if cfg.shows("p-num") {
         let right = px(p.hp_max);
@@ -104,13 +90,13 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         let cur_s = format!("{}", p.hp.round());
         let ms = cv.measure(&max_s, Font::NumBold, 12.0, 0.0);
         cv.text(right - ms.x, header_h - 15.0, &max_s, Font::NumBold, 12.0, mute, Align2::LEFT_TOP);
-        let cs = cv.measure(&cur_s, Font::Num, 22.0, 0.0);
+        let cs = cv.measure(&cur_s, Font::NumHeavy, 24.0, 0.0);
         cv.text(
             right - ms.x - 2.0 - cs.x,
-            header_h - 25.0,
+            header_h - 27.0,
             &cur_s,
-            Font::Num,
-            22.0,
+            Font::NumHeavy,
+            24.0,
             if low { danger } else { text },
             Align2::LEFT_TOP,
         );
@@ -147,17 +133,27 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
     let fill = match (tint, low) {
         (Some(c), _) => fade(c, blink),
         (None, true) => fade(danger, blink),
-        (None, false) => text,
+        (None, false) => cv.tok("hp"),
     };
     layers.push(Layer::fill(r(p.hp), fill));
     cv.bar_ex("player-hp", 0.0, y, w, 14.0, &layers, false, true);
+    // Notches inside the bar: every 25 points, longer every 50
+    if cfg.shows("p-ruler") && f.density != rh_core::settings::Density::Minimal {
+        let c = fade(cv.tok("shadow"), 0.55);
+        let mut v = 25.0;
+        while v < p.hp_max - 1.0 {
+            let long = (v as i32) % 50 == 0;
+            cv.rect(px(v) - 0.5, if long { y } else { y + 7.0 }, 1.0, if long { 14.0 } else { 7.0 }, c);
+            v += 25.0;
+        }
+    }
     let mut bottom = y + 14.0;
 
     // Stamina bar and value
     if cfg.shows("p-st") && p.stamina_max > 0.0 {
         let sy = bottom + 5.0;
         let tired = p.stamina < p.stamina_max * 0.25;
-        let c = if tired { cv.tok("accent") } else { mute };
+        let c = if tired { cv.tok("accent") } else { cv.tok("stamina") };
         cv.bar("stamina", 0.0, sy, px(p.stamina_max), 6.0, &[Layer::fill(p.stamina / p.stamina_max, c)], false);
         if cfg.shows("p-num") {
             let s = format!("{}", p.stamina.round());
@@ -183,18 +179,6 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         bottom = sy + 6.0;
     }
 
-    // Ticks: a short one every 25 points, a long one every 50
-    if cfg.shows("p-ruler") && f.density != rh_core::settings::Density::Minimal {
-        let ry = bottom + 3.0;
-        let c = fade(text, 0.55);
-        let mut v = 0.0;
-        while v <= wmax + 0.1 {
-            let long = (v as i32) % 50 == 0;
-            cv.rect(px(v), ry + if long { 0.0 } else { 3.0 }, 1.0, if long { 5.0 } else { 2.0 }, c);
-            v += 25.0;
-        }
-        bottom = ry + 5.0;
-    }
     let col_w = px(wmax) + 64.0;
 
     // Status effects: next to the right end of the HP bar
@@ -276,7 +260,11 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
             bottom = gy + 4.0;
         }
     }
-    cv.crosshair(-18.0, 26.0);
+    // A strip down the left edge while something is wrong: the status colour, or red at low HP
+    let state = tint.or(low.then_some(danger)).or(healing.then(|| cv.tok("heal")));
+    if let Some(c) = state {
+        cv.rect(-10.0, y, 3.0, bottom - y, c);
+    }
     vec2(right.max(col_w), bottom)
 }
 
@@ -367,7 +355,6 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
     if !any {
         y += module_header(cv, &f.t("module.buffs"), 260.0, "", Some(40.0));
     }
-    cv.crosshair(-18.0, -2.0);
     vec2(w.max(260.0), y)
 }
 
@@ -504,6 +491,5 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         }
         WeaponState::None => {}
     }
-    cv.crosshair(-18.0, -2.0);
     vec2(w, y - 4.0)
 }

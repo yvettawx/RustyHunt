@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Built-in overlay look "plate": every module on a solid dark backing, plain light bars. -->
+<theme xmlns="urn:rustyhunt:theme:1" id="plate" name="theme.plate" version="1.0.0" app="1.1" base="dark">
+  <tokens>
+    <color name="hp" value="#f2f0e9"/>
+    <color name="stamina" value="#f2f0e9a8"/>
+    <color name="monster-hp" value="#f2f0e9"/>
+    <color name="ghost" value="#ffc48ce6"/>
+    <color name="track" value="#0000006b"/>
+    <color name="text-faint" value="#f2f0e940"/>
+  </tokens>
+  <styles>
+    <panel shape="rect" fill="#0b0b0bc4" padding="12" fade="0" edge="#f2f0e926"/>
+    <bar edge="false" glow="0"/>
+    <text shadow="0.6"/>
+  </styles>
+</theme>

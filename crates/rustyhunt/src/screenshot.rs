@@ -31,8 +31,16 @@ impl Shot {
     }
 }
 
-fn save(img: &egui::ColorImage, path: &std::path::Path) {
+fn save(img: &egui::ColorImage, path: &std::path::Path, alpha: bool) {
     let [w, h] = img.size;
+    if alpha {
+        // Also keep the transparent picture, for putting it over a game frame
+        let mut raw = image::RgbaImage::new(w as u32, h as u32);
+        for (i, p) in img.pixels.iter().enumerate() {
+            raw.put_pixel((i % w) as u32, (i / w) as u32, image::Rgba(p.to_srgba_unmultiplied()));
+        }
+        let _ = raw.save(path.with_extension("alpha.png"));
+    }
     let mut buf = image::RgbaImage::new(w as u32, h as u32);
     for (i, p) in img.pixels.iter().enumerate() {
         let [r, g, b, a] = p.to_srgba_unmultiplied();
@@ -83,12 +91,13 @@ impl eframe::App for Shot {
                 let _ = std::fs::write(self.path.with_extension("json"), serde_json::to_string(&rects).unwrap_or_default());
             }
             let path = self.path.clone();
+            let alpha = !self.what.starts_with("main");
             let done = self.done.clone();
             let shared = self.shared.clone();
             ctx.send_viewport_cmd_to(
                 target,
                 egui::ViewportCommand::Screenshot(egui::ScreenshotCallback::new(move |img| {
-                    save(&img, &path);
+                    save(&img, &path, alpha);
                     log::info!("screenshot saved {}", path.display());
                     done.store(true, std::sync::atomic::Ordering::Relaxed);
                     shared.repaint();

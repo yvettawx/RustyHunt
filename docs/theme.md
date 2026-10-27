@@ -73,6 +73,11 @@ Colors used by the overlay:
 | `track`, `edge`, `shadow`, `hatch` | Bar track, outline, text shadow, hatch pattern |
 | `crown-gold`, `crown-silver` | Crowns |
 | `qurio` | Qurio |
+| `hp`, `stamina` | The hunter's health and stamina bars |
+| `monster-hp` | The target's HP bar |
+| `enrage` | An enraged monster's HP bar |
+| `frostcraft` | The Frostcraft gauge under the sharpness bar |
+| `status-poison`, `status-venom`, `status-fire`, `status-thunder`, `status-water`, `status-ice`, `status-dragon`, `status-bleed`, `status-effluvia`, `status-blast` | The hunter's health bar and status tags while that effect is on |
 
 The main window uses nine colors starting with `window.`: `paper` (background), `ink` (text), `mute`, `faint`, `line` (dividers), `block`, `onblock` (primary buttons and name tags), `accent`, `desk` (the dark area around previews).
 
@@ -88,6 +93,7 @@ Font tokens: `number`, `number-heavy`, `number-bold`, `text`, `text-bold`. Durat
   <pip shape="diamond"/>
   <switch shape="round"/>
   <panel shape="round" radius="6" fill="#0d151c99"/>
+  <header shape="block" notch="accent"/>
   <text shadow="1.5"/>
 </styles>
 ```
@@ -98,7 +104,8 @@ Font tokens: `number`, `number-heavy`, `number-bold`, `text`, `text-bold`. Durat
 | `tag` | `shape` (rect, cut, round), `cut`, `radius` |
 | `pip` | `shape` (square, diamond, circle) |
 | `switch` | `shape` (square, round) |
-| `panel` | `shape` (none, rect, cut, round), `fill`, `stroke`, `padding`, `cut`, `radius` |
+| `panel` | Backing behind each module: `shape` (none, rect, cut, round), `fill`, `stroke`, `padding`, `cut`, `radius`, `fade` (0 to 1, fades out towards the right), `edge` (color of a line along the top) |
+| `header` | Module titles: `shape` (line: a word and a thin line; block: a dark block), `notch` (color of a mark left of a block title) |
 | `text` | `shadow`: text shadow strength, 0 to 3 |
 
 ### 3. Module templates

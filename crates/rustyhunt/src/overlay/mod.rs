@@ -478,7 +478,9 @@ pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Th
             st.animating |= anim;
             return size;
         }
-        match id {
+        // Reserve the backing's place first so it lands under the module once its size is known
+        let slot = cv.painter.add(egui::Shape::Noop);
+        let size = match id {
             modules::MONSTER => monster::draw(cv, f, cfg, st),
             modules::PLAYER => hunter::player(cv, f, cfg, st),
             modules::BUFFS => hunter::buffs(cv, f, cfg, st),
@@ -489,7 +491,11 @@ pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Th
             modules::BASE => misc::base(cv, f, cfg, st),
             modules::PERF => misc::perf(cv, f, cfg, st),
             other => crate::plugins::draw_module(other, cv, f, cfg, st, ctx),
+        };
+        if size != Vec2::ZERO {
+            cv.panel_into(slot, 0.0, 0.0, size.x, size.y);
         }
+        size
     }
 }
 

@@ -474,6 +474,8 @@ hunter = "Hunter"
 [theme]
 light = "Light"
 dark = "Dark"
+plate = "Plate"
+label = "Label"
 follow_system = "Follow system light or dark"
 needs_app = "Needs app {need}, current {current}"
 too_big = "Theme pack over 20 MB"

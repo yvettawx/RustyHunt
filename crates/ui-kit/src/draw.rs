@@ -210,23 +210,42 @@ impl<'a> Canvas<'a> {
 
     /// Module backing: not drawn by default (unobtrusive); themes can add one.
     pub fn panel(&self, x: f32, y: f32, w: f32, h: f32) {
+        self.painter.add(self.panel_shape(x, y, w, h));
+    }
+
+    /// Puts the backing into a slot reserved with `painter.add(Shape::Noop)` before the module was drawn,
+    /// so it ends up under the module although its size is only known afterwards.
+    pub fn panel_into(&self, slot: egui::layers::ShapeIdx, x: f32, y: f32, w: f32, h: f32) {
+        self.painter.set(slot, self.panel_shape(x, y, w, h));
+    }
+
+    fn panel_shape(&self, x: f32, y: f32, w: f32, h: f32) -> Shape {
         let p = &self.theme.styles.panel;
         let (x, y, w, h) = (x - p.padding, y - p.padding, w + p.padding * 2.0, h + p.padding * 2.0);
         let stroke = Stroke::new(1.0, self.c(p.stroke));
+        let mut shapes = Vec::new();
         match p.shape {
-            PanelShape::None => {}
+            PanelShape::None => return Shape::Noop,
+            // A backing that fades out to the right is drawn as a gradient, whatever the shape
+            _ if p.fade > 0.0 => {
+                let r = self.r(x, y, w, h);
+                let (a, b) = (self.c(p.fill), self.c(fade(p.fill, 1.0 - p.fade)));
+                let mut mesh = egui::Mesh::default();
+                for (pos, c) in [(r.left_top(), a), (r.right_top(), b), (r.right_bottom(), b), (r.left_bottom(), a)] {
+                    mesh.colored_vertex(pos, c);
+                }
+                mesh.add_triangle(0, 1, 2);
+                mesh.add_triangle(0, 2, 3);
+                shapes.push(Shape::mesh(mesh));
+            }
             PanelShape::Rect => {
-                self.painter
-                    .rect(self.r(x, y, w, h), CornerRadius::ZERO, self.c(p.fill), stroke, egui::StrokeKind::Inside);
+                shapes.push(Shape::rect_filled(self.r(x, y, w, h), CornerRadius::ZERO, self.c(p.fill)));
+                shapes.push(Shape::rect_stroke(self.r(x, y, w, h), CornerRadius::ZERO, stroke, egui::StrokeKind::Inside));
             }
             PanelShape::Round => {
-                self.painter.rect(
-                    self.r(x, y, w, h),
-                    CornerRadius::same((p.radius * self.scale) as u8),
-                    self.c(p.fill),
-                    stroke,
-                    egui::StrokeKind::Inside,
-                );
+                let cr = CornerRadius::same((p.radius * self.scale) as u8);
+                shapes.push(Shape::rect_filled(self.r(x, y, w, h), cr, self.c(p.fill)));
+                shapes.push(Shape::rect_stroke(self.r(x, y, w, h), cr, stroke, egui::StrokeKind::Inside));
             }
             PanelShape::Cut => {
                 let c = p.cut;
@@ -238,9 +257,39 @@ impl<'a> Canvas<'a> {
                     self.p(x, y + h),
                     self.p(x, y + c),
                 ];
-                self.painter.add(Shape::convex_polygon(pts, self.c(p.fill), stroke));
+                shapes.push(Shape::convex_polygon(pts, self.c(p.fill), stroke));
             }
         }
+        if p.edge.a() > 0 {
+            shapes.push(Shape::rect_filled(self.r(x, y, w, 2.0), CornerRadius::ZERO, self.c(p.edge)));
+        }
+        Shape::Vec(shapes)
+    }
+
+    /// Module title in the theme's header style: a word and a thin line, or a dark block with a notch.
+    /// Returns the height it takes.
+    pub fn header(&self, label: &str, w: f32, right: &str, rule_w: Option<f32>) -> f32 {
+        let mute = self.tok("text-mute");
+        let st = &self.theme.styles.header;
+        let mut end = w;
+        if !right.is_empty() {
+            let rs = self.measure(right, Font::NumBold, 10.0, 0.06);
+            self.text_ex(w - rs.x, 0.0, right, Font::NumBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
+            end = w - rs.x - 8.0;
+        }
+        if st.block {
+            let notch = if st.notch.a() > 0 { 3.0 } else { 0.0 };
+            if notch > 0.0 {
+                self.rect(0.0, 0.0, notch, 17.0, st.notch);
+            }
+            let sz = self.tag(notch, 0.0, label, Font::TextBold, 11.0, (6.0, 2.0, 7.0, 2.0), self.tok("ink"), self.tok("text"));
+            return sz.y + 7.0;
+        }
+        let sz = self.text_ex(0.0, 0.0, label, Font::TextBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
+        let x0 = sz.x + 8.0;
+        let x1 = rule_w.map_or(end, |rw| x0 + rw);
+        self.rule(x0, x1, sz.y / 2.0, self.tok("text-faint"));
+        sz.y + 7.0
     }
 
     fn bar_outline(&self, style: &BarStyle, x: f32, y: f32, w: f32, h: f32) -> Vec<Pos2> {

@@ -343,7 +343,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     } else if m.enraged {
         cv.tok("enrage")
     } else {
-        text
+        cv.tok("monster-hp")
     };
     layers.push(Layer::fill(ratio, fill));
     // One flash when the monster becomes enraged
@@ -389,7 +389,6 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
 
     // Crosshair marker
     let ry = if side { top_of_header + 26.0 } else { bottom - 2.0 };
-    cv.crosshair(-20.0, ry);
     cv.crosshair(w + 11.0, ry);
 
     // Callouts, above the module's top-left corner

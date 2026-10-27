@@ -76,12 +76,16 @@ STYLES = {
     "tag": (["shape", "cut", "radius"], "Name tags: shape is rect, cut, round"),
     "pip": (["shape"], "Pips: square, diamond, circle"),
     "switch": (["shape"], "Switches: square, round"),
-    "panel": (["shape", "fill", "stroke", "padding", "cut", "radius"], "Module backing: none, rect, cut, round"),
+    "panel": (["shape", "fill", "stroke", "padding", "cut", "radius", "fade", "edge"],
+              "Module backing: shape none, rect, cut, round; fade 0 to 1 fades it out towards the right; edge is the color of a line along the top"),
+    "header": (["shape", "notch"], "Module titles: shape line or block; notch is the color of a mark left of a block title"),
     "text": (["shadow"], "Text shadow strength, 0 to 3"),
 }
 TOKENS_DOC = (
     "Tokens: colors, fonts, durations, sizes. Overlay colors: text, text-mute, text-faint, ink, accent, danger, cool, ok, "
-    "ghost, heal, track, edge, shadow, hatch, crown-gold, crown-silver, qurio; main window colors start with window.: "
+    "ghost, heal, track, edge, shadow, hatch, crown-gold, crown-silver, qurio, hp, stamina, monster-hp, enrage, frostcraft, "
+    "status-poison, status-venom, status-fire, status-thunder, status-water, status-ice, status-dragon, status-bleed, "
+    "status-effluvia, status-blast; main window colors start with window.: "
     "paper, ink, mute, faint, line, block, onblock, accent, desk"
 )
 MODULE_DOC = (

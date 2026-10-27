@@ -112,7 +112,6 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         cv.polyline(&pts, 1.5, accent);
         y += 28.0;
     }
-    cv.crosshair(-18.0, -2.0);
     vec2(w, y)
 }
 
@@ -167,7 +166,6 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
             y += 14.0;
         }
     }
-    cv.crosshair(-18.0, -2.0);
     vec2(w, y)
 }
 
@@ -203,7 +201,6 @@ pub fn clock(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
     if x <= 0.0 {
         return Vec2::ZERO;
     }
-    cv.crosshair(-18.0, 4.0);
     vec2(x, h)
 }
 
@@ -255,7 +252,6 @@ pub fn base(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
         cv.text(w - vs.x, y + 3.0, &value, Font::Num, 12.0, if full { accent } else { text }, Align2::LEFT_TOP);
         y += 21.0;
     }
-    cv.crosshair(-18.0, -2.0);
     vec2(w, y)
 }
 

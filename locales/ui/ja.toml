@@ -474,6 +474,8 @@ hunter = "ハンター"
 [theme]
 light = "ライト"
 dark = "ダーク"
+plate = "プレート"
+label = "ラベル"
 follow_system = "システムに合わせてライト、ダークを切替"
 needs_app = "アプリ {need} が必要、現在 {current}"
 too_big = "テーマパックが 20 MB を超えています"
