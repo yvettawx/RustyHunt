@@ -40,7 +40,32 @@ Released.
 
 ## 1.1.1: UI and copy
 
-- Polish the UI and the wording, and make the app easier to use.
+Built, not yet checked in the game.
+
+**Overlay**
+
+- The monster module shows only once you select a monster (lock-on, the in-game selection, a hit in last-hit mode, or a manual switch).
+- Parts and ailments share one grid at full opacity; ailments show how many times they triggered and flash when they trigger again; all parts or only recently hit ones.
+- Exact numbers instead of percentages; no floating change numbers. The monster list no longer shows HP.
+- The player's health bar takes the colour of the worst status effect, as in game; an enraged monster's HP bar turns red and flashes once.
+- Thicker, shorter sharpness bar with the hits left as a number; Frostcraft is a gauge under it instead of a buff.
+- Default look close to the game's HUD (backings fading to the right, green health, yellow stamina); Plate and Label are built-in alternatives. Each module can turn its backing off; the player module keeps its own (off, solid, blur).
+- Layout mode: no toolbar and no native HUD outlines; drag corners to scale and side edges to change the width; the mouse wheel no longer scales.
+- Fixed: anything a module drew left of or above its origin was clipped, so the callouts above the bottom monster module never showed.
+
+**Main window**
+
+- Hover, press and keyboard focus states with short transitions; one type scale; orange only for warnings.
+- Exact HP on the home page; the home page rows are aligned; theme cards preview the overlay look.
+
+**Copy**
+
+- Module names say what they show (Monster status, Player status, Damage stats...); jargon replaced; fine options folded under More.
+
+**To check in game**
+
+- Frostcraft gauge: the value range is unknown, the gauge uses the largest value seen so far.
+- Health bar colours for each status effect; target selection without a lock-on; dragging corners and edges in the real layout window.
 
 ## 1.2.0: needs injection, disassembly or memory scanning
 
