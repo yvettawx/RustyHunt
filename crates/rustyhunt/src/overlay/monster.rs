@@ -18,6 +18,8 @@ struct Cell {
     count: i32,
     /// Exact value or time left, right-aligned
     value: Option<String>,
+    /// The maximum after the value, smaller ("/600")
+    max: Option<String>,
     bar: f32,
     /// Second, thinner bar (part flinch)
     bar2: Option<f32>,
@@ -43,13 +45,28 @@ fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cel
         })
         .map(|(i, p)| {
             let done = p.broken();
+            // Breakable parts count down durability, with flinch as the thin bar; the others only flinch
+            let breakable = p.breaks_max > 0;
+            let (cur, max) = if breakable {
+                (p.durability, p.durability_max)
+            } else {
+                (p.flinch, p.flinch_max)
+            };
+            let numbers = cfg.shows("m-pval") && !done && max > 0.0;
             Cell {
                 name: f.i18n.game(&p.key),
-                pips: (cfg.shows("m-pips") && p.breaks_max > 0).then_some((p.breaks, p.breaks_max)),
+                pips: (cfg.shows("m-pips") && breakable).then_some((p.breaks, p.breaks_max)),
                 count: 0,
-                value: (cfg.shows("m-pval") && !done && p.breaks_max > 0).then(|| thousands(p.durability)),
-                bar: if done || p.breaks_max == 0 { 0.0 } else { p.durability_ratio() },
-                bar2: cfg.shows("m-b2").then(|| p.flinch_ratio()),
+                value: numbers.then(|| format!("{}", cur.max(0.0).round())),
+                max: numbers.then(|| format!("/{}", max.round())),
+                bar: if done {
+                    0.0
+                } else if breakable {
+                    p.durability_ratio()
+                } else {
+                    p.flinch_ratio()
+                },
+                bar2: (cfg.shows("m-b2") && breakable).then(|| p.flinch_ratio()),
                 done,
                 active: false,
                 flash: st.flash.get(&format!("{}:p{i}", m.uid)).is_some_and(|t| f.now - t < 0.8),
@@ -72,9 +89,10 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
         })
         .map(|a| {
             let active = a.active();
+            let numbers = cfg.shows("m-pval") && !active && a.buildup_max > 0.0;
             let value = if active && a.timer_max > 2.0 {
                 Some(mmss(a.timer))
-            } else if cfg.shows("m-pval") && !active {
+            } else if numbers {
                 Some(format!("{}", a.buildup.round()))
             } else {
                 None
@@ -84,6 +102,7 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
                 pips: None,
                 count: a.count,
                 value,
+                max: numbers.then(|| format!("/{}", a.buildup_max.round())),
                 bar: if active { a.timer_ratio() } else { a.buildup_ratio() },
                 bar2: None,
                 done: false,
@@ -120,6 +139,11 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     let hot = c.flash || c.active;
     // Right side, from the right edge inward: value, then pips or the trigger count
     let mut right = x + w;
+    if let Some(m) = &c.max {
+        let ms = cv.measure(m, Font::NumBold, 9.0, 0.0);
+        cv.text(right - ms.x, y + 3.0, m, Font::NumBold, 9.0, mute, Align2::LEFT_TOP);
+        right -= ms.x;
+    }
     if let Some(v) = &c.value {
         let vs = cv.measure(v, Font::NumBold, 11.0, 0.0);
         cv.text(
@@ -128,7 +152,13 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
             v,
             Font::NumBold,
             11.0,
-            if c.active { accent } else { mute },
+            if c.active {
+                accent
+            } else if c.max.is_some() {
+                text
+            } else {
+                mute
+            },
             Align2::LEFT_TOP,
         );
         right -= vs.x + 5.0;
