@@ -57,6 +57,39 @@ struct MonsterCache {
     /// 异常结构的地址和键
     ailments: Option<Vec<(u64, String)>>,
     list_index: i32,
+    breaks: BreakHistory,
+}
+
+/// 一场狩猎里每个部位见过的最大破坏次数。
+///
+/// 当客人时游戏不同步部位耐久，读到的次数可能回落；已经破坏的部位不该再变回未破坏。
+#[derive(Default)]
+struct BreakHistory {
+    /// （任务编号，怪物编号）；不在任务里时任务编号是 0
+    hunt: (i32, i32),
+    best: Vec<i32>,
+}
+
+impl BreakHistory {
+    fn hold(&mut self, hunt: (i32, i32), defs: &[crate::data::PartDef], parts: &mut [Part]) {
+        if self.hunt != hunt {
+            self.hunt = hunt;
+            self.best.clear();
+        }
+        self.best.resize(defs.len(), 0);
+        // 没找到的切断部位会被跳过，`parts` 和 `defs` 不一定一一对应
+        for p in parts.iter_mut() {
+            let Some(i) = defs.iter().position(|pd| pd.id == p.id && pd.key == p.key) else {
+                continue;
+            };
+            let best = &mut self.best[i];
+            if p.breaks >= *best {
+                *best = p.breaks;
+            } else {
+                hold_breaks(p, &defs[i], *best);
+            }
+        }
+    }
 }
 
 #[derive(Default)]
@@ -82,6 +115,8 @@ pub struct WorldReader<M: Memory> {
     /// 单人离线时用怪物掉血估算自己的伤害
     hp_seen: HashMap<u64, f32>,
     solo_damage: f32,
+    /// 当前任务编号，不在任务里时是 0
+    quest_id: i32,
     pub warnings: Vec<String>,
 }
 
@@ -101,6 +136,7 @@ impl<M: Memory> WorldReader<M> {
             sa_awake_max: 0.0,
             hp_seen: HashMap::new(),
             solo_damage: 0.0,
+            quest_id: 0,
             warnings: Vec::new(),
         }
     }
@@ -188,6 +224,7 @@ impl<M: Memory> WorldReader<M> {
             Ok(()) => {}
             Err(e) => self.warn("任务", e),
         }
+        self.quest_id = s.quest.as_ref().filter(|_| s.in_quest()).map_or(0, |q| q.id);
         match self.read_monsters(&prev.monsters) {
             Ok(m) => s.monsters = m,
             Err(e) => self.warn("怪物", e),
@@ -633,7 +670,11 @@ impl<M: Memory> WorldReader<M> {
             Err(e) => self.warn("目标", e),
         }
         match self.read_parts(addr, id, &def) {
-            Ok(parts) => m.parts = parts,
+            Ok(mut parts) => {
+                let hunt = (self.quest_id, id);
+                self.monsters.entry(addr).or_default().breaks.hold(hunt, &def.parts, &mut parts);
+                m.parts = parts;
+            }
             Err(e) => self.warn("部位", e),
         }
         match self.read_tenderize(addr, &def, &mut m.parts) {
@@ -1083,6 +1124,26 @@ fn part_from_raw(pd: &crate::data::PartDef, b: &[u8]) -> Part {
     p
 }
 
+/// 把部位的破坏次数提到 `breaks`，耐久按刚好达到这个次数时的状态算。
+fn hold_breaks(p: &mut Part, pd: &crate::data::PartDef, breaks: i32) {
+    p.breaks = breaks.min(p.breaks_max);
+    if p.kind != PartKind::Breakable {
+        return;
+    }
+    let max = p.flinch_max;
+    match pd.thresholds.get(p.breaks as usize) {
+        Some(&t) => {
+            let count = if p.breaks > 0 { pd.thresholds[p.breaks as usize - 1] } else { 0 };
+            p.durability_max = t as f32 * max;
+            p.durability = (t - count - 1).max(0) as f32 * max + p.flinch;
+        }
+        None => {
+            p.durability_max = max;
+            p.durability = 0.0;
+        }
+    }
+}
+
 /// 上游 `GetCurrentSharpness`：当前值落在哪一段颜色里。
 pub fn current_sharpness(thresholds: &[i32], current: i32) -> Option<SharpnessLevel> {
     for i in (1..thresholds.len()).rev() {
@@ -1205,6 +1266,87 @@ mod tests {
         b[24..28].copy_from_slice(&5i32.to_le_bytes());
         let p = part_from_raw(&pd, &b);
         assert!(p.broken());
+    }
+
+    fn head(thresholds: Vec<i32>) -> crate::data::PartDef {
+        crate::data::PartDef {
+            id: 2,
+            key: "PART_HEAD".into(),
+            severable: false,
+            thresholds,
+            tenderize_ids: vec![],
+        }
+    }
+
+    fn raw_part(count: i32) -> Vec<u8> {
+        let mut b = vec![0u8; PART_STRUCT_SIZE];
+        b[12..16].copy_from_slice(&100f32.to_le_bytes());
+        b[16..20].copy_from_slice(&40f32.to_le_bytes());
+        b[24..28].copy_from_slice(&count.to_le_bytes());
+        b
+    }
+
+    #[test]
+    fn breaks_never_drop_within_a_hunt() {
+        let defs = vec![head(vec![2, 5])];
+        let mut h = BreakHistory::default();
+
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(3))];
+        h.hold((101, 7), &defs, &mut parts);
+        assert_eq!(parts[0].breaks, 1);
+
+        // 客人这边读到的次数回落了
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
+        h.hold((101, 7), &defs, &mut parts);
+        assert_eq!(parts[0].breaks, 1);
+        assert_eq!(parts[0].durability_max, 500.0);
+        assert_eq!(parts[0].durability, 240.0);
+
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(5))];
+        h.hold((101, 7), &defs, &mut parts);
+        assert!(parts[0].broken());
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(1))];
+        h.hold((101, 7), &defs, &mut parts);
+        assert!(parts[0].broken());
+        assert_eq!(parts[0].durability_ratio(), 0.0);
+    }
+
+    #[test]
+    fn break_history_resets_on_new_hunt() {
+        let defs = vec![head(vec![5])];
+        let mut h = BreakHistory::default();
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(5))];
+        h.hold((101, 7), &defs, &mut parts);
+        assert!(parts[0].broken());
+
+        // 任务结束
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
+        h.hold((0, 7), &defs, &mut parts);
+        assert_eq!(parts[0].breaks, 0);
+
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(5))];
+        h.hold((0, 7), &defs, &mut parts);
+        // 同一个地址换了一只怪
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
+        h.hold((0, 9), &defs, &mut parts);
+        assert_eq!(parts[0].breaks, 0);
+    }
+
+    #[test]
+    fn severed_part_stays_severed() {
+        let defs = vec![crate::data::PartDef {
+            id: 6,
+            key: "PART_TAIL".into(),
+            severable: true,
+            thresholds: vec![1],
+            tenderize_ids: vec![],
+        }];
+        let mut h = BreakHistory::default();
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(1))];
+        h.hold((101, 7), &defs, &mut parts);
+        let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
+        h.hold((101, 7), &defs, &mut parts);
+        assert!(parts[0].broken());
     }
 
     #[test]
