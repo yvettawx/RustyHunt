@@ -282,7 +282,7 @@ pub fn rows(book: &Book) -> Vec<Row> {
                 research,
                 // When the save's value is above the table's cap, the save wins
                 research_cap: inf.research.max(saved_research).min(9),
-                nav: m.nav.unwrap_or(0),
+                nav: m.nav.unwrap_or_else(|| r.map_or(0, |r| r.nav())),
                 slain: r.map_or(0, |r| r.slain),
                 captured: r.map_or(0, |r| r.captured),
                 largest,

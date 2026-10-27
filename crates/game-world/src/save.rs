@@ -32,6 +32,9 @@ const NAME_OFFSET: usize = 4;
 const GUILDCARD_OFFSET: usize = 690;
 const NOTES_OFFSET: usize = GUILDCARD_OFFSET + 6923;
 const MONSTER_SLOTS: usize = 96;
+/// Scoutfly navigation points per monster: f32, indexed by the internal monster ID (not the guild card index).
+/// Found by matching against the in-game research list.
+const NAV_OFFSET: usize = 0xE7C31;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SaveError {
@@ -64,6 +67,24 @@ pub struct MonsterRecord {
     pub largest: u16,
     pub smallest: u16,
     pub research: u8,
+    /// Scoutfly navigation points; level thresholds are 30, 60 and 100
+    pub nav_points: f32,
+}
+
+impl MonsterRecord {
+    /// Navigation level 0..=3.
+    pub fn nav(&self) -> u8 {
+        nav_level(self.nav_points)
+    }
+}
+
+pub fn nav_level(points: f32) -> u8 {
+    match points {
+        p if p >= 100.0 => 3,
+        p if p >= 60.0 => 2,
+        p if p >= 30.0 => 1,
+        _ => 0,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -226,10 +247,18 @@ impl SaveFile {
                 continue;
             }
             let notes = &s[NOTES_OFFSET..];
+            let ids: std::collections::HashMap<&str, i32> = crate::data::data().monster_keys.iter().map(|(id, k)| (k.as_str(), *id)).collect();
+            let nav_points = |key: &str| {
+                ids.get(key).map_or(0.0, |&id| {
+                    let o = NAV_OFFSET + id as usize * 4;
+                    f32::from_le_bytes(s[o..o + 4].try_into().unwrap())
+                })
+            };
             let monsters = (0..MONSTER_SLOTS)
                 .map(|i| MonsterRecord {
                     index: i,
                     key: monster_key(i).unwrap_or_default().to_string(),
+                    nav_points: monster_key(i).map_or(0.0, nav_points),
                     captured: u16_at(notes, i * 2),
                     slain: u16_at(notes, MONSTER_SLOTS * 2 + i * 2),
                     largest: u16_at(notes, MONSTER_SLOTS * 4 + i * 2),
@@ -313,6 +342,15 @@ mod tests {
         assert!(h.monsters.iter().any(|m| m.slain > 0));
         for m in &h.monsters {
             assert!(m.research <= 10, "{m:?}");
+            assert!((0.0..1000.0).contains(&m.nav_points), "{m:?}");
+        }
+    }
+
+    #[test]
+    fn nav_levels_follow_the_scoutfly_thresholds() {
+        // Points and levels read off the in-game research list
+        for (points, level) in [(0.0, 0), (29.0, 0), (30.0, 1), (56.0, 1), (64.0, 2), (86.0, 2), (108.0, 3), (116.0, 3)] {
+            assert_eq!(nav_level(points), level, "{points}");
         }
     }
 }

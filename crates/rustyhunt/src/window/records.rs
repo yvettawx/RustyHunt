@@ -693,7 +693,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             }
         }
         x += cols[3] + 14.0;
-        // Navigation level (manual)
+        // Navigation level
         for k in 0..3u8 {
             let sr = Rect::from_min_size(pos2(x + k as f32 * 17.0, cy - 5.0), vec2(14.0, 10.0));
             let resp = ui.interact(sr.expand(1.5), egui::Id::unique(("nav", &r.key, k)), Sense::click());
