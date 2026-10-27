@@ -247,8 +247,10 @@ impl Overlay {
         // 窗口位置和穿透
         let geometry = self.target_geometry(&live, layout_on);
         let want = geometry.unwrap_or((-32000, -32000, 1, 1));
-        if self.geometry != Some(want)
-            && let Some(h) = self.hwnd
+        // Moving onto a monitor with a different scale makes winit resize the window
+        // to keep its logical size, so check the real rect, not just what was last asked for.
+        if let Some(h) = self.hwnd
+            && (self.geometry != Some(want) || (geometry.is_some() && crate::win::window_rect(h) != Some(want)))
         {
             crate::win::place_overlay(h, want);
             self.geometry = Some(want);

@@ -42,6 +42,12 @@ pub fn window_origin(hwnd: Option<isize>) -> Option<(i32, i32)> {
     (unsafe { GetWindowRect(h, &mut r) } != 0).then_some((r.left, r.top))
 }
 
+/// Window rect on screen in physical pixels: (x, y, w, h).
+pub fn window_rect(hwnd: isize) -> Option<(i32, i32, i32, i32)> {
+    let mut r: RECT = unsafe { std::mem::zeroed() };
+    (unsafe { GetWindowRect(hwnd as HWND, &mut r) } != 0).then_some((r.left, r.top, r.right - r.left, r.bottom - r.top))
+}
+
 pub fn primary_screen() -> (i32, i32) {
     unsafe { (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) }
 }
