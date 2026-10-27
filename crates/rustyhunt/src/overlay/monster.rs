@@ -19,6 +19,8 @@ struct Cell {
     /// The maximum after the value, smaller ("/600")
     max: Option<String>,
     bar: f32,
+    /// Parts that break more than once: (breaks so far, breaks possible); the bar is split per break
+    segments: Option<(i32, i32)>,
     /// Second, thinner bar (part flinch)
     bar2: Option<f32>,
     /// Broken or severed: name dimmed, bar hatched
@@ -63,6 +65,7 @@ fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cel
                 } else {
                     p.flinch_ratio()
                 },
+                segments: (p.breaks_max > 1).then_some((p.breaks, p.breaks_max)),
                 bar2: (cfg.shows("m-b2") && breakable).then(|| p.flinch_ratio()),
                 done,
                 active: false,
@@ -100,6 +103,7 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
                 value,
                 max: numbers.then(|| format!("/{}", a.buildup_max.round())),
                 bar: if active { a.timer_ratio() } else { a.buildup_ratio() },
+                segments: None,
                 bar2: None,
                 done: false,
                 active,
@@ -188,7 +192,24 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     cv.text(x, top_for_bottom(base, 12.0, Font::Text), &name, Font::Text, 12.0, name_color, Align2::LEFT_TOP);
     let bar_color = if hot { accent } else { text };
     let by = base + 5.0;
-    cv.bar("part", x, by, w, CELL_BAR, &[Layer::fill(c.bar, bar_color)], c.done);
+    match c.segments {
+        // One segment per break, used up from the right: broken ones hatched, the current one filling
+        Some((broken, n)) if n > 1 && !c.done => {
+            let gap = 3.0;
+            let sw = (w - gap * (n - 1) as f32) / n as f32;
+            let current = n - broken.clamp(0, n) - 1;
+            for k in 0..n {
+                let sx = x + k as f32 * (sw + gap);
+                let fill = match k.cmp(&current) {
+                    std::cmp::Ordering::Less => 1.0,
+                    std::cmp::Ordering::Equal => c.bar,
+                    std::cmp::Ordering::Greater => 0.0,
+                };
+                cv.bar("part", sx, by, sw, CELL_BAR, &[Layer::fill(fill, bar_color)], k > current);
+            }
+        }
+        _ => cv.bar("part", x, by, w, CELL_BAR, &[Layer::fill(c.bar, bar_color)], c.done),
+    }
     if let Some(r) = c.bar2 {
         cv.bar(
             "part-flinch",
