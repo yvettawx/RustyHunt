@@ -75,8 +75,16 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
     if f.density != rh_core::settings::Density::Minimal && !p.name.is_empty() {
         let nsz = cv.tag(0.0, header_h - 19.0, &p.name, Font::TextBold, 12.0, (7.0, 3.0, 7.0, 2.0), cv.tok("ink"), text);
         hx = nsz.x + 8.0;
-        if p.mr > 0 {
-            let s = cv.text(hx, header_h - 15.0, &format!("MR {}", p.mr), Font::NumBold, 11.0, mute, Align2::LEFT_TOP);
+        let rank = match (p.mr > 0, p.hr > 0) {
+            (true, true) => format!("MR {} / HR {}", p.mr, p.hr),
+            (true, false) => format!("MR {}", p.mr),
+            (false, true) => format!("HR {}", p.hr),
+            (false, false) => String::new(),
+        };
+        if !rank.is_empty() {
+            // On the name tag's baseline
+            let base = header_h - 19.0 + 3.0 + 12.0 * 1.04;
+            let s = cv.text(hx, base - 11.0 * 0.98, &rank, Font::NumBold, 11.0, mute, Align2::LEFT_TOP);
             hx += s.x + 10.0;
         }
     }
@@ -156,10 +164,12 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         let c = if tired { cv.tok("accent") } else { cv.tok("stamina") };
         cv.bar("stamina", 0.0, sy, px(p.stamina_max), 6.0, &[Layer::fill(p.stamina / p.stamina_max, c)], false);
         if cfg.shows("p-num") {
+            // Value and maximum on one baseline, level with the bottom of the bar
+            let base = sy + 7.0;
             let s = format!("{}", p.stamina.round());
             let sz = cv.text(
                 px(p.stamina_max) + 8.0,
-                sy - 2.0,
+                base - 11.0 * 0.98,
                 &s,
                 Font::NumBold,
                 11.0,
@@ -168,7 +178,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
             );
             cv.text(
                 px(p.stamina_max) + 8.0 + sz.x + 1.0,
-                sy - 1.0,
+                base - 10.0 * 0.98,
                 &format!("/{}", p.stamina_max.round()),
                 Font::NumBold,
                 10.0,

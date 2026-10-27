@@ -146,8 +146,8 @@ pub struct ModuleInfo {
 }
 
 /// Elements of built-in modules that go under "More": details most players don't need to see.
-const MORE: [&str; 15] = [
-    "m-en", "m-crown", "m-record", "m-notes", "m-ghost", "m-st", "m-b2", "m-pips", "d-rank", "d-blur", "d-pal", "d-split", "d-curve", "p-ruler", "p-team",
+const MORE: [&str; 14] = [
+    "m-en", "m-crown", "m-record", "m-notes", "m-ghost", "m-st", "m-b2", "d-rank", "d-blur", "d-pal", "d-split", "d-curve", "p-ruler", "p-team",
 ];
 
 fn el(key: &str, default_on: bool) -> ElementInfo {
@@ -198,7 +198,6 @@ pub fn builtin() -> Vec<ModuleInfo> {
                 ("m-st", true),
                 ("m-parts", true),
                 ("m-b2", true),
-                ("m-pips", true),
                 ("m-pval", true),
                 ("m-ails", true),
                 ("m-toast", true),

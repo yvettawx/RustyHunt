@@ -12,8 +12,6 @@ use super::{Frame, State, ToastStyle, mmss, thousands};
 /// One cell of the parts or ailments grid. Both use the same cell so neither outweighs the other.
 struct Cell {
     name: String,
-    /// Parts: (breaks, breaks_max) drawn as pips
-    pips: Option<(i32, i32)>,
     /// Ailments: how many times it has triggered
     count: i32,
     /// Exact value or time left, right-aligned
@@ -55,7 +53,6 @@ fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cel
             let numbers = cfg.shows("m-pval") && !done && max > 0.0;
             Cell {
                 name: f.i18n.game(&p.key),
-                pips: (cfg.shows("m-pips") && breakable).then_some((p.breaks, p.breaks_max)),
                 count: 0,
                 value: numbers.then(|| format!("{}", cur.max(0.0).round())),
                 max: numbers.then(|| format!("/{}", max.round())),
@@ -99,7 +96,6 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
             };
             Cell {
                 name: f.i18n.game(&a.key),
-                pips: None,
                 count: a.count,
                 value,
                 max: numbers.then(|| format!("/{}", a.buildup_max.round())),
@@ -113,15 +109,19 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
         .collect()
 }
 
-const CELL_H: f32 = 25.0;
-const CELL_GAP_Y: f32 = 8.0;
+const CELL_H: f32 = 28.0;
+const CELL_GAP_Y: f32 = 9.0;
+/// Text baseline inside a cell, from its top
+const CELL_BASE: f32 = 13.0;
+const CELL_BAR: f32 = 5.0;
+const CELL_BAR2: f32 = 3.0;
 
 /// Lays cells out in `cols` columns starting at `y0`; returns the height used.
 fn grid(cv: &Canvas, cells: &[Cell], y0: f32, w: f32, cols: usize) -> f32 {
     if cells.is_empty() {
         return 0.0;
     }
-    let gap = 16.0;
+    let gap = 18.0;
     let cw = (w - gap * (cols as f32 - 1.0)) / cols as f32;
     for (i, c) in cells.iter().enumerate() {
         let x = (i % cols) as f32 * (cw + gap);
@@ -132,49 +132,50 @@ fn grid(cv: &Canvas, cells: &[Cell], y0: f32, w: f32, cols: usize) -> f32 {
     rows * CELL_H + (rows - 1.0) * CELL_GAP_Y
 }
 
+/// One cell: name on the left and value/max on the right, on one baseline, then the bars.
+/// A broken part's bar is hatched all the way.
 fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     let text = cv.tok("text");
     let mute = cv.tok("text-mute");
     let accent = cv.tok("accent");
     let hot = c.flash || c.active;
-    // Right side, from the right edge inward: value, then pips or the trigger count
+    let base = y + CELL_BASE;
+    // Right side, from the right edge inward: max, value, then the trigger count
     let mut right = x + w;
     if let Some(m) = &c.max {
-        let ms = cv.measure(m, Font::NumBold, 9.0, 0.0);
-        cv.text(right - ms.x, y + 3.0, m, Font::NumBold, 9.0, mute, Align2::LEFT_TOP);
-        right -= ms.x;
-    }
-    if let Some(v) = &c.value {
-        let vs = cv.measure(v, Font::NumBold, 11.0, 0.0);
+        let ms = cv.measure(m, Font::NumBold, 10.0, 0.0);
         cv.text(
-            right - vs.x,
-            y + 1.0,
-            v,
+            right - ms.x,
+            top_for_bottom(base, 10.0, Font::NumBold),
+            m,
             Font::NumBold,
-            11.0,
-            if c.active {
-                accent
-            } else if c.max.is_some() {
-                text
-            } else {
-                mute
-            },
+            10.0,
+            mute,
             Align2::LEFT_TOP,
         );
-        right -= vs.x + 5.0;
+        right -= ms.x + 1.0;
     }
-    if let Some((n, max)) = c.pips {
-        let pw = max as f32 * 9.0 - 3.0;
-        cv.pips(right - pw, y + 4.0, max, n, 6.0, 3.0, if c.flash { accent } else { text });
-        right -= pw + 5.0;
+    if let Some(v) = &c.value {
+        let vs = cv.measure(v, Font::NumBold, 12.0, 0.0);
+        let color = if c.active { accent } else { text };
+        cv.text(
+            right - vs.x,
+            top_for_bottom(base, 12.0, Font::NumBold),
+            v,
+            Font::NumBold,
+            12.0,
+            color,
+            Align2::LEFT_TOP,
+        );
+        right -= vs.x + 6.0;
     }
     if c.count > 0 {
         let s = c.count.to_string();
         let pad = (4.0, 1.0, 4.0, 0.0);
         let ts = cv.tag_size(&s, Font::NumBold, 10.0, pad);
         let (bg, fg) = if c.flash { (accent, cv.tok("ink")) } else { (text, cv.tok("ink")) };
-        cv.tag(right - ts.x, y + 1.0, &s, Font::NumBold, 10.0, pad, bg, fg);
-        right -= ts.x + 5.0;
+        cv.tag(right - ts.x, base + 2.0 - ts.y, &s, Font::NumBold, 10.0, pad, bg, fg);
+        right -= ts.x + 6.0;
     }
     let name_color = if hot {
         accent
@@ -184,11 +185,20 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
         text
     };
     let name = cv.fit(&c.name, Font::Text, 12.0, (right - x).max(12.0));
-    cv.text(x, y, &name, Font::Text, 12.0, name_color, Align2::LEFT_TOP);
+    cv.text(x, top_for_bottom(base, 12.0, Font::Text), &name, Font::Text, 12.0, name_color, Align2::LEFT_TOP);
     let bar_color = if hot { accent } else { text };
-    cv.bar("part", x, y + 17.0, w, 3.0, &[Layer::fill(c.bar, bar_color)], c.done);
+    let by = base + 5.0;
+    cv.bar("part", x, by, w, CELL_BAR, &[Layer::fill(c.bar, bar_color)], c.done);
     if let Some(r) = c.bar2 {
-        cv.bar("part-flinch", x, y + 22.0, w, 2.0, &[Layer::fill(r, if hot { accent } else { mute })], false);
+        cv.bar(
+            "part-flinch",
+            x,
+            by + CELL_BAR + 2.0,
+            w,
+            CELL_BAR2,
+            &[Layer::fill(r, if hot { accent } else { mute })],
+            false,
+        );
     }
 }
 
@@ -247,15 +257,17 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     let tag_size = 17.0;
     let tag_pad = (8.0, 3.0, 8.0, 2.0);
     let tsz = cv.tag_size(&name, Font::TextBold, tag_size, tag_pad);
-    let mut x = 0.0;
-    cv.tag(x, bottom - tsz.y, &name, Font::TextBold, tag_size, tag_pad, cv.tok("ink"), text);
-    x += tsz.x + 10.0;
+    cv.tag(0.0, bottom - tsz.y, &name, Font::TextBold, tag_size, tag_pad, cv.tok("ink"), text);
+    // Everything after the name tag sits on the baseline of its text, the same distance apart
+    let base = bottom - tsz.y + tag_pad.1 + tag_size * 1.04;
+    let gap = 14.0;
+    let mut x = tsz.x + gap;
     if !side && cfg.shows("m-en") {
         let en = f.i18n.monster_in(&m.key, rh_core::i18n::Lang::En).to_uppercase();
         if !en.is_empty() && f.i18n.term_lang() != rh_core::i18n::Lang::En {
             let sz = cv.text_ex(
                 x,
-                top_for_bottom(bottom - 2.0, 11.0, Font::Num),
+                top_for_bottom(base, 11.0, Font::Num),
                 &en,
                 Font::Num,
                 11.0,
@@ -264,14 +276,14 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
                 0.2,
                 true,
             );
-            x += sz.x + 10.0;
+            x += sz.x + gap;
         }
     }
     if cfg.shows("m-crown") && matches!(m.crown, Crown::Gold | Crown::Silver | Crown::Mini) {
         // As in the game: the mini crown is a small gold one, the large crowns gold or silver
-        let cw = if m.crown == Crown::Mini { 10.0 } else { 18.0 };
-        cv.crown(x, bottom - 3.0 - cw * 0.65, cw, m.crown != Crown::Silver);
-        x += cw + 10.0;
+        let cw = if m.crown == Crown::Mini { 11.0 } else { 18.0 };
+        cv.crown(x, base - cw * 10.0 / 16.0, cw, m.crown != Crown::Silver);
+        x += cw + gap;
     }
     let notes = f.notes.get(&m.key);
     // Beats the largest or smallest size in the Hunter's Notes
@@ -281,14 +293,14 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         let label = f.t(if big { "label.record_big" } else { "label.record_small" });
         let sz = cv.text(
             x,
-            top_for_bottom(bottom - 2.0, 12.0, Font::TextBold),
+            top_for_bottom(base, 12.0, Font::TextBold),
             &label,
             Font::TextBold,
             12.0,
             text,
             Align2::LEFT_TOP,
         );
-        x += sz.x + 10.0;
+        x += sz.x + gap;
     }
     if cfg.shows("m-state") {
         let (label, color) = if m.enraged {
@@ -301,36 +313,50 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             (String::new(), None)
         };
         if let Some(c) = color {
-            let ty = top_for_bottom(bottom - 2.0, 12.0, Font::TextBold);
-            cv.dot(x + 3.5, ty + 9.0, 3.5, c, true);
-            let sz = cv.text(x + 13.0, ty, &label, Font::TextBold, 12.0, c, Align2::LEFT_TOP);
-            x += 13.0 + sz.x + 10.0;
+            cv.dot(x + 3.5, base - 4.5, 3.5, c, true);
+            let sz = cv.text(
+                x + 12.0,
+                top_for_bottom(base, 12.0, Font::TextBold),
+                &label,
+                Font::TextBold,
+                12.0,
+                c,
+                Align2::LEFT_TOP,
+            );
+            x += 12.0 + sz.x + gap;
         }
     }
     if cfg.shows("m-weak") && !m.weaknesses.is_empty() && f.density != Density::Minimal {
-        let ty = top_for_bottom(bottom - 2.0, 10.0, Font::NumBold);
-        let sz = cv.text_ex(x + 4.0, ty, &f.t("label.weak"), Font::TextBold, 10.0, mute, Align2::LEFT_TOP, 0.06, true);
-        let mut wx = x + 4.0 + sz.x;
+        let sz = cv.text(
+            x,
+            top_for_bottom(base, 11.0, Font::Text),
+            &f.t("label.weak"),
+            Font::Text,
+            11.0,
+            mute,
+            Align2::LEFT_TOP,
+        );
+        let mut wx = x + sz.x;
         for e in &m.weaknesses {
             let n = f.t(&format!("element.{}", e.key()));
             let s = cv.text(
-                wx + 5.0,
-                top_for_bottom(bottom - 2.0, 11.0, Font::TextBold),
+                wx + 4.0,
+                top_for_bottom(base, 12.0, Font::TextBold),
                 &n,
                 Font::TextBold,
-                11.0,
+                12.0,
                 text,
                 Align2::LEFT_TOP,
             );
-            wx += 5.0 + s.x;
+            wx += 4.0 + s.x;
         }
-        x = wx + 10.0;
+        x = wx + gap;
     }
     if cfg.shows("m-notes")
         && f.density != Density::Minimal
         && let Some(r) = notes
     {
-        notes_text(cv, f, r, x, top_for_bottom(bottom - 2.0, 11.0, Font::NumBold), 11.0, mute, text);
+        notes_text(cv, f, r, x, top_for_bottom(base, 11.0, Font::Text), 11.0, mute, text);
     }
 
     // Right side: current HP, large, then the maximum
@@ -340,7 +366,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         let ms = cv.measure(&max_s, Font::NumBold, 12.0, 0.0);
         cv.text(
             w - ms.x,
-            top_for_bottom(bottom + 1.0, 12.0, Font::NumBold),
+            top_for_bottom(bottom + 2.0, 12.0, Font::NumBold),
             &max_s,
             Font::NumBold,
             12.0,
@@ -351,7 +377,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         let cs = cv.measure(&cur, Font::NumHeavy, big, -0.02);
         cv.text_ex(
             w - ms.x - 3.0 - cs.x,
-            top_for_bottom(bottom + 4.0, big, Font::NumHeavy),
+            top_for_bottom(bottom + 2.0, big, Font::NumHeavy),
             &cur,
             Font::NumHeavy,
             big,
@@ -361,7 +387,8 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             true,
         );
     }
-    y = bottom + 7.0;
+    y = bottom + 8.0;
+    let hp_h = 10.0;
 
     // HP bar
     let capz = m.capturable() && m.alive();
@@ -383,30 +410,19 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         layers.push(Layer::fill(ratio, fade(text, 1.0 - since / 0.6)));
         st.animating = true;
     }
-    cv.bar_ex("monster-hp", 0.0, y, w, 7.0, &layers, true, true);
+    cv.bar_ex("monster-hp", 0.0, y, w, hp_h, &layers, true, true);
     if cfg.shows("m-cap") && m.capture_threshold > 0.0 && m.alive() {
         let mx = w * m.capture_threshold;
-        cv.line((mx + 0.5, y - 6.0), (mx + 0.5, y + 13.0), 3.0, fade(cv.tok("shadow"), 0.5));
-        cv.line((mx, y - 6.0), (mx, y + 13.0), 2.0, accent);
-        cv.text_ex(
-            mx + 5.0,
-            y + 6.0,
-            &f.t("label.capture"),
-            Font::TextBold,
-            9.0,
-            accent,
-            Align2::LEFT_TOP,
-            0.0,
-            true,
-        );
+        cv.line((mx + 0.5, y - 5.0), (mx + 0.5, y + hp_h + 5.0), 3.0, fade(cv.tok("shadow"), 0.5));
+        cv.line((mx, y - 5.0), (mx, y + hp_h + 5.0), 2.0, accent);
     }
-    y += 7.0;
+    y += hp_h;
 
     if cfg.shows("m-st") {
-        y += 6.0;
+        y += 4.0;
         let (sr, color) = if m.tired { (1.0, cv.tok("cool")) } else { (m.stamina_ratio(), mute) };
-        cv.bar("monster-stamina", 0.0, y, w, 2.0, &[Layer::fill(sr, color)], false);
-        y += 2.0;
+        cv.bar("monster-stamina", 0.0, y, w, 3.0, &[Layer::fill(sr, color)], false);
+        y += 3.0;
     }
 
     if side && !parts.is_empty() {
@@ -455,8 +471,8 @@ pub fn notes_text(cv: &Canvas, f: &Frame, r: &crate::bestiary::Row, x: f32, y: f
         ("records.nav", r.nav.to_string()),
     ] {
         let ls = cv.text(cx, y, &f.t(key), Font::Text, size, label, Align2::LEFT_TOP);
-        let vs = cv.text(cx + ls.x + 3.0, y, &v, Font::NumBold, size, value, Align2::LEFT_TOP);
-        cx += ls.x + 3.0 + vs.x + 8.0;
+        let vs = cv.text(cx + ls.x + 4.0, y, &v, Font::NumBold, size, value, Align2::LEFT_TOP);
+        cx += ls.x + 4.0 + vs.x + 10.0;
     }
-    cx - 8.0 - x
+    cx - 10.0 - x
 }
