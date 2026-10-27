@@ -302,13 +302,19 @@ impl Scanner {
             self.shared.live.write().unwrap().errors += 1;
         }
 
-        {
+        let switched = {
             let mut live = self.shared.live.write().unwrap();
+            let switched = live.game_foreground != foreground;
             live.game_rect = rect;
             live.game_foreground = foreground;
             live.game_minimized = minimized;
             live.read_ms = live.read_ms * 0.8 + read_ms * 0.2;
             live.pid = Some(pid);
+            switched
+        };
+        if switched {
+            // The overlay hides while the game is in the background, even if no data changed
+            self.shared.repaint_overlay();
         }
         self.publish(snap, Connection::Connected);
     }

@@ -270,7 +270,9 @@ impl Overlay {
             }
             self.passthrough = Some(!layout_on);
         }
-        if geometry.is_none() || (!settings.overlay_visible && !layout_on) {
+        // The overlay is topmost: draw nothing over other programs while the game is in the background
+        let in_front = live.game_foreground || layout_on || matches!(live.connection, Connection::Demo);
+        if geometry.is_none() || (!settings.overlay_visible && !layout_on) || !in_front {
             self.backing.hide();
             return;
         }
