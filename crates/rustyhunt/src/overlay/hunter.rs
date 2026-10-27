@@ -289,6 +289,7 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
     let trays = &f.profile.buffs.trays;
     let player_on = f.profile.module(modules::PLAYER).is_some_and(|m| m.enabled);
     let low_secs = f.profile.buffs.low_secs;
+    let wrap = modules::width(modules::BUFFS, false, cfg.width);
     let mut any = false;
     for (ti, tray) in trays.iter().enumerate() {
         let list: Vec<_> = p
@@ -324,7 +325,7 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
             }
             x += 10.0;
             row_h = row_h.max(tsz.y);
-            if x > 560.0 {
+            if x > wrap {
                 w = w.max(x);
                 x = 0.0;
                 y += row_h + 6.0;
@@ -375,7 +376,7 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
     if matches!(p.weapon_state, WeaponState::None) {
         return Vec2::ZERO;
     }
-    let w = 300.0;
+    let w = modules::width(modules::WEAPON, false, cfg.width);
     let text = cv.tok("text");
     let mute = cv.tok("text-mute");
     let accent = cv.tok("accent");

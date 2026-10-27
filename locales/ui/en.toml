@@ -303,22 +303,8 @@ awakened = "Awakened"
 amped = "Amped"
 
 [layout]
-title = "Layout mode"
-reset_all = "Reset all"
-grid = "Grid"
-zones = "Native HUD"
-key_drag = "Drag"
-key_wheel = "Wheel"
 key_double = "Double-click"
-move = "Move"
-scale = "Scale"
 reset = "Reset"
-
-[zone]
-health = "Health"
-quest = "Quest"
-minimap = "Minimap"
-items = "Items"
 
 [settings]
 general = "General"

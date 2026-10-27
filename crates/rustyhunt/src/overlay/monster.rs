@@ -9,9 +9,6 @@ use ui_kit::{Canvas, Font, Layer};
 
 use super::{Frame, State, ToastStyle, mmss, thousands};
 
-const BOTTOM_W: f32 = 820.0;
-const SIDE_W: f32 = 380.0;
-
 /// One cell of the parts or ailments grid. Both use the same cell so neither outweighs the other.
 struct Cell {
     name: String,
@@ -181,8 +178,9 @@ fn top_for_bottom(bottom: f32, size: f32, font: Font) -> f32 {
 pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 {
     let Some(m) = f.target else { return Vec2::ZERO };
     let side = f.profile.monster.layout == MonsterLayout::Side;
-    let w = if side { SIDE_W } else { BOTTOM_W };
-    let cols = if side { 3 } else { 8 };
+    let w = rh_core::modules::width(rh_core::modules::MONSTER, side, cfg.width);
+    // Cells at least about 88 wide, at most eight to a row
+    let cols = (((w + 16.0) / 104.0).floor() as usize).clamp(1, 8);
     let text = cv.tok("text");
     let mute = cv.tok("text-mute");
     let accent = cv.tok("accent");

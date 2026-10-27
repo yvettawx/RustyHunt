@@ -66,6 +66,7 @@ impl eframe::App for Shot {
             egui::ViewportId::ROOT
         };
         if self.what == "layout" && self.frames == 5 {
+            crate::overlay::LAYOUT_INLINE.store(true, std::sync::atomic::Ordering::Relaxed);
             self.shared.act(crate::state::Action::SetLayout(true));
         }
         // Scenes switch state at a fixed time; capture shortly after, while the change still animates

@@ -194,6 +194,9 @@ fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
 
 const LAYOUT_TITLE: &str = "RustyHunt Layout";
 
+/// For screenshots: draw layout mode into the overlay window itself, which can be captured.
+pub static LAYOUT_INLINE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 fn layout_viewport() -> egui::ViewportId {
     egui::ViewportId::from_hash_of("rustyhunt-layout")
 }
@@ -283,7 +286,7 @@ impl Overlay {
             return;
         }
 
-        if !layout_on {
+        if !layout_on || LAYOUT_INLINE.load(std::sync::atomic::Ordering::Relaxed) {
             self.layout_win = None;
             self.paint(ui, t0);
             return;
@@ -380,7 +383,7 @@ impl Overlay {
         let frame_w = screen.width() / s;
 
         if layout_on {
-            layout::backdrop(&ctx, screen, s, &self.layout, game);
+            layout::backdrop(&ctx, screen, s, &self.layout);
         }
 
         // Backing of the player module, around where it was drawn last frame

@@ -1,14 +1,15 @@
-//! Layout mode: the overlay takes the mouse, the game dims, and a grid and the native HUD areas show.
-//! Modules snap to 8px when dragged; scroll to resize, double-click to reset, Ctrl Z to undo, Esc or the hotkey to finish and save.
+//! Layout mode: the overlay takes the mouse and the game dims. Drag a module to move it (snaps to 8px),
+//! drag a corner to scale it, drag a side edge to change its width; double-click resets, Ctrl Z undoes,
+//! Esc or the hotkey finishes and saves.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use egui::{Align2, Color32, CornerRadius, Id, LayerId, Order, Pos2, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
+use egui::{Color32, CornerRadius, CursorIcon, Id, LayerId, Order, Rect, Sense, Stroke, StrokeKind, Vec2, pos2, vec2};
 use rh_core::i18n;
 use rh_core::model::Game;
 use rh_core::modules::{self, Placement};
-use rh_core::settings::ModuleConfig;
+use rh_core::settings::{ModuleConfig, MonsterLayout};
 use ui_kit::Font;
 use ui_kit::color::rgba;
 
@@ -17,72 +18,60 @@ use crate::state::Shared;
 const PAPER: Color32 = Color32::from_rgb(0xf2, 0xf0, 0xe9);
 const ORANGE: Color32 = Color32::from_rgb(0xff, 0x6b, 0x1a);
 
+#[derive(Default)]
 pub struct LayoutState {
     drag: Option<Drag>,
     undo: Vec<(String, ModuleConfig)>,
-    pub grid: bool,
-    pub zones: bool,
 }
 
-impl Default for LayoutState {
-    fn default() -> Self {
-        LayoutState {
-            drag: None,
-            undo: Vec::new(),
-            grid: true,
-            zones: true,
-        }
-    }
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum Grip {
+    Move,
+    /// A corner, by which side of the module it is on (-1 or 1 on each axis)
+    Corner(f32, f32),
+    /// The left (-1) or right (1) edge
+    Edge(f32),
 }
 
 struct Drag {
     id: String,
-    start: Pos2,
-    size: (f32, f32),
+    grip: Grip,
+    /// Module rect when the drag started, reference coordinates
+    start: Rect,
+    cfg: ModuleConfig,
 }
 
 fn top_layer() -> LayerId {
     LayerId::new(Order::Tooltip, Id::unique("layout-top"))
 }
 
-/// Dimming, grid and native HUD areas, drawn under the modules.
-pub fn backdrop(ctx: &egui::Context, screen: Rect, s: f32, st: &LayoutState, game: Game) {
+/// Dimming, and the snapping grid while a module is being moved.
+pub fn backdrop(ctx: &egui::Context, screen: Rect, s: f32, st: &LayoutState) {
     let p = ctx.layer_painter(LayerId::new(Order::Background, Id::unique("layout-back")));
     p.rect_filled(screen, CornerRadius::ZERO, rgba(8, 8, 8, 0.55));
-    if st.grid {
-        let fine = rgba(242, 240, 233, 0.035);
-        let major = rgba(242, 240, 233, 0.09);
-        let mut x = 0.0;
-        while x * s < screen.width() {
-            let c = if (x as i32) % 64 == 0 { major } else { fine };
-            p.line_segment(
-                [pos2(screen.min.x + x * s, screen.min.y), pos2(screen.min.x + x * s, screen.max.y)],
-                Stroke::new(1.0, c),
-            );
-            x += 8.0;
-        }
-        let mut y = 0.0;
-        while y * s < screen.height() {
-            let c = if (y as i32) % 64 == 0 { major } else { fine };
-            p.line_segment(
-                [pos2(screen.min.x, screen.min.y + y * s), pos2(screen.max.x, screen.min.y + y * s)],
-                Stroke::new(1.0, c),
-            );
-            y += 8.0;
-        }
+    if !st.drag.as_ref().is_some_and(|d| d.grip == Grip::Move) {
+        return;
     }
-    let _ = game;
-}
-
-fn zones(game: Game, frame_w: f32) -> Vec<(Rect, String)> {
-    // Native HUD coordinates were measured at 1920 wide; on wide screens the right-hand areas follow the right edge
-    modules::native_zones(game)
-        .iter()
-        .map(|&(x, y, w, h, key)| {
-            let x = if x > 960.0 { x + (frame_w - 1920.0) } else { x };
-            (Rect::from_min_size(pos2(x, y), vec2(w, h)), i18n::t(key))
-        })
-        .collect()
+    let fine = rgba(242, 240, 233, 0.035);
+    let major = rgba(242, 240, 233, 0.09);
+    let mut x = 0.0;
+    while x * s < screen.width() {
+        let c = if (x as i32) % 64 == 0 { major } else { fine };
+        p.line_segment(
+            [pos2(screen.min.x + x * s, screen.min.y), pos2(screen.min.x + x * s, screen.max.y)],
+            Stroke::new(1.0, c),
+        );
+        x += 8.0;
+    }
+    let mut y = 0.0;
+    while y * s < screen.height() {
+        let c = if (y as i32) % 64 == 0 { major } else { fine };
+        p.line_segment(
+            [pos2(screen.min.x, screen.min.y + y * s), pos2(screen.max.x, screen.min.y + y * s)],
+            Stroke::new(1.0, c),
+        );
+        y += 8.0;
+    }
 }
 
 fn dashed_rect(p: &egui::Painter, r: Rect, color: Color32) {
@@ -92,41 +81,83 @@ fn dashed_rect(p: &egui::Painter, r: Rect, color: Color32) {
     }
 }
 
+/// Grab areas of a module outline on screen: corners, then side edges if the width can change.
+fn grips(outline: Rect, wide: bool) -> Vec<(Grip, Rect)> {
+    let k = 14.0;
+    let mut out = Vec::new();
+    for (gx, gy, p) in [
+        (-1.0, -1.0, outline.left_top()),
+        (1.0, -1.0, outline.right_top()),
+        (-1.0, 1.0, outline.left_bottom()),
+        (1.0, 1.0, outline.right_bottom()),
+    ] {
+        out.push((Grip::Corner(gx, gy), Rect::from_center_size(p, vec2(k, k))));
+    }
+    if wide && outline.height() > k * 2.0 {
+        for (gx, x) in [(-1.0, outline.min.x), (1.0, outline.max.x)] {
+            let r = Rect::from_min_max(pos2(x - 5.0, outline.min.y + k / 2.0), pos2(x + 5.0, outline.max.y - k / 2.0));
+            out.push((Grip::Edge(gx), r));
+        }
+    }
+    out
+}
+
+fn cursor(g: Grip) -> CursorIcon {
+    match g {
+        Grip::Move => CursorIcon::Grab,
+        Grip::Corner(x, y) if x == y => CursorIcon::ResizeNwSe,
+        Grip::Corner(..) => CursorIcon::ResizeNeSw,
+        Grip::Edge(_) => CursorIcon::ResizeHorizontal,
+    }
+}
+
+/// The new settings of a module being dragged, and the label shown while dragging.
+fn dragged(d: &Drag, delta: Vec2, frame_w: f32, side: bool) -> (ModuleConfig, String) {
+    let snap = |v: f32| (v / 8.0).round() * 8.0;
+    let r = d.start;
+    let mut c = d.cfg.clone();
+    match d.grip {
+        Grip::Move => {
+            let x = snap(r.min.x + delta.x).clamp(0.0, (frame_w - r.width()).max(0.0));
+            let y = snap(r.min.y + delta.y).clamp(0.0, (1080.0 - r.height()).max(0.0));
+            c.placement = Placement::from_top_left(x, y, frame_w, (r.width(), r.height()));
+            (c, format!("{}, {}", x as i32, y as i32))
+        }
+        Grip::Corner(gx, gy) => {
+            // Average of how far each axis was pulled; the opposite corner stays put
+            let k = ((r.width() + gx * delta.x) / r.width() + (r.height() + gy * delta.y) / r.height()) / 2.0;
+            c.scale = ((d.cfg.scale * k).clamp(0.5, 2.0) * 100.0).round() / 100.0;
+            let size = r.size() * (c.scale / d.cfg.scale);
+            let x = if gx > 0.0 { r.min.x } else { r.max.x - size.x };
+            let y = if gy > 0.0 { r.min.y } else { r.max.y - size.y };
+            c.placement = Placement::from_top_left(x, y, frame_w, (size.x, size.y));
+            let label = format!("{}%", (c.scale * 100.0).round());
+            (c, label)
+        }
+        Grip::Edge(gx) => {
+            let old = modules::width(&d.id, side, d.cfg.width);
+            let w = modules::width(&d.id, side, Some((old + gx * delta.x / d.cfg.scale).round()));
+            c.width = Some(w);
+            let rw = r.width() + (w - old) * d.cfg.scale;
+            let x = if gx > 0.0 { r.min.x } else { r.max.x - rw };
+            c.placement = Placement::from_top_left(x, r.min.y, frame_w, (rw, r.height()));
+            (c, format!("{}", w as i32))
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, rects: &BTreeMap<String, Rect>, screen: Rect, s: f32, frame_w: f32, game: Game) {
     let ctx = ui.ctx().clone();
     let painter = ctx.layer_painter(top_layer());
     let to_screen = |r: Rect| Rect::from_min_max(screen.min + r.min.to_vec2() * s, screen.min + r.max.to_vec2() * s);
-    let zone_list = zones(game, frame_w);
-
-    // Native HUD areas
-    let mut zone_hit = vec![false; zone_list.len()];
-    let mut module_hit = BTreeMap::new();
-    for (id, r) in rects {
-        for (i, (z, _)) in zone_list.iter().enumerate() {
-            if r.intersects(*z) {
-                zone_hit[i] = true;
-                module_hit.insert(id.clone(), true);
-            }
-        }
-    }
-    if st.zones {
-        for ((z, name), hit) in zone_list.iter().zip(&zone_hit) {
-            let r = to_screen(*z);
-            let c = if *hit { ORANGE } else { rgba(242, 240, 233, 0.35) };
-            dashed_rect(&painter, r, c);
-            painter.text(
-                r.min + vec2(6.0, 4.0),
-                Align2::LEFT_TOP,
-                name,
-                Font::Text.id(11.0 * s.max(0.7)),
-                if *hit { ORANGE } else { rgba(242, 240, 233, 0.5) },
-            );
-        }
-    }
 
     // Release the settings lock before looking up plugin module names: the plugin side writes settings while holding its own lock
-    let ids: Vec<String> = shared.settings().profile(game).modules.keys().cloned().collect();
+    let (ids, side) = {
+        let set = shared.settings();
+        let p = set.profile(game);
+        (p.modules.keys().cloned().collect::<Vec<_>>(), p.monster.layout == MonsterLayout::Side)
+    };
     let names: BTreeMap<String, String> = ids
         .into_iter()
         .map(|id| {
@@ -135,76 +166,76 @@ pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, r
         })
         .collect();
 
+    let delta = ctx
+        .input(|i| i.pointer.press_origin().zip(i.pointer.latest_pos()).map(|(a, b)| b - a))
+        .unwrap_or_default()
+        / s;
     let mut changed: Option<(String, ModuleConfig)> = None;
     for (id, r) in rects {
-        let sr = to_screen(*r);
-        let resp = ui.interact(sr.expand(8.0), Id::unique(("layout", id)), Sense::click_and_drag());
+        let outline = to_screen(*r).expand(8.0);
         let cfg = shared.settings().profile(game).module(id).cloned().unwrap_or_default();
+        let wide = modules::width_range(id, side).is_some();
 
-        if resp.drag_started() {
-            st.undo.push((id.clone(), cfg.clone()));
-            st.drag = Some(Drag {
-                id: id.clone(),
-                start: r.min,
-                size: (r.width(), r.height()),
-            });
-        }
-        let mut label = format!("{}%", (cfg.scale * 100.0).round());
-        if resp.dragged()
-            && let Some(d) = st.drag.as_ref().filter(|d| &d.id == id)
-        {
-            let total = ctx
-                .input(|i| i.pointer.press_origin().zip(i.pointer.latest_pos()).map(|(a, b)| b - a))
-                .unwrap_or_default();
-            let snap = |v: f32| (v / 8.0).round() * 8.0;
-            let x = snap(d.start.x + total.x / s).clamp(0.0, (frame_w - d.size.0).max(0.0));
-            let y = snap(d.start.y + total.y / s).clamp(0.0, (1080.0 - d.size.1).max(0.0));
-            let mut c = cfg.clone();
-            c.placement = Placement::from_top_left(x, y, frame_w, d.size);
-            label = format!("{}, {}", x as i32, y as i32);
-            changed = Some((id.clone(), c));
-        }
-        if resp.drag_stopped() {
-            st.drag = None;
-        }
-        if resp.hovered() {
-            let scroll = ctx.input(|i| i.smooth_scroll_delta.y);
-            if scroll.abs() > 0.5 {
+        // The body first, then the grips on top of it, so the grips win where they overlap
+        let mut targets = vec![(Grip::Move, outline)];
+        targets.extend(grips(outline, wide));
+        let mut hovered = None;
+        let mut label = String::new();
+        for (n, (grip, area)) in targets.into_iter().enumerate() {
+            let resp = ui.interact(area, Id::unique(("layout", id, n)), Sense::click_and_drag());
+            if resp.hovered() || resp.dragged() {
+                hovered = Some(grip);
+            }
+            if resp.drag_started() {
                 st.undo.push((id.clone(), cfg.clone()));
-                let mut c = cfg.clone();
-                c.scale = ((c.scale + if scroll > 0.0 { 0.05 } else { -0.05 }) * 100.0).round() / 100.0;
-                c.scale = c.scale.clamp(0.5, 2.0);
+                st.drag = Some(Drag {
+                    id: id.clone(),
+                    grip,
+                    start: *r,
+                    cfg: cfg.clone(),
+                });
+            }
+            if resp.dragged()
+                && let Some(d) = st.drag.as_ref().filter(|d| &d.id == id && d.grip == grip)
+            {
+                let (c, l) = dragged(d, delta, frame_w, side);
+                label = l;
                 changed = Some((id.clone(), c));
             }
+            if resp.drag_stopped() {
+                st.drag = None;
+            }
+            if grip == Grip::Move && resp.double_clicked() {
+                st.undo.push((id.clone(), cfg.clone()));
+                let id2 = id.clone();
+                shared.edit_settings(|set| set.profile_mut(game).reset_module(game, &id2));
+            }
         }
-        if resp.double_clicked() {
-            st.undo.push((id.clone(), cfg.clone()));
-            let id2 = id.clone();
-            shared.edit_settings(|set| set.profile_mut(game).reset_module(game, &id2));
+        let dragging = st.drag.as_ref().filter(|d| &d.id == id).map(|d| d.grip);
+        if let Some(g) = dragging.or(hovered) {
+            ctx.set_cursor_icon(if dragging == Some(Grip::Move) { CursorIcon::Grabbing } else { cursor(g) });
         }
 
-        let dragging = st.drag.as_ref().is_some_and(|d| &d.id == id);
-        let hit = module_hit.contains_key(id);
-        let color = if dragging || hit {
-            ORANGE
-        } else if resp.hovered() {
-            PAPER
-        } else {
-            rgba(242, 240, 233, 0.6)
-        };
-        let outline = sr.expand(8.0);
-        if resp.hovered() || dragging {
+        let active = hovered.is_some() || dragging.is_some();
+        if active {
+            let color = if dragging.is_some() { ORANGE } else { PAPER };
             painter.rect_stroke(outline, CornerRadius::ZERO, Stroke::new(1.0, color), StrokeKind::Inside);
-        } else {
-            dashed_rect(&painter, outline, color);
-        }
-        if resp.hovered() || dragging || hit {
+            for (g, area) in grips(outline, wide) {
+                let hot = dragging == Some(g) || (dragging.is_none() && hovered == Some(g));
+                let shape = match g {
+                    Grip::Edge(_) => Rect::from_center_size(area.center(), vec2(4.0, 18.0)),
+                    _ => Rect::from_center_size(area.center(), vec2(8.0, 8.0)),
+                };
+                painter.rect_filled(shape, CornerRadius::ZERO, if hot { ORANGE } else { PAPER });
+            }
             let name = names.get(id).cloned().unwrap_or_else(|| id.clone());
-            let text = format!("{name}　{label}");
+            let text = if label.is_empty() { name } else { format!("{name}　{label}") };
             let g = painter.layout_no_wrap(text, Font::TextBold.id(12.0), Color32::from_rgb(0x11, 0x11, 0x11));
             let tr = Rect::from_min_size(outline.min + vec2(-1.0, -g.size().y - 10.0), g.size() + vec2(16.0, 8.0));
-            painter.rect_filled(tr, CornerRadius::ZERO, if hit || dragging { ORANGE } else { PAPER });
+            painter.rect_filled(tr, CornerRadius::ZERO, if dragging.is_some() { ORANGE } else { PAPER });
             painter.galley(tr.min + vec2(8.0, 4.0), g, Color32::BLACK);
+        } else {
+            dashed_rect(&painter, outline, rgba(242, 240, 233, 0.6));
         }
     }
     if let Some((id, c)) = changed {
@@ -222,7 +253,6 @@ pub fn interact(ui: &mut egui::Ui, shared: &Arc<Shared>, st: &mut LayoutState, r
         shared.act(crate::state::Action::SetLayout(false));
     }
 
-    toolbar(&ctx, shared, st, screen, game);
     hints(&ctx, screen);
 }
 
@@ -232,117 +262,10 @@ fn pop_undo(shared: &Shared, st: &mut LayoutState, game: Game) {
     }
 }
 
-fn bar_button(ui: &mut egui::Ui, label: &str, on: bool, primary: bool) -> egui::Response {
-    let font = Font::Text.id(14.0);
-    let g = ui.painter().layout_no_wrap(label.to_string(), font, PAPER);
-    let w = g.size().x + 32.0 + if on { 14.0 } else { 0.0 };
-    let (rect, resp) = ui.allocate_exact_size(vec2(w, 40.0), Sense::click());
-    let hovered = resp.hovered();
-    let (bg, fg) = if primary {
-        (if hovered { ORANGE } else { PAPER }, Color32::from_rgb(0x11, 0x11, 0x11))
-    } else {
-        (
-            if hovered { Color32::from_rgb(0x1f, 0x1f, 0x1e) } else { Color32::TRANSPARENT },
-            if on || hovered { PAPER } else { Color32::from_rgb(0xbd, 0xbb, 0xb4) },
-        )
-    };
-    ui.painter().rect_filled(rect, CornerRadius::ZERO, bg);
-    let mut x = rect.min.x + 16.0;
-    if on {
-        let c = pos2(x + 3.0, rect.center().y);
-        ui.painter().add(egui::Shape::convex_polygon(
-            vec![c + vec2(0.0, -3.5), c + vec2(3.5, 0.0), c + vec2(0.0, 3.5), c + vec2(-3.5, 0.0)],
-            ORANGE,
-            Stroke::NONE,
-        ));
-        x += 14.0;
-    }
-    let g = ui.painter().layout_no_wrap(label.to_string(), Font::Text.id(14.0), fg);
-    ui.painter().galley(pos2(x, rect.center().y - g.size().y / 2.0), g, fg);
-    resp
-}
-
-fn toolbar(ctx: &egui::Context, shared: &Arc<Shared>, st: &mut LayoutState, screen: Rect, game: Game) {
-    egui::Area::new(Id::unique("layout-toolbar"))
-        .order(Order::Tooltip)
-        .fixed_pos(pos2(screen.center().x, screen.min.y + 22.0))
-        .pivot(Align2::CENTER_TOP)
-        .show(ctx, |ui| {
-            egui::Frame::new()
-                .fill(Color32::from_rgb(0x11, 0x11, 0x11))
-                .shadow(egui::Shadow {
-                    offset: [0, 8],
-                    blur: 30,
-                    spread: 0,
-                    color: rgba(0, 0, 0, 0.4),
-                })
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-                        let (r, _) = ui.allocate_exact_size(vec2(0.0, 40.0), Sense::hover());
-                        let title = i18n::t("layout.title");
-                        let g = ui.painter().layout_no_wrap(title, Font::TextBold.id(14.0), PAPER);
-                        let (tr, _) = ui.allocate_exact_size(vec2(g.size().x + 36.0, 40.0), Sense::hover());
-                        ui.painter().galley(pos2(tr.min.x + 18.0, tr.center().y - g.size().y / 2.0), g, PAPER);
-                        ui.painter()
-                            .line_segment([tr.right_top(), tr.right_bottom()], Stroke::new(1.0, Color32::from_rgb(0x33, 0x33, 0x33)));
-                        let _ = r;
-
-                        // Profiles
-                        let (profiles, active) = {
-                            let set = shared.settings();
-                            let l = set.layouts(game);
-                            (l.profiles.keys().cloned().collect::<Vec<_>>(), l.active.clone())
-                        };
-                        let mut pick = active.clone();
-                        ui.add_space(8.0);
-                        ui.visuals_mut().override_text_color = Some(PAPER);
-                        egui::ComboBox::from_id_salt("layout-profile")
-                            .selected_text(egui::RichText::new(&active).color(PAPER).size(14.0))
-                            .show_ui(ui, |ui| {
-                                for p in &profiles {
-                                    ui.selectable_value(&mut pick, p.clone(), p);
-                                }
-                            });
-                        ui.add_space(8.0);
-                        if pick != active {
-                            shared.edit_settings(|s| s.layouts_mut(game).active = pick.clone());
-                        }
-                        if bar_button(ui, &i18n::t("action.undo"), false, false).clicked() {
-                            pop_undo(shared, st, game);
-                        }
-                        if bar_button(ui, &i18n::t("layout.reset_all"), false, false).clicked() {
-                            let all = shared.settings().profile(game).clone();
-                            for (id, c) in all.modules {
-                                st.undo.push((id, c));
-                            }
-                            shared.edit_settings(|s| {
-                                let p = s.profile_mut(game);
-                                let ids: Vec<String> = p.modules.keys().cloned().collect();
-                                for id in ids {
-                                    p.reset_module(game, &id);
-                                }
-                            });
-                        }
-                        if bar_button(ui, &i18n::t("layout.grid"), st.grid, false).clicked() {
-                            st.grid = !st.grid;
-                        }
-                        if bar_button(ui, &i18n::t("layout.zones"), st.zones, false).clicked() {
-                            st.zones = !st.zones;
-                        }
-                        if bar_button(ui, &i18n::t("action.done"), false, true).clicked() {
-                            shared.act(crate::state::Action::SetLayout(false));
-                        }
-                    });
-                });
-        });
-}
-
+/// Key reminders in the bottom-right corner.
 fn hints(ctx: &egui::Context, screen: Rect) {
     let p = ctx.layer_painter(top_layer());
     let items = [
-        (i18n::t("layout.key_drag"), i18n::t("layout.move")),
-        (i18n::t("layout.key_wheel"), i18n::t("layout.scale")),
         (i18n::t("layout.key_double"), i18n::t("layout.reset")),
         ("Ctrl Z".to_string(), i18n::t("action.undo")),
         ("Esc".to_string(), i18n::t("action.done")),
@@ -357,7 +280,7 @@ fn hints(ctx: &egui::Context, screen: Rect) {
         total += gk.size().x + 12.0 + 6.0 + gt.size().x + 22.0;
         parts.push((gk, gt));
     }
-    let mut x = screen.center().x - total / 2.0;
+    let mut x = screen.max.x - total - 12.0;
     let y = screen.max.y - 40.0;
     for (gk, gt) in parts {
         let kr = Rect::from_min_size(pos2(x, y), gk.size() + vec2(12.0, 4.0));
@@ -368,5 +291,52 @@ fn hints(ctx: &egui::Context, screen: Rect) {
         let tw = gt.size().x;
         p.galley(pos2(x, y + 1.0), gt, PAPER);
         x += tw + 22.0;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn drag(id: &str, grip: Grip) -> Drag {
+        Drag {
+            id: id.into(),
+            grip,
+            start: Rect::from_min_size(pos2(100.0, 600.0), vec2(270.0, 120.0)),
+            cfg: ModuleConfig::default(),
+        }
+    }
+
+    #[test]
+    fn corner_scales_around_the_opposite_corner() {
+        let d = drag(modules::DAMAGE, Grip::Corner(-1.0, -1.0));
+        let (c, label) = dragged(&d, vec2(-27.0, -12.0), 1920.0, false);
+        assert_eq!(c.scale, 1.1);
+        assert_eq!(label, "110%");
+        let size = (270.0 * 1.1, 120.0 * 1.1);
+        let (x, y) = c.placement.to_top_left(1920.0, size);
+        assert!((x + size.0 - 370.0).abs() < 0.01 && (y + size.1 - 720.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn edge_changes_width_within_range() {
+        let d = drag(modules::DAMAGE, Grip::Edge(1.0));
+        let (c, _) = dragged(&d, vec2(50.0, 0.0), 1920.0, false);
+        assert_eq!(c.width, Some(320.0));
+        let (c, _) = dragged(&d, vec2(-500.0, 0.0), 1920.0, false);
+        assert_eq!(c.width, Some(200.0));
+        // Left edge: the right side stays put
+        let d = drag(modules::DAMAGE, Grip::Edge(-1.0));
+        let (c, _) = dragged(&d, vec2(-30.0, 0.0), 1920.0, false);
+        let (x, _) = c.placement.to_top_left(1920.0, (300.0, 120.0));
+        assert_eq!(x, 70.0);
+    }
+
+    #[test]
+    fn move_snaps_to_grid() {
+        let d = drag(modules::DAMAGE, Grip::Move);
+        let (c, label) = dragged(&d, vec2(13.0, -3.0), 1920.0, false);
+        assert_eq!(label, "112, 600");
+        assert_eq!(c.placement.to_top_left(1920.0, (270.0, 120.0)), (112.0, 600.0));
     }
 }

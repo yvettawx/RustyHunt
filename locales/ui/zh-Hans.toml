@@ -303,22 +303,8 @@ awakened = "觉醒"
 amped = "属性强化"
 
 [layout]
-title = "布局模式"
-reset_all = "全部复位"
-grid = "网格"
-zones = "原生 HUD"
-key_drag = "拖动"
-key_wheel = "滚轮"
 key_double = "双击"
-move = "移动"
-scale = "缩放"
 reset = "复位"
-
-[zone]
-health = "体力"
-quest = "任务"
-minimap = "小地图"
-items = "道具"
 
 [settings]
 general = "通用"

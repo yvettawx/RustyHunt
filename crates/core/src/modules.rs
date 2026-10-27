@@ -248,26 +248,24 @@ pub fn default_placement(game: Game, id: &str, monster_side: bool) -> Placement 
     }
 }
 
-/// Rough areas of the native HUD (drawn in layout mode, with a hint when a module is dragged in).
-pub fn native_zones(game: Game) -> &'static [(f32, f32, f32, f32, &'static str)] {
-    match game {
-        Game::World => &[
-            (40.0, 30.0, 620.0, 100.0, "zone.health"),
-            (1400.0, 90.0, 500.0, 100.0, "zone.quest"),
-            (90.0, 670.0, 340.0, 340.0, "zone.minimap"),
-            (1280.0, 930.0, 620.0, 140.0, "zone.items"),
-        ],
-        Game::Rise => &[
-            (20.0, 0.0, 1000.0, 180.0, "zone.health"),
-            (150.0, 600.0, 310.0, 470.0, "zone.minimap"),
-            (1560.0, 880.0, 360.0, 190.0, "zone.items"),
-        ],
-        Game::Wilds => &[
-            (30.0, 15.0, 670.0, 185.0, "zone.health"),
-            (40.0, 820.0, 340.0, 250.0, "zone.minimap"),
-            (430.0, 915.0, 280.0, 110.0, "zone.items"),
-        ],
+/// Modules whose width can be dragged in layout mode: (default, min, max) before scaling.
+pub fn width_range(id: &str, monster_side: bool) -> Option<(f32, f32, f32)> {
+    match id {
+        MONSTER if monster_side => Some((380.0, 300.0, 640.0)),
+        MONSTER => Some((820.0, 480.0, 1400.0)),
+        BUFFS => Some((560.0, 200.0, 960.0)),
+        DAMAGE => Some((270.0, 200.0, 520.0)),
+        AREA => Some((230.0, 180.0, 420.0)),
+        WEAPON => Some((300.0, 220.0, 480.0)),
+        BASE => Some((220.0, 180.0, 420.0)),
+        _ => None,
     }
+}
+
+/// A module's width: the one set in layout mode, kept within range, or its default.
+pub fn width(id: &str, monster_side: bool, set: Option<f32>) -> f32 {
+    let (default, min, max) = width_range(id, monster_side).unwrap_or((300.0, 100.0, 2000.0));
+    set.map_or(default, |w| w.clamp(min, max))
 }
 
 /// Player module: pixels per HP point (measured on the native health bar) and the native bar's area.

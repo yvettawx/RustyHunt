@@ -2,6 +2,7 @@
 
 use egui::{Align2, Color32, Vec2, vec2};
 use rh_core::model::{Crown, Target};
+use rh_core::modules;
 use rh_core::settings::{Density, ModuleConfig};
 use ui_kit::color::fade;
 use ui_kit::{Canvas, Font, Layer};
@@ -22,7 +23,7 @@ pub fn damage(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
     if s.party.is_empty() || s.party.iter().all(|p| p.damage <= 0.0) && !f.preview {
         return Vec2::ZERO;
     }
-    let w = 270.0;
+    let w = modules::width(modules::DAMAGE, false, cfg.width);
     let text = cv.tok("text");
     let accent = cv.tok("accent");
     let elapsed = s.elapsed.max(1.0);
@@ -123,7 +124,7 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
     if list.is_empty() {
         return Vec2::ZERO;
     }
-    let w = 230.0;
+    let w = modules::width(modules::AREA, false, cfg.width);
     let text = cv.tok("text");
     let accent = cv.tok("accent");
     let mut y = module_header(cv, &f.t("module.area"), w, &list.len().to_string(), None);
@@ -208,7 +209,7 @@ pub fn clock(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
 
 pub fn base(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2 {
     let Some(b) = &f.snap.base else { return Vec2::ZERO };
-    let w = 220.0;
+    let w = modules::width(modules::BASE, false, cfg.width);
     let text = cv.tok("text");
     let accent = cv.tok("accent");
     let mut y = module_header(cv, &f.t("module.base"), w, "", None);

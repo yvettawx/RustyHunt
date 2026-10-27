@@ -303,22 +303,8 @@ awakened = "覚醒"
 amped = "属性強化"
 
 [layout]
-title = "レイアウトモード"
-reset_all = "すべて初期位置"
-grid = "グリッド"
-zones = "標準 HUD"
-key_drag = "ドラッグ"
-key_wheel = "ホイール"
 key_double = "ダブルクリック"
-move = "移動"
-scale = "拡大縮小"
 reset = "初期位置"
-
-[zone]
-health = "体力"
-quest = "クエスト"
-minimap = "ミニマップ"
-items = "アイテム"
 
 [settings]
 general = "一般"

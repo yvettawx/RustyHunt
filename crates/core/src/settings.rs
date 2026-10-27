@@ -82,6 +82,8 @@ pub struct ModuleConfig {
     pub quest_only: bool,
     /// Elements turned off
     pub off: BTreeSet<String>,
+    /// Width set in layout mode, before scaling; None for the module's own width
+    pub width: Option<f32>,
 }
 
 impl Default for ModuleConfig {
@@ -94,6 +96,7 @@ impl Default for ModuleConfig {
             hide_in_menu: true,
             quest_only: true,
             off: BTreeSet::new(),
+            width: None,
         }
     }
 }
