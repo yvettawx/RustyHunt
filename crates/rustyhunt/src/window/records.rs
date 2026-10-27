@@ -582,6 +582,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
         "status_no_big",
         "status_no_small",
         "status_research",
+        "status_guaranteed",
         "status_done",
     ]
     .map(|s| i18n::t(&format!("records.{s}")));
@@ -600,14 +601,15 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     ui.add_space(14.0);
 
     let width = ui.available_width();
-    let cols = [150.0, 34.0, 34.0, 168.0, 62.0, 0.0];
-    let rest = width - cols.iter().sum::<f32>() - 14.0 * 5.0;
+    let cols = [150.0, 34.0, 34.0, 168.0, 62.0, 230.0, 0.0];
+    let rest = width - cols.iter().sum::<f32>() - 14.0 * 6.0;
     let header = [
         i18n::t("records.monster"),
         i18n::t("records.big"),
         i18n::t("records.small"),
         i18n::t("records.research"),
         i18n::t("records.nav"),
+        i18n::t("records.crown_quests"),
         i18n::t("records.maps"),
     ];
     let (hr, _) = ui.allocate_exact_size(vec2(width, 24.0), Sense::hover());
@@ -623,7 +625,9 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     let mut changes: Vec<(String, ManualEdit)> = Vec::new();
     for r in &rows {
         let name = i.monster(&r.key);
-        let ok = (q.is_empty() || name.to_lowercase().contains(&q) || r.key.contains(&q))
+        let quests = crate::bestiary::crown_quests_for(&r.key);
+        let matches = |t: &str| t.to_lowercase().contains(&q);
+        let ok = (q.is_empty() || matches(&name) || r.key.contains(&q) || quests.iter().any(|cq| matches(cq.name(i.term_lang()))))
             && (st.kind == 0 || kinds.get(st.kind - 1) == Some(&r.species))
             && (st.map == 0 || r.maps.contains(&map_list[st.map - 1]))
             && match st.status {
@@ -631,7 +635,8 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                 2 => !r.fixed && !r.big,
                 3 => !r.fixed && !r.small,
                 4 => r.research < r.research_cap,
-                5 => r.done(),
+                5 => quests.iter().any(|cq| cq.guaranteed()),
+                6 => r.done(),
                 _ => true,
             };
         if !ok {
@@ -705,6 +710,46 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             }
         }
         x += cols[4] + 14.0;
+        // Crown quests, one line per quest
+        let lines = crate::bestiary::quest_lines(&quests, i.term_lang());
+        let shown = lines.len().min(2);
+        for (k, line) in lines.iter().take(shown).enumerate() {
+            let ly = cy + (k as f32 - (shown as f32 - 1.0) / 2.0) * 17.0;
+            // Faded once every crown on the line is recorded
+            let need = (line.gold && !r.big) || (line.mini && !r.small);
+            let ink = if need { pal.ink } else { pal.faint };
+            if line.gold {
+                crown_icon(ui, pos2(x + 7.0, ly), 14.0, need, false, pal);
+            }
+            if line.mini {
+                crown_icon(ui, pos2(x + if line.gold { 21.0 } else { 7.0 }, ly), 10.0, need, false, pal);
+            }
+            let nx = x + if line.gold && line.mini { 30.0 } else { 18.0 };
+            let mut tail = String::new();
+            if line.chance < 100 {
+                tail = format!("  {}%", line.chance);
+            }
+            if k == 1 && lines.len() > 2 {
+                tail += &format!("  +{}", lines.len() - 2);
+            }
+            let tail_w = if tail.is_empty() {
+                0.0
+            } else {
+                ui.painter().layout_no_wrap(tail.clone(), Font::Text.id(11.0), pal.mute).size().x
+            };
+            let mut job = egui::text::LayoutJob::simple_singleline(line.name.to_string(), Font::Text.id(12.0), ink);
+            job.wrap = egui::text::TextWrapping::truncate_at_width(x + cols[5] - nx - tail_w);
+            let g = ui.painter().layout_job(job);
+            let gw = g.size().x;
+            ui.painter().galley(pos2(nx, ly - g.size().y / 2.0), g, ink);
+            if !tail.is_empty() {
+                text_at(ui, pos2(nx + gw, ly), Align2::LEFT_CENTER, &tail, Font::Text, 11.0, pal.mute);
+            }
+        }
+        if lines.is_empty() {
+            text_at(ui, pos2(x, cy), Align2::LEFT_CENTER, "—", Font::Text, 12.0, pal.mute);
+        }
+        x += cols[5] + 14.0;
         let maps: Vec<String> = r.maps.iter().map(|m| i.map(m)).collect();
         let maps = if maps.is_empty() { "—".to_string() } else { maps.join(" ") };
         let g = ui.painter().layout(maps, Font::Text.id(12.0), pal.mute, rest);

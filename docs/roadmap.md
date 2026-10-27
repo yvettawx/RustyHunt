@@ -18,7 +18,7 @@ Still not tested in the real game:
 
 - Save slots 59, 66, 67 and 70+ are not mapped to monsters yet, so Furious Rajang, Raging Brachydios, Fatalis and Scarred Yian Garuga don't appear in the notes. Each one needs checking in the in-game Hunter's Notes.
 - Research level caps follow the community rule (introduced in Low Rank 9, High Rank 7, new in Iceborne 4; Zorah Magdaros and Xeno'jiiva 4). Not verified yet: Kirin, Bazelgeuse, Nergigante, Xeno'jiiva, Kulve Taroth, Behemoth, Leshen, Ancient Leshen.
-- The crown quest column is missing: it needs a table of quests that guarantee a gold crown.
+- Crown quest column: done, from Kiranico game data (`data/world/crown_quests.toml`). Two event quests that community lists mark as guaranteed, ノラの深奥 (Deviljho) and 試練 (Anjanath), aren't in Kiranico's quest database and aren't included.
 
 **Multiplayer**
 

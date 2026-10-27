@@ -1,0 +1,1436 @@
+# Quests with a raised chance of a gold crown (largest or smallest size) for a large monster, World: Iceborne.
+# Source: Kiranico (mhworld.kiranico.com), game version 15.11, taken 2026-10-27. Each quest page lists the
+# possible sizes of its monsters with their probabilities, and each monster page gives the mini and gold
+# size thresholds; chance is the sum of the probabilities at or past the threshold, in percent.
+# Only chances of 10% or more are kept. Quest names are the in-game text in each language from Kiranico.
+# kiranico: quest ID on Kiranico. crown: gold (largest) or mini (smallest).
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "acidic_glavenus"
+crown = "gold"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "acidic_glavenus"
+crown = "mini"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "anjanath"
+crown = "gold"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "anjanath"
+crown = "mini"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "anjanath"
+crown = "gold"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "anjanath"
+crown = "mini"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nZp2g"
+rank = "★7"
+monster = "azure_rathalos"
+crown = "mini"
+chance = 100
+"zh-Hans" = "日本环球影城·燃燒喲，蒼星們！"
+"zh-Hant" = "USJ‧燃燒喲，蒼星們！"
+"ja" = "ＵＳＪ・燃えよ、蒼き星達！"
+"en" = "USJ Blazing Azure Stars!"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "azure_rathalos"
+crown = "gold"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "azure_rathalos"
+crown = "mini"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "azure_rathalos"
+crown = "gold"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "azure_rathalos"
+crown = "mini"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "banbaro"
+crown = "gold"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "banbaro"
+crown = "mini"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "barioth"
+crown = "gold"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "barioth"
+crown = "mini"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "AoE43"
+rank = "★3"
+monster = "barroth"
+crown = "gold"
+chance = 100
+"zh-Hans" = "不畏泥泞之人啊"
+"zh-Hant" = "不畏泥地之人啊"
+"ja" = "泥土の道をいとわぬ者よ"
+"en" = "Down the Dark, Muddy Path"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "barroth"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "barroth"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "bazelgeuse"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "bazelgeuse"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "beotodus"
+crown = "gold"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "beotodus"
+crown = "mini"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "black_diablos"
+crown = "gold"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "black_diablos"
+crown = "mini"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "brachydios"
+crown = "gold"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "brachydios"
+crown = "mini"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "rv1Gy"
+rank = "M★6"
+monster = "brute_tigrex"
+crown = "gold"
+chance = 50
+"zh-Hans" = "黑轰龙不会受伤"
+"zh-Hant" = "黑轟龍不會受傷"
+"ja" = "黒轟竜は傷つかない"
+"en" = "Brand New Brute"
+
+[[quest]]
+kiranico = "rv1Gy"
+rank = "M★6"
+monster = "brute_tigrex"
+crown = "mini"
+chance = 50
+"zh-Hans" = "黑轰龙不会受伤"
+"zh-Hant" = "黑轟龍不會受傷"
+"ja" = "黒轟竜は傷つかない"
+"en" = "Brand New Brute"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "coral_pukei_pukei"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "coral_pukei_pukei"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "6Px9m"
+rank = "★9"
+monster = "deviljho"
+crown = "mini"
+chance = 100
+"zh-Hans" = "穷贼啮猎人！"
+"zh-Hant" = "窮賊囓獵人！"
+"ja" = "窮賊、ハンターを噛む！"
+"en" = "The Greatest Jagras"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "diablos"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "diablos"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "nZp2g"
+rank = "★7"
+monster = "dodogama"
+crown = "gold"
+chance = 100
+"zh-Hans" = "日本环球影城·燃燒喲，蒼星們！"
+"zh-Hant" = "USJ‧燃燒喲，蒼星們！"
+"ja" = "ＵＳＪ・燃えよ、蒼き星達！"
+"en" = "USJ Blazing Azure Stars!"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "dodogama"
+crown = "gold"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "dodogama"
+crown = "mini"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "ebony_odogaron"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "ebony_odogaron"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "fulgur_anjanath"
+crown = "gold"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "fulgur_anjanath"
+crown = "mini"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "AVqjo"
+rank = "M★6"
+monster = "furious_rajang"
+crown = "mini"
+chance = 100
+"zh-Hans" = "金狮金猴"
+"zh-Hant" = "金獅金猴"
+"ja" = "さるは金色、かわいいな"
+"en" = "Monkey Business"
+
+[[quest]]
+kiranico = "6B7J2"
+rank = "M★6"
+monster = "furious_rajang"
+crown = "gold"
+chance = 100
+"zh-Hans" = "噢噢，健美身体"
+"zh-Hant" = "噢噢，健美身體"
+"ja" = "嗚呼嗚呼、マッスルボディ"
+"en" = "Mighty Muscle Monkey Madness"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "glavenus"
+crown = "gold"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "glavenus"
+crown = "mini"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "great_girros"
+crown = "gold"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "great_girros"
+crown = "mini"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "great_girros"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "great_girros"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "6Px9m"
+rank = "★9"
+monster = "great_jagras"
+crown = "gold"
+chance = 100
+"zh-Hans" = "穷贼啮猎人！"
+"zh-Hant" = "窮賊囓獵人！"
+"ja" = "窮賊、ハンターを噛む！"
+"en" = "The Greatest Jagras"
+
+[[quest]]
+kiranico = "rGMPB"
+rank = "★3"
+monster = "great_jagras"
+crown = "gold"
+chance = 100
+"zh-Hans" = "日本环球影城·跃动吧，金星们！"
+"zh-Hant" = "USJ‧躍動吧，金星們！"
+"ja" = "ＵＳＪ・躍動せよ、金の星達！"
+"en" = "USJ: Gold Star Treatment"
+
+[[quest]]
+kiranico = "rGMPB"
+rank = "★3"
+monster = "great_jagras"
+crown = "mini"
+chance = 100
+"zh-Hans" = "日本环球影城·跃动吧，金星们！"
+"zh-Hant" = "USJ‧躍動吧，金星們！"
+"ja" = "ＵＳＪ・躍動せよ、金の星達！"
+"en" = "USJ: Gold Star Treatment"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "great_jagras"
+crown = "gold"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "great_jagras"
+crown = "mini"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "jyuratodus"
+crown = "gold"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "jyuratodus"
+crown = "mini"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "jyuratodus"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "jyuratodus"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "nZqea"
+rank = "★6"
+monster = "kulu_ya_ku"
+crown = "gold"
+chance = 100
+"zh-Hans" = "爱上蛋吧！"
+"zh-Hant" = "愛上蛋吧！"
+"ja" = "卵好きになろう！"
+"en" = "Egg Lovers United"
+
+[[quest]]
+kiranico = "nXdZG"
+rank = "★6"
+monster = "kulu_ya_ku"
+crown = "gold"
+chance = 100
+"zh-Hans" = "来自异世界的访客"
+"zh-Hant" = "來自異世界的訪客"
+"ja" = "異世界からの来訪者"
+"en" = "A Visitor from Another World"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "kulu_ya_ku"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "kulu_ya_ku"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "6WkOJ"
+rank = "★9"
+monster = "lavasioth"
+crown = "gold"
+chance = 100
+"zh-Hans" = "本尊的名字是熔岩龙"
+"zh-Hant" = "本尊的名字是熔岩龍"
+"ja" = "我が名はヴォルガノス"
+"en" = "The Name's Lavasioth!"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "lavasioth"
+crown = "gold"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "lavasioth"
+crown = "mini"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "legiana"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "legiana"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "legiana"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "legiana"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "nargacuga"
+crown = "gold"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "nargacuga"
+crown = "mini"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "n0qLO"
+rank = "M★2"
+monster = "nightshade_paolumu"
+crown = "mini"
+chance = 100
+"zh-Hans" = "好坏孩子统统入睡"
+"zh-Hant" = "好壞孩子統統入睡"
+"ja" = "ねむれよいこもわるいこも"
+"en" = "Paolumu Lullabies"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "nightshade_paolumu"
+crown = "gold"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "nightshade_paolumu"
+crown = "mini"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nZpwL"
+rank = "★7"
+monster = "odogaron"
+crown = "mini"
+chance = 100
+"zh-Hans" = "斩击大骚动！！？"
+"zh-Hant" = "斬擊大騷動！！？"
+"ja" = "ラッシュ大騒動！！？"
+"en" = "A Rush of Blood"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "odogaron"
+crown = "gold"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "odogaron"
+crown = "mini"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "odogaron"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "odogaron"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "paolumu"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "paolumu"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "paolumu"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "paolumu"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "pink_rathian"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "pink_rathian"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "pukei_pukei"
+crown = "gold"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "pukei_pukei"
+crown = "mini"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "radobaan"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "AoO7E"
+rank = "★7"
+monster = "radobaan"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒废之谷的歌剧"
+"zh-Hant" = "荒廢之谷的歌劇"
+"ja" = "頽廃の谷のオペラ"
+"en" = "Effluvial Opera"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "rajang"
+crown = "gold"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "rajang"
+crown = "mini"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "na0WY"
+rank = "M★1"
+monster = "rathalos"
+crown = "gold"
+chance = 100
+"zh-Hans" = "我们的世界"
+"zh-Hant" = "Our World　我們的世界"
+"ja" = "Our World　私達の世界へ"
+"en" = "To Our World"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "rathalos"
+crown = "gold"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "rathalos"
+crown = "mini"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "rathalos"
+crown = "gold"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "rathalos"
+crown = "mini"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "rathian"
+crown = "gold"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "6pxVy"
+rank = "★7"
+monster = "rathian"
+crown = "mini"
+chance = 12
+"zh-Hans" = "荒野的波丽露"
+"zh-Hant" = "荒野的波麗露"
+"ja" = "荒れ野のボレロ"
+"en" = "Wildspire Bolero"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "savage_deviljho"
+crown = "gold"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "nbd32"
+rank = "M★6"
+monster = "savage_deviljho"
+crown = "mini"
+chance = 12
+"zh-Hans" = "温泥的重金属"
+"zh-Hant" = "溫泥的重金屬"
+"ja" = "泥など温しヘヴィメタル"
+"en" = "Heavy Metal in the Waste"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "seething_bazelgeuse"
+crown = "gold"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "seething_bazelgeuse"
+crown = "mini"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "shrieking_legiana"
+crown = "gold"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "shrieking_legiana"
+crown = "mini"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "stygian_zinogre"
+crown = "gold"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "stygian_zinogre"
+crown = "mini"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6paka"
+rank = "★8"
+monster = "teostra"
+crown = "gold"
+chance = 100
+"zh-Hans" = "潘多拉的斗技场"
+"zh-Hant" = "潘朵拉的鬥技場"
+"ja" = "パンドラの闘技場"
+"en" = "Pandora's Arena"
+
+[[quest]]
+kiranico = "nZ7VP"
+rank = "★8"
+monster = "teostra"
+crown = "gold"
+chance = 100
+"zh-Hans" = "只有跪拜一途"
+"zh-Hant" = "只有跪拜一途"
+"ja" = "平伏するより他に無し"
+"en" = "No Remorse, No Surrender"
+
+[[quest]]
+kiranico = "nXdE8"
+rank = "★8"
+monster = "teostra"
+crown = "gold"
+chance = 100
+"zh-Hans" = "烈日"
+"zh-Hant" = "烈日"
+"ja" = "烈日"
+"en" = "The Blazing Sun"
+
+[[quest]]
+kiranico = "reVeq"
+rank = "M★3"
+monster = "tigrex"
+crown = "gold"
+chance = 100
+"zh-Hans" = "稀幻的轰龙？？？"
+"zh-Hant" = "稀幻的轟龍？？？"
+"ja" = "幻の轟竜？？？"
+"en" = "Seeing is Believing"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "tigrex"
+crown = "gold"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "nlB1b"
+rank = "M★6"
+monster = "tigrex"
+crown = "mini"
+chance = 12
+"zh-Hans" = "生命的颂歌"
+"zh-Hant" = "生命的頌歌"
+"ja" = "命ある者のカンツォーネ"
+"en" = "Rotten Canzone"
+
+[[quest]]
+kiranico = "n3KJw"
+rank = "M★2"
+monster = "tobi_kadachi"
+crown = "mini"
+chance = 100
+"zh-Hans" = "雷龙小雷龙大雷龙"
+"zh-Hant" = "雷龍小雷龍大雷龍"
+"ja" = "カガチコカガチデカカガチ"
+"en" = "Kadachi Twins"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "tobi_kadachi"
+crown = "gold"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nXklO"
+rank = "★7"
+monster = "tobi_kadachi"
+crown = "mini"
+chance = 12
+"zh-Hans" = "深绿的蓝调"
+"zh-Hant" = "深綠的藍調"
+"ja" = "深緑のブルース"
+"en" = "Deep Green Blues"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "tzitzi_ya_ku"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "nZp4Z"
+rank = "★7"
+monster = "tzitzi_ya_ku"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海台的华尔兹"
+"zh-Hant" = "海台的華爾滋"
+"ja" = "海台のワルツ"
+"en" = "Coral Waltz"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "uragaan"
+crown = "gold"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "A1lKa"
+rank = "M★6"
+monster = "uragaan"
+crown = "mini"
+chance = 12
+"zh-Hans" = "粗暴的另类摇滚"
+"zh-Hant" = "粗暴的另類搖滾"
+"ja" = "じゃじゃ馬共のオルタナティブ"
+"en" = "Alt Rock Recess"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "uragaan"
+crown = "gold"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "rGMzD"
+rank = "★7"
+monster = "uragaan"
+crown = "mini"
+chance = 12
+"zh-Hans" = "结晶体的摇滚乐"
+"zh-Hant" = "結晶體的搖滾樂"
+"ja" = "結晶達のロックンロール"
+"en" = "Rock N' Roll Recess"
+
+[[quest]]
+kiranico = "n3KJw"
+rank = "M★2"
+monster = "viper_tobi_kadachi"
+crown = "gold"
+chance = 100
+"zh-Hans" = "雷龙小雷龙大雷龙"
+"zh-Hant" = "雷龍小雷龍大雷龍"
+"ja" = "カガチコカガチデカカガチ"
+"en" = "Kadachi Twins"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "viper_tobi_kadachi"
+crown = "gold"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "6KDg7"
+rank = "M★6"
+monster = "viper_tobi_kadachi"
+crown = "mini"
+chance = 12
+"zh-Hans" = "冰封的谣曲"
+"zh-Hant" = "冰封的謠曲"
+"ja" = "眠りの地のバラード"
+"en" = "Ballad of the Hoarfrost"
+
+[[quest]]
+kiranico = "A7XJW"
+rank = "M★6"
+monster = "yian_garuga"
+crown = "mini"
+chance = 100
+"zh-Hans" = "塞耳露耳"
+"zh-Hant" = "塞耳露耳"
+"ja" = "耳塞ぎてミミ隠さず"
+"en" = "Don't Forget The Earplugs!"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "yian_garuga"
+crown = "gold"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "68pxp"
+rank = "M★6"
+monster = "yian_garuga"
+crown = "mini"
+chance = 12
+"zh-Hans" = "大树的约德尔"
+"zh-Hant" = "大樹的約德爾"
+"ja" = "大樹のヨーデル"
+"en" = "Yodeling in the Forest"
+
+[[quest]]
+kiranico = "n4qm9"
+rank = "M★6"
+monster = "zinogre"
+crown = "gold"
+chance = 50
+"zh-Hans" = "再会了，雷狼龙"
+"zh-Hant" = "再會了，雷狼龍"
+"ja" = "ジンオウガよさらば"
+"en" = "A Farewell to Zinogre"
+
+[[quest]]
+kiranico = "n4qm9"
+rank = "M★6"
+monster = "zinogre"
+crown = "mini"
+chance = 50
+"zh-Hans" = "再会了，雷狼龙"
+"zh-Hant" = "再會了，雷狼龍"
+"ja" = "ジンオウガよさらば"
+"en" = "A Farewell to Zinogre"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "zinogre"
+crown = "gold"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"
+
+[[quest]]
+kiranico = "6JBzd"
+rank = "M★6"
+monster = "zinogre"
+crown = "mini"
+chance = 12
+"zh-Hans" = "海底的古典乐"
+"zh-Hant" = "海底的古典樂"
+"ja" = "海の底のクラシック"
+"en" = "Symphony of the Coral"

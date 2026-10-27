@@ -30,6 +30,105 @@ pub fn info() -> &'static BTreeMap<String, Info> {
     I.get_or_init(|| toml::from_str(DATA).expect("内置图鉴数据格式正确"))
 }
 
+const CROWN_QUESTS: &str = include_str!("../../../data/world/crown_quests.toml");
+
+/// A quest with a raised chance of a gold or mini crown for one of its monsters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CrownQuest {
+    pub monster: String,
+    /// `gold` or `mini`
+    pub crown: String,
+    /// Percent
+    pub chance: u8,
+    #[serde(rename = "zh-Hans")]
+    zh_hans: String,
+    #[serde(rename = "zh-Hant")]
+    zh_hant: String,
+    ja: String,
+    en: String,
+}
+
+impl CrownQuest {
+    pub fn name(&self, lang: rh_core::i18n::Lang) -> &str {
+        use rh_core::i18n::Lang;
+        match lang {
+            Lang::ZhHans => &self.zh_hans,
+            Lang::ZhHant => &self.zh_hant,
+            Lang::Ja => &self.ja,
+            Lang::En => &self.en,
+        }
+    }
+
+    pub fn guaranteed(&self) -> bool {
+        self.chance >= 100
+    }
+
+    pub fn gold(&self) -> bool {
+        self.crown == "gold"
+    }
+}
+
+#[derive(Deserialize)]
+struct CrownQuests {
+    quest: Vec<CrownQuest>,
+}
+
+pub fn crown_quests() -> &'static [CrownQuest] {
+    static Q: OnceLock<Vec<CrownQuest>> = OnceLock::new();
+    Q.get_or_init(|| toml::from_str::<CrownQuests>(CROWN_QUESTS).expect("bundled crown quest data is valid").quest)
+}
+
+/// Crown quests for one monster: guaranteed ones first, then by chance.
+pub fn crown_quests_for(key: &str) -> Vec<&'static CrownQuest> {
+    let mut v: Vec<&CrownQuest> = crown_quests().iter().filter(|q| q.monster == key).collect();
+    v.sort_by_key(|q| std::cmp::Reverse(q.chance));
+    v
+}
+
+/// One quest as shown in the notes table.
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuestLine<'a> {
+    pub name: &'a str,
+    pub gold: bool,
+    pub mini: bool,
+    /// Percent; the highest chance among the crowns on this line
+    pub chance: u8,
+}
+
+/// Groups a monster's crown quests into lines. For each crown, only guaranteed quests are kept
+/// when there are any; otherwise every quest with a raised chance is.
+pub fn quest_lines<'a>(quests: &[&'a CrownQuest], lang: rh_core::i18n::Lang) -> Vec<QuestLine<'a>> {
+    let mut lines: Vec<QuestLine> = Vec::new();
+    for gold in [true, false] {
+        let of: Vec<&&CrownQuest> = quests.iter().filter(|q| q.gold() == gold).collect();
+        let sure = of.iter().any(|q| q.guaranteed());
+        for q in of.into_iter().filter(|q| !sure || q.guaranteed()) {
+            let name = q.name(lang);
+            let i = match lines.iter().position(|l| l.name == name) {
+                Some(i) => i,
+                None => {
+                    lines.push(QuestLine {
+                        name,
+                        gold: false,
+                        mini: false,
+                        chance: 0,
+                    });
+                    lines.len() - 1
+                }
+            };
+            let l = &mut lines[i];
+            if gold {
+                l.gold = true;
+            } else {
+                l.mini = true;
+            }
+            l.chance = l.chance.max(q.chance);
+        }
+    }
+    lines.sort_by(|a, b| b.chance.cmp(&a.chance).then((b.gold && b.mini).cmp(&(a.gold && a.mini))));
+    lines
+}
+
 /// Map codes to the maps in the term table.
 pub fn map_keys(code: &str) -> Vec<&'static str> {
     code.chars()
@@ -365,6 +464,27 @@ mod tests {
         assert!(info()["zorah_magdaros"].fixed);
         assert_eq!(map_keys("AG"), vec!["ancient_forest", "guiding_lands"]);
         assert_eq!(info()["rathalos"].species, "TYPE_FLYING_WYVERN");
+    }
+
+    #[test]
+    fn crown_quests_load_and_group() {
+        use rh_core::i18n::Lang;
+        let all = crown_quests();
+        assert!(all.iter().all(|q| info().contains_key(&q.monster)), "every quest monster is in the notes");
+        assert!(all.iter().all(|q| q.crown == "gold" || q.crown == "mini"));
+
+        // Two Great Jagras in the USJ quest are always tiny and one is always huge
+        let lines = quest_lines(&crown_quests_for("great_jagras"), Lang::Ja);
+        assert_eq!(lines[0].name, "ＵＳＪ・躍動せよ、金の星達！");
+        assert!(lines[0].gold && lines[0].mini && lines[0].chance == 100);
+        // Guaranteed quests hide the 12% ones for the same crown
+        assert!(lines.iter().all(|l| l.chance == 100));
+
+        // No guaranteed quest: the 12% music quests show, one line each with both crowns
+        let lines = quest_lines(&crown_quests_for("barroth"), Lang::En);
+        assert!(lines.iter().any(|l| l.gold && l.chance == 100));
+        let lines = quest_lines(&crown_quests_for("radobaan"), Lang::En);
+        assert!(!lines.is_empty() && lines.iter().all(|l| l.gold && l.mini && l.chance == 12));
     }
 
     #[test]
