@@ -19,7 +19,7 @@ Still not tested in the real game:
 **Hunter's notes**
 
 - Save slots 59, 66, 67 and 70 (Scarred Yian Garuga, Furious Rajang, Raging Brachydios, Fatalis) are mapped from MHWISaveEditor's save template, which agrees with every slot already checked. Not yet seen in a save that has hunted them.
-- Research level caps: checked against the in-game research list. Dodogama, Lavasioth, Uragaan, Bazelgeuse and Nergigante were corrected to 7. Not seen in the list yet: Kulve Taroth, Behemoth, Ancient Leshen, and Leshen's Master Rank stars.
+- Research level caps: High Rank monsters without Master Rank research (Bazelgeuse, Nergigante, Vaal Hazak, Deviljho, Behemoth, Leshen, Ancient Leshen) are 4, from a community list and PSNProfiles' trophy guide; Dodogama, Lavasioth and Uragaan are 7. Kulve Taroth's 7 comes from the community list only.
 - Crown quest column: done, from Kiranico game data (`data/world/crown_quests.toml`). The Heart of the Nora (Deviljho) and The Proving (Anjanath), which community lists mark as guaranteed, are PS4-only Horizon Zero Dawn collaboration quests and aren't included.
 - Done: the monster and area modules show when a monster beats the recorded largest or smallest size, and its research and scoutfly levels.
 - Done: navigation levels are read from the save; monsters are listed in the in-game research list order; the header shows when the game last saved, and the notes reread the save after the game writes it.
