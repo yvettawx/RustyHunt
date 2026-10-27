@@ -145,6 +145,14 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
             c.crown(x, y + 5.0, 12.0, m.crown != Crown::Silver);
             x += 17.0;
         }
+        let notes = f.notes.get(&m.key);
+        if cfg.shows("a-record")
+            && let Some(big) = notes.and_then(|r| crate::bestiary::size_record(r, m.size))
+        {
+            let label = f.t(if big { "label.record_big" } else { "label.record_small" });
+            let ts = c.text(x, y + 3.0, &label, Font::TextBold, 10.0, text, Align2::LEFT_TOP);
+            x += ts.x + 5.0;
+        }
         if m.tired {
             let ts = c.text(x, y + 3.0, &f.t("state.tired"), Font::Text, 10.0, cv.tok("cool"), Align2::LEFT_TOP);
             x += ts.x + 5.0;
@@ -162,6 +170,12 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
             c.text(w - vs.x, y + 3.0, &v, Font::NumBold, 11.0, text, Align2::LEFT_TOP);
         }
         y += 21.0;
+        if cfg.shows("a-notes")
+            && let Some(r) = notes
+        {
+            super::monster::notes_text(&c, f, r, 17.0, y - 3.0, 10.0, cv.tok("text-mute"), text);
+            y += 14.0;
+        }
     }
     cv.crosshair(-18.0, -2.0);
     vec2(w, y)

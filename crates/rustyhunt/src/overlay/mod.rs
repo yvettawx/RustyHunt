@@ -41,6 +41,8 @@ pub struct Frame<'a> {
     pub frame_us: u32,
     /// Layout mode or preview: ignore the display conditions
     pub preview: bool,
+    /// Hunter's Notes rows by monster key; empty when the save hasn't been read
+    pub notes: &'a HashMap<String, crate::bestiary::Row>,
 }
 
 impl Frame<'_> {
@@ -340,6 +342,12 @@ impl Overlay {
             density = Density::Full;
         }
         let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
+        crate::bestiary::keep_fresh(&shared);
+        let notes = if snap.large_monsters().next().is_some() {
+            crate::bestiary::by_key()
+        } else {
+            HashMap::new()
+        };
         let f = Frame {
             snap: &snap,
             live: &live,
@@ -352,6 +360,7 @@ impl Overlay {
             target,
             frame_us: shared.frame_us.load(std::sync::atomic::Ordering::Relaxed),
             preview: layout_on,
+            notes: &notes,
         };
         self.state.take_events(&shared, &f);
         self.state.images.set_dir(theme.dir.clone());
@@ -530,6 +539,7 @@ impl Preview {
             target,
             frame_us: 0,
             preview: true,
+            notes: &HashMap::new(),
         };
         let cfg = ModuleConfig {
             opacity: 1.0,

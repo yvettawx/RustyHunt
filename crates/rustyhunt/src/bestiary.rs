@@ -318,6 +318,44 @@ pub fn reread_if_saved(shared: &std::sync::Arc<Shared>) {
     }
 }
 
+/// For the overlay, which may run without the notes page ever being opened: reads the save once,
+/// then again whenever the game writes it. A failed read isn't retried until the notes page asks.
+pub fn keep_fresh(shared: &std::sync::Arc<Shared>) {
+    let first = with(|b| b.save.is_none() && !b.reading && b.error.is_none() && b.path.is_none());
+    if first {
+        read(shared.clone());
+    } else {
+        reread_if_saved(shared);
+    }
+}
+
+/// The notes rows by monster key, for the overlay.
+pub fn by_key() -> HashMap<String, Row> {
+    with(|b| {
+        if b.save.is_none() {
+            HashMap::new()
+        } else {
+            rows(b).into_iter().map(|r| (r.key.clone(), r)).collect()
+        }
+    })
+}
+
+/// Whether a monster of `size` (multiplier, e.g. 1.23) would beat the recorded largest or smallest.
+/// Nothing for fixed-size monsters or ones without a record yet.
+pub fn size_record(row: &Row, size: f32) -> Option<bool> {
+    if row.fixed || row.largest == 0 || row.smallest == 0 {
+        return None;
+    }
+    let pct = (size * 100.0).round() as u16;
+    if pct > row.largest {
+        Some(true)
+    } else if pct < row.smallest {
+        Some(false)
+    } else {
+        None
+    }
+}
+
 /// Reads the save in the background, then compares how many crowns are lit before and after and sends a notification.
 pub fn read(shared: std::sync::Arc<Shared>) {
     let account = shared.settings().save_account;
@@ -491,6 +529,30 @@ mod tests {
         assert!(info()["zorah_magdaros"].fixed);
         assert_eq!(map_keys("AG"), vec!["ancient_forest", "guiding_lands"]);
         assert_eq!(info()["rathalos"].species, "TYPE_FLYING_WYVERN");
+    }
+
+    #[test]
+    fn size_record_compares_with_the_notes() {
+        let row = Row {
+            key: "rathalos".into(),
+            species: String::new(),
+            maps: vec![],
+            fixed: false,
+            big: false,
+            small: false,
+            research: 0,
+            research_cap: 9,
+            nav: 0,
+            slain: 3,
+            captured: 0,
+            largest: 112,
+            smallest: 95,
+        };
+        assert_eq!(size_record(&row, 1.13), Some(true));
+        assert_eq!(size_record(&row, 1.12), None, "equal isn't a new record");
+        assert_eq!(size_record(&row, 0.94), Some(false));
+        assert_eq!(size_record(&Row { largest: 0, ..row.clone() }, 1.3), None, "no record yet");
+        assert_eq!(size_record(&Row { fixed: true, ..row }, 1.3), None);
     }
 
     #[test]

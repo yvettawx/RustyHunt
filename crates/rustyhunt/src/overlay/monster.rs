@@ -147,6 +147,23 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         cv.crown(x, bottom - 3.0 - cw * 0.75, cw, m.crown != Crown::Silver);
         x += cw + 10.0;
     }
+    let notes = f.notes.get(&m.key);
+    // Beats the largest or smallest size in the Hunter's Notes
+    if cfg.shows("m-record")
+        && let Some(big) = notes.and_then(|r| crate::bestiary::size_record(r, m.size))
+    {
+        let label = f.t(if big { "label.record_big" } else { "label.record_small" });
+        let sz = cv.text(
+            x,
+            top_for_bottom(bottom - 2.0, 12.0, Font::TextBold),
+            &label,
+            Font::TextBold,
+            12.0,
+            text,
+            Align2::LEFT_TOP,
+        );
+        x += sz.x + 10.0;
+    }
     if cfg.shows("m-state") {
         let (label, color) = if m.enraged {
             (format!("{} {}", f.t("state.enraged"), mmss(m.enrage_timer)), Some(accent))
@@ -184,6 +201,13 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             );
             wx += 5.0 + s.x;
         }
+        x = wx + 10.0;
+    }
+    if cfg.shows("m-notes")
+        && f.density != Density::Minimal
+        && let Some(r) = notes
+    {
+        notes_text(cv, f, r, x, top_for_bottom(bottom - 2.0, 11.0, Font::NumBold), 11.0, mute, text);
     }
 
     // Right side: HP value, combo damage, percent
@@ -542,4 +566,18 @@ fn ailments_grid(cv: &Canvas, f: &Frame, st: &State, m: &Monster, y0: f32, w: f3
         i += 1;
     }
     if i == 0 { 0.0 } else { (i.div_ceil(cols)) as f32 * 26.0 - 7.0 }
+}
+
+/// "Research 4/9  Scoutfly 2" from the Hunter's Notes; returns the width.
+pub fn notes_text(cv: &Canvas, f: &Frame, r: &crate::bestiary::Row, x: f32, y: f32, size: f32, label: Color32, value: Color32) -> f32 {
+    let mut cx = x;
+    for (key, v) in [
+        ("records.research", format!("{}/{}", r.research, r.research_cap)),
+        ("records.nav", r.nav.to_string()),
+    ] {
+        let ls = cv.text(cx, y, &f.t(key), Font::Text, size, label, Align2::LEFT_TOP);
+        let vs = cv.text(cx + ls.x + 3.0, y, &v, Font::NumBold, size, value, Align2::LEFT_TOP);
+        cx += ls.x + 3.0 + vs.x + 8.0;
+    }
+    cx - 8.0 - x
 }

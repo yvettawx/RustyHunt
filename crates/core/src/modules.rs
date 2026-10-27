@@ -181,6 +181,8 @@ pub fn builtin() -> Vec<ModuleInfo> {
                 ("m-abs", true),
                 ("m-en", true),
                 ("m-crown", true),
+                ("m-record", true),
+                ("m-notes", true),
                 ("m-state", true),
                 ("m-weak", true),
                 ("m-dmg", true),
@@ -211,7 +213,7 @@ pub fn builtin() -> Vec<ModuleInfo> {
                 ("d-curve", true),
             ],
         ),
-        module(AREA, true, &[("a-bar", true), ("a-pct", true)]),
+        module(AREA, true, &[("a-bar", true), ("a-pct", true), ("a-record", true), ("a-notes", true)]),
         module(
             PLAYER,
             true,
