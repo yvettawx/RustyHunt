@@ -1,5 +1,6 @@
 # Monster index in the save's Hunter's Notes (the guild card order) to the term table key.
-# Indices from Cirilla's misc/savedata.bt (MIT license); 68 was checked in game.
+# Indices from Cirilla's misc/savedata.bt (MIT license); 59, 66, 67 and 70 from the monsters96 order in
+# MHWISaveEditor's SAVEDATA1000.bt, which agrees with every other entry here. 68 was checked in game.
 
 0 = "great_jagras"
 1 = "kulu_ya_ku"
@@ -60,11 +61,15 @@
 56 = "shara_ishvalda"
 57 = "zinogre"
 58 = "yian_garuga"
+59 = "scarred_yian_garuga"
 60 = "brute_tigrex"
 61 = "gold_rathian"
 62 = "silver_rathalos"
 63 = "rajang"
 64 = "stygian_zinogre"
 65 = "safijiiva"
+66 = "furious_rajang"
+67 = "raging_brachydios"
 68 = "frostfang_barioth"
 69 = "alatreon"
+70 = "fatalis"
