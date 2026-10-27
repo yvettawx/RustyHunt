@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "address-map"
-version = "1.0.0"
+version = "1.1.0"
 
 [[package]]
 name = "adler2"
@@ -1741,7 +1741,7 @@ dependencies = [
 
 [[package]]
 name = "game-world"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "address-map",
  "aes",
@@ -3425,7 +3425,7 @@ checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
 
 [[package]]
 name = "platform"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "bytemuck",
  "log",
@@ -3434,7 +3434,7 @@ dependencies = [
 
 [[package]]
 name = "plugin-host"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "rustyhunt-core",
  "serde",
@@ -4023,7 +4023,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rustyhunt"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "address-map",
  "chrono",
@@ -4053,7 +4053,7 @@ dependencies = [
 
 [[package]]
 name = "rustyhunt-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "log",
  "serde",
@@ -4063,7 +4063,7 @@ dependencies = [
 
 [[package]]
 name = "rustyhunt-native"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "platform",
  "retour",
@@ -4072,7 +4072,7 @@ dependencies = [
 
 [[package]]
 name = "rustyhunt-setup"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "windows-sys 0.61.2",
  "winresource",
@@ -4883,7 +4883,7 @@ dependencies = [
 
 [[package]]
 name = "ui-kit"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "egui",
  "image",
