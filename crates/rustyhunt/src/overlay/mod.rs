@@ -117,6 +117,9 @@ impl State {
                 if (a.buildup - old.buildup).abs() > 0.01 || a.count != old.count || a.active() != old.active() {
                     self.activity.touch(format!("{}:a{}", m.uid, a.key), now);
                 }
+                if a.count > old.count {
+                    self.flash.insert(format!("{}:a{}", m.uid, a.key), now);
+                }
             }
         }
         if snap.player.hp < prev.player.hp - 0.5 {

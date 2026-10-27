@@ -93,20 +93,6 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
             if low { danger } else { text },
             Align2::LEFT_TOP,
         );
-        let red = p.hp_recoverable - p.hp;
-        if red > 1.0 && !healing {
-            let s = format!("+{}", red.round());
-            let rs = cv.measure(&s, Font::Num, 12.0, 0.0);
-            cv.text(
-                right - ms.x - 2.0 - cs.x - 8.0 - rs.x,
-                header_h - 15.0,
-                &s,
-                Font::Num,
-                12.0,
-                danger,
-                Align2::LEFT_TOP,
-            );
-        }
     }
 
     // HP bar: trail, red HP, healing, current
@@ -377,7 +363,7 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
     };
     match &p.weapon_state {
         WeaponState::Longsword { gauge, level, level_timer, .. } => {
-            y = row(y, &f.t("weapon.spirit_gauge"), gauge / 100.0, text, &format!("{}%", gauge.round()));
+            y = row(y, &f.t("weapon.spirit_gauge"), gauge / 100.0, text, "");
             let (lv_name, lv_color) = match level {
                 1 => (f.t("weapon.spirit_white"), Color32::from_rgb(0xf2, 0xf0, 0xe9)),
                 2 => (f.t("weapon.spirit_yellow"), Color32::from_rgb(0xf2, 0xcf, 0x3a)),
@@ -400,7 +386,7 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
             } else if *arch_demon {
                 f.t("weapon.arch_demon")
             } else {
-                format!("{}%", gauge.round())
+                String::new()
             };
             y = row(y, &f.t("weapon.demon_gauge"), gauge / 100.0, if *demon_mode { accent } else { text }, &v);
         }
@@ -433,7 +419,7 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
             } else {
                 0.0
             };
-            y = row(y, &f.t("weapon.kinsect"), r, text, &format!("{}%", (r * 100.0).round()));
+            y = row(y, &f.t("weapon.kinsect"), r, text, "");
         }
         WeaponState::ChargeBlade {
             phials,
@@ -477,7 +463,7 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         }
         WeaponState::SwitchAxe { gauge, awakened_timer, .. } => {
             let awake = *awakened_timer > 0.0;
-            let v = if awake { f.t("weapon.awakened") } else { format!("{}%", gauge.round()) };
+            let v = if awake { f.t("weapon.awakened") } else { String::new() };
             y = row(y, &f.t("weapon.switch_gauge"), gauge / 100.0, if awake { accent } else { text }, &v);
             if awake {
                 y = row(y, &f.t("weapon.amped"), 1.0, accent, &mmss(*awakened_timer));

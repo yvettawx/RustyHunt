@@ -116,6 +116,8 @@ pub struct MonsterOptions {
     pub layout: MonsterLayout,
     pub idle_fade_secs: f32,
     pub target_mode: TargetMode,
+    /// Show every part, or only parts hit within `idle_fade_secs`
+    pub all_parts: bool,
 }
 
 impl Default for MonsterOptions {
@@ -124,6 +126,7 @@ impl Default for MonsterOptions {
             layout: MonsterLayout::Bottom,
             idle_fade_secs: 4.0,
             target_mode: TargetMode::Lock,
+            all_parts: true,
         }
     }
 }

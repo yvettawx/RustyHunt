@@ -293,6 +293,12 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
                 });
             }
             ui.add_space(18.0);
+            field_label(ui, pal, &i18n::t("label.parts_shown"));
+            let mut sel = if mo.all_parts { 0 } else { 1 };
+            if widgets::seg(ui, pal, &[i18n::t("modules.parts_all"), i18n::t("modules.parts_active")], &mut sel) {
+                shared.edit_settings(|s| s.profile_mut(game).monster.all_parts = sel == 0);
+            }
+            ui.add_space(18.0);
             field_label(ui, pal, &i18n::t("label.idle_fade"));
             let mut v = mo.idle_fade_secs;
             if widgets::range(ui, pal, "idle", &mut v, 2.0, 30.0, 1.0, &i18n::t("unit.seconds"), rw) {

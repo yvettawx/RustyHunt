@@ -154,20 +154,9 @@ pub fn area(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec2
             x += ts.x + 5.0;
         }
         if m.tired {
-            let ts = c.text(x, y + 3.0, &f.t("state.tired"), Font::Text, 10.0, cv.tok("cool"), Align2::LEFT_TOP);
-            x += ts.x + 5.0;
+            c.text(x, y + 3.0, &f.t("state.tired"), Font::Text, 10.0, cv.tok("cool"), Align2::LEFT_TOP);
         } else if m.enraged {
-            let ts = c.text(x, y + 3.0, &f.t("state.enraged"), Font::Text, 10.0, accent, Align2::LEFT_TOP);
-            x += ts.x + 5.0;
-        }
-        let bx = x.max(110.0) + 4.0;
-        if cfg.shows("a-bar") {
-            c.bar("area", bx, y + 9.0, w - bx - 43.0, 2.0, &[Layer::fill(m.hp_ratio(), text)], false);
-        }
-        if cfg.shows("a-pct") {
-            let v = format!("{}%", (m.hp_ratio() * 100.0).round());
-            let vs = c.measure(&v, Font::NumBold, 11.0, 0.0);
-            c.text(w - vs.x, y + 3.0, &v, Font::NumBold, 11.0, text, Align2::LEFT_TOP);
+            c.text(x, y + 3.0, &f.t("state.enraged"), Font::Text, 10.0, accent, Align2::LEFT_TOP);
         }
         y += 21.0;
         if cfg.shows("a-notes")
