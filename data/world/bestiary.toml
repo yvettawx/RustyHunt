@@ -6,10 +6,13 @@
 # order: position in the in-game research level list (Ecological Research > Research levels), checked in game
 #        2026-10-27 for every monster the list showed; the rest follow the Hunter's Notes order on
 #        monsterhunterwiki.org, each placed after the nearest monster before it in that order.
-# research: research level cap. 9 for monsters introduced in Low Rank, 7 for High Rank, 4 for new in Iceborne; Zorah Magdaros and Xeno'jiiva 4.
-#           Checked against the in-game research list on 2026-10-27 (green stars for Low Rank, 4 yellow for monsters
-#           introduced in High Rank, 3 purple once met in Master Rank); not seen there yet: Kulve Taroth, Behemoth,
-#           Leshen's Master Rank stars, Ancient Leshen.
+# research: research level cap. 9 for monsters introduced in Low Rank, 7 for High Rank, 4 for new in Iceborne.
+#           High Rank monsters that have no Master Rank research stay at 4: Zorah Magdaros, Xeno'jiiva, Bazelgeuse,
+#           Nergigante, Vaal Hazak, Deviljho, Behemoth, Leshen and Ancient Leshen (their Master Rank versions are the
+#           variants; none appears in the Guiding Lands). Sources: a community list of research caps the user found,
+#           PSNProfiles' Iceborne trophy guide on Master Rank research, and the in-game research list on 2026-10-27
+#           (green stars for Low Rank, 4 yellow for High Rank; 3 purple slots appear once the yellow ones are full,
+#           e.g. Dodogama at 4). Kulve Taroth's 7 is from the community list only.
 
 [acidic_glavenus]
 order = 46
@@ -27,7 +30,7 @@ fixed = true
 [ancient_leshen]
 order = 71
 species = "TYPE_RELICT"
-research = 7
+research = 4
 maps = ""
 fixed = true
 
@@ -64,13 +67,13 @@ maps = "WG"
 [bazelgeuse]
 order = 25
 species = "TYPE_FLYING_WYVERN"
-research = 7
+research = 4
 maps = "AWCRE"
 
 [behemoth]
 order = 69
 species = "TYPE_ELDER_DRAGON"
-research = 7
+research = 4
 maps = ""
 fixed = true
 
@@ -113,7 +116,7 @@ maps = "CG"
 [deviljho]
 order = 26
 species = "TYPE_BRUTE_WYVERN"
-research = 7
+research = 4
 maps = "AWCRE"
 
 [diablos]
@@ -229,7 +232,7 @@ maps = "CHG"
 [leshen]
 order = 70
 species = "TYPE_RELICT"
-research = 7
+research = 4
 maps = ""
 fixed = true
 
@@ -254,7 +257,7 @@ maps = "ACG"
 [nergigante]
 order = 27
 species = "TYPE_ELDER_DRAGON"
-research = 7
+research = 4
 maps = ""
 
 [nightshade_paolumu]
@@ -406,7 +409,7 @@ maps = "EG"
 [vaal_hazak]
 order = 31
 species = "TYPE_ELDER_DRAGON"
-research = 7
+research = 4
 maps = ""
 
 [velkhana]
