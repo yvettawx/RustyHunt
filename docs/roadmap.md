@@ -16,6 +16,8 @@ Still not tested in the real game:
 
 ## 1.1.0: issues that need no injection or reverse engineering
 
+Finished on 2026-10-27. Left open: save slots 59, 66, 67 and 70 haven't been checked against a save that has hunted those monsters, and the memory target is deferred.
+
 **Hunter's notes**
 
 - Save slots 59, 66, 67 and 70 (Scarred Yian Garuga, Furious Rajang, Raging Brachydios, Fatalis) are mapped from MHWISaveEditor's save template, which agrees with every slot already checked. Not yet seen in a save that has hunted them.
