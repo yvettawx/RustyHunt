@@ -184,6 +184,12 @@ fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
     true
 }
 
+const LAYOUT_TITLE: &str = "RustyHunt Layout";
+
+fn layout_viewport() -> egui::ViewportId {
+    egui::ViewportId::from_hash_of("rustyhunt-layout")
+}
+
 pub struct Overlay {
     pub shared: Arc<Shared>,
     pub state: State,
@@ -191,7 +197,8 @@ pub struct Overlay {
     geometry: Option<(i32, i32, i32, i32)>,
     /// Keep repainting until then after a move: a resize drops a frame while the swapchain is reconfigured
     settle_until: Option<std::time::Instant>,
-    passthrough: Option<bool>,
+    /// The layout window while layout mode is on, and where it was last placed
+    layout_win: Option<(isize, (i32, i32, i32, i32))>,
     hwnd: Option<isize>,
     backing: backing::Backing,
     preview_snap: Option<Arc<Snapshot>>,
@@ -205,7 +212,7 @@ impl Overlay {
             layout: LayoutState::default(),
             geometry: None,
             settle_until: None,
-            passthrough: None,
+            layout_win: None,
             hwnd: None,
             backing: backing::Backing::default(),
             preview_snap: None,
@@ -243,11 +250,8 @@ impl Overlay {
         let layout_on = shared.layout_mode();
         let live = shared.live().clone();
         let settings = shared.settings().clone();
-        let theme = shared.theme();
-        let i18n = i18n::current();
-        let now = shared.now();
 
-        // Window position and click-through
+        // Window position
         let geometry = self.target_geometry(&live, layout_on);
         let want = geometry.unwrap_or((-32000, -32000, 1, 1));
         // Moving onto a monitor with a different scale makes winit resize the window
@@ -263,21 +267,57 @@ impl Overlay {
         if self.settle_until.is_some_and(|t| std::time::Instant::now() < t) {
             ctx.request_repaint();
         }
-        if self.passthrough != Some(!layout_on)
-            && let Some(h) = self.hwnd
-        {
-            crate::win::set_click_through(h, !layout_on);
-            if layout_on {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
-            }
-            self.passthrough = Some(!layout_on);
-        }
         // The overlay is topmost: draw nothing over other programs while the game is in the background
         let in_front = live.game_foreground || layout_on || matches!(live.connection, Connection::Demo);
         if geometry.is_none() || (!settings.overlay_visible && !layout_on) || !in_front {
             self.backing.hide();
+            self.layout_win = None;
             return;
         }
+
+        if !layout_on {
+            self.layout_win = None;
+            self.paint(ui, t0);
+            return;
+        }
+        // Layout mode needs the mouse and keyboard, which the overlay can't take: it has to stay a
+        // layered click-through window, since changing that style breaks its DirectComposition
+        // output. A plain window on top takes over while layout mode is on, and the overlay stays empty.
+        let builder = egui::ViewportBuilder::default()
+            .with_title(LAYOUT_TITLE)
+            .with_decorations(false)
+            .with_transparent(true)
+            .with_always_on_top()
+            .with_taskbar(false)
+            .with_resizable(false)
+            .with_inner_size([1.0, 1.0])
+            .with_position([-32000.0, -32000.0]);
+        ctx.show_viewport_immediate(layout_viewport(), builder, |vui, _| {
+            let first = self.layout_win.is_none();
+            if let Some(h) = self.layout_win.map(|w| w.0).or_else(|| crate::win::own_window(LAYOUT_TITLE)) {
+                if self.layout_win.is_none_or(|(_, at)| at != want) || crate::win::window_rect(h) != Some(want) {
+                    crate::win::place_overlay(h, want);
+                    vui.ctx().request_repaint();
+                }
+                self.layout_win = Some((h, want));
+            }
+            if first {
+                vui.ctx().send_viewport_cmd(egui::ViewportCommand::Focus);
+            }
+            self.paint(vui, t0);
+        });
+    }
+
+    /// Draws the modules (and in layout mode the layout tools) into `ui`'s window.
+    fn paint(&mut self, ui: &mut egui::Ui, t0: std::time::Instant) {
+        let ctx = ui.ctx().clone();
+        let shared = self.shared.clone();
+        let layout_on = shared.layout_mode();
+        let live = shared.live().clone();
+        let settings = shared.settings().clone();
+        let theme = shared.theme();
+        let i18n = i18n::current();
+        let now = shared.now();
 
         let snap = if live.has_data() {
             self.preview_snap = None;
