@@ -19,6 +19,8 @@ pub struct State {
     preview: Preview,
     new_profile: Option<String>,
     renaming: Option<String>,
+    /// The "More" group of the element list is open
+    more: bool,
 }
 
 pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
@@ -215,12 +217,31 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
                     ui.vertical(|ui| {
                         ui.set_width(col_w);
                         field_label(ui, pal, &i18n::t("label.content"));
-                        for e in &info.elements {
+                        let element = |ui: &mut Ui, e: &rh_core::modules::ElementInfo| {
                             let mut on = cfg.shows(&e.key);
                             let name = if info.plugin.is_some() { e.name.clone() } else { i18n::t(&e.name) };
                             if toggle_row(ui, pal, &name, &mut on) {
                                 let (id, k) = (info.id.clone(), e.key.clone());
                                 shared.edit_settings(|s| s.profile_mut(game).module_mut(&id).toggle(&k));
+                            }
+                        };
+                        for e in info.elements.iter().filter(|e| !e.more) {
+                            element(ui, e);
+                        }
+                        // Fine settings stay folded away under "More"
+                        let more: Vec<_> = info.elements.iter().filter(|e| e.more).collect();
+                        if !more.is_empty() {
+                            ui.add_space(8.0);
+                            let open = w.modules.more;
+                            let text = format!("{} {}  {}", i18n::t("label.more"), more.len(), if open { "−" } else { "+" });
+                            if link(ui, pal, &text).clicked() {
+                                w.modules.more = !open;
+                            }
+                            ui.add_space(8.0);
+                            if open {
+                                for e in more {
+                                    element(ui, e);
+                                }
                             }
                         }
                     });

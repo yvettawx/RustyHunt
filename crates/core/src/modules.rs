@@ -128,6 +128,9 @@ pub struct ElementInfo {
     /// UI copy key
     pub name: String,
     pub default_on: bool,
+    /// A fine setting, listed under "More" on the Modules page
+    #[serde(default)]
+    pub more: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -142,11 +145,18 @@ pub struct ModuleInfo {
     pub plugin: Option<String>,
 }
 
+/// Elements of built-in modules that go under "More": details most players don't need to see.
+const MORE: [&str; 16] = [
+    "m-en", "m-crown", "m-record", "m-notes", "m-ghost", "m-st", "m-b2", "m-pips", "m-pval", "d-rank", "d-blur", "d-pal", "d-split", "d-curve", "p-ruler",
+    "p-team",
+];
+
 fn el(key: &str, default_on: bool) -> ElementInfo {
     ElementInfo {
         key: key.to_string(),
         name: format!("element.{key}"),
         default_on,
+        more: MORE.contains(&key),
     }
 }
 

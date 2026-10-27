@@ -124,6 +124,7 @@ fn module_info(m: &Manifest, d: &plugin_host::manifest::ModuleDecl) -> ModuleInf
                 key: e.key.clone(),
                 name: e.name.clone(),
                 default_on: e.default_on,
+                more: false,
             })
             .collect(),
         games: vec![Game::World],
