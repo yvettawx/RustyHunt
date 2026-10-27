@@ -102,6 +102,19 @@ pub fn overlay_defaults() -> BTreeMap<String, Color32> {
         ("crown-gold", Color32::from_rgb(0xe9, 0xc2, 0x5b)),
         ("crown-silver", Color32::from_rgb(0xd9, 0xdd, 0xe2)),
         ("qurio", Color32::from_rgb(0xc4, 0x8c, 0xff)),
+        ("enrage", Color32::from_rgb(0xff, 0x4a, 0x3d)),
+        ("frostcraft", Color32::from_rgb(0x7f, 0xd3, 0xff)),
+        // Hunter status effects, tinting the health bar like the game does
+        ("status-poison", Color32::from_rgb(0xa0, 0x66, 0xd3)),
+        ("status-venom", Color32::from_rgb(0x7b, 0x3f, 0xb8)),
+        ("status-fire", Color32::from_rgb(0xff, 0x6a, 0x2b)),
+        ("status-thunder", Color32::from_rgb(0xf2, 0xd2, 0x3a)),
+        ("status-water", Color32::from_rgb(0x3f, 0x8f, 0xf0)),
+        ("status-ice", Color32::from_rgb(0x4f, 0xc3, 0xf2)),
+        ("status-dragon", Color32::from_rgb(0xb0, 0x26, 0x3a)),
+        ("status-bleed", Color32::from_rgb(0xff, 0x3d, 0x7f)),
+        ("status-effluvia", Color32::from_rgb(0x8a, 0x7f, 0xb0)),
+        ("status-blast", Color32::from_rgb(0x8f, 0xd1, 0x4f)),
     ]
     .into_iter()
     .map(|(k, v)| (k.to_string(), v))

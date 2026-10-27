@@ -19,6 +19,27 @@ const SHARP_COLORS: [Color32; 7] = [
     Color32::from_rgb(0xa0, 0x66, 0xd3),
 ];
 
+/// Status effects that tint the health bar, most serious first, with their colour token.
+const STATUS_TINTS: [(&str, &str); 10] = [
+    ("ABNORMALITY_VENOM", "status-venom"),
+    ("ABNORMALITY_POISON", "status-poison"),
+    ("ABNORMALITY_BLEED", "status-bleed"),
+    ("ABNORMALITY_DRAGON", "status-dragon"),
+    ("ABNORMALITY_FIRE", "status-fire"),
+    ("ABNORMALITY_BLAST", "status-blast"),
+    ("ABNORMALITY_EFFLUVIA", "status-effluvia"),
+    ("ABNORMALITY_THUNDER", "status-thunder"),
+    ("ABNORMALITY_ICE", "status-ice"),
+    ("ABNORMALITY_WATER", "status-water"),
+];
+
+/// Effects the game shows as a gauge rather than an icon; drawn in the player module, not with buffs.
+pub const GAUGES: [&str; 1] = ["ABNORMALITY_FROSTCRAFT"];
+
+fn status_color(cv: &Canvas, key: &str) -> Option<Color32> {
+    STATUS_TINTS.iter().find(|(k, _)| *k == key).map(|(_, t)| cv.tok(t))
+}
+
 /// Module title: one word and a thin line, with an optional value on the right (no backing).
 pub fn module_header(cv: &Canvas, label: &str, w: f32, right: &str, rule_w: Option<f32>) -> f32 {
     let mute = cv.tok("text-mute");
@@ -122,7 +143,13 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
             color: fade(cv.tok("heal"), pulse),
         });
     }
-    layers.push(Layer::fill(r(p.hp), if low { fade(danger, blink) } else { text }));
+    let tint = STATUS_TINTS.iter().find(|(k, _)| p.debuffs().any(|d| d.key == *k)).map(|(_, t)| cv.tok(t));
+    let fill = match (tint, low) {
+        (Some(c), _) => fade(c, blink),
+        (None, true) => fade(danger, blink),
+        (None, false) => text,
+    };
+    layers.push(Layer::fill(r(p.hp), fill));
     cv.bar_ex("player-hp", 0.0, y, w, 14.0, &layers, false, true);
     let mut bottom = y + 14.0;
 
@@ -176,6 +203,7 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         let mut ax = col_w + 16.0;
         for d in p.debuffs() {
             let name = f.i18n.game(&d.key);
+            let c = status_color(cv, &d.key).unwrap_or(cv.tok("accent"));
             let tsz = cv.tag(
                 ax,
                 27.0,
@@ -183,29 +211,30 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
                 Font::TextBold,
                 11.0,
                 (6.0, 2.0, 6.0, 1.0),
-                cv.tok("accent"),
+                c,
                 Color32::from_rgb(0x11, 0x11, 0x11),
             );
             let t = buff_time(d.timer, d.infinite);
-            let ts = cv.text(ax + tsz.x + 5.0, 27.0, &t, Font::Num, 12.0, cv.tok("accent"), Align2::LEFT_TOP);
+            let ts = cv.text(ax + tsz.x + 5.0, 27.0, &t, Font::Num, 12.0, c, Align2::LEFT_TOP);
             let rw = tsz.x + 5.0 + ts.x;
             let ratio = if d.timer_max > 0.0 { d.timer / d.timer_max } else { 1.0 };
-            cv.bar("debuff", ax, 27.0 + tsz.y + 4.0, rw, 2.0, &[Layer::fill(ratio, cv.tok("accent"))], false);
+            cv.bar("debuff", ax, 27.0 + tsz.y + 4.0, rw, 2.0, &[Layer::fill(ratio, c)], false);
             ax += rw + 12.0;
             right = right.max(ax);
         }
     }
 
-    // Sharpness
+    // Sharpness: a thick bar sized like the game's, the hits left as a number; the colour names the level
     if cfg.shows("p-sharp")
         && let Some(sh) = &p.sharpness
     {
-        let sy = bottom + 8.0;
-        let seg_w = 210.0;
+        let sy = bottom + 10.0;
+        let seg_w = 150.0;
+        let bar_h = 9.0;
         let total = sh.thresholds.iter().copied().filter(|&t| t > 0).max().unwrap_or(1).max(1) as f32;
         let mut start = 0;
         let mut x = 0.0;
-        cv.rect(-1.0, sy - 1.0, seg_w + 2.0, 6.0, cv.tok("edge"));
+        cv.rect(-1.0, sy - 1.0, seg_w + 2.0, bar_h + 2.0, cv.tok("edge"));
         for (i, &end) in sh.thresholds.iter().enumerate() {
             if end <= start {
                 continue;
@@ -214,36 +243,38 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
             let color = SHARP_COLORS[i.min(6)];
             // Darken the part that's used up
             let used = ((sh.current - start) as f32 / (end - start) as f32).clamp(0.0, 1.0);
-            cv.rect(x, sy, (len - 1.0).max(0.0), 4.0, color);
+            cv.rect(x, sy, (len - 1.0).max(0.0), bar_h, color);
             if used < 1.0 {
-                cv.rect(x + len * used, sy, (len * (1.0 - used) - 1.0).max(0.0), 4.0, rgba(0, 0, 0, 0.75));
+                cv.rect(x + len * used, sy, (len * (1.0 - used) - 1.0).max(0.0), bar_h, rgba(0, 0, 0, 0.75));
             }
             x += len;
             start = end;
         }
         let mk = (sh.current as f32 / total * seg_w).clamp(0.0, seg_w);
-        let tri = [cv.p(mk - 4.0, sy + 11.0), cv.p(mk + 4.0, sy + 11.0), cv.p(mk, sy + 6.0)];
-        cv.painter.add(egui::Shape::convex_polygon(tri.to_vec(), cv.c(text), egui::Stroke::NONE));
-        let level = sh.level.index();
-        let mut tx = seg_w + 10.0;
-        if f.density != rh_core::settings::Density::Minimal {
-            let cname = f.t(&format!("sharpness.{level}"));
-            let s = cv.text(tx, sy - 5.0, &cname, Font::TextBold, 11.0, SHARP_COLORS[level.min(6)], Align2::LEFT_TOP);
-            tx += s.x + 10.0;
-            let hits = sh.hits_left();
-            let warn = hits < 10 && sh.level != SharpnessLevel::Red;
-            cv.text(
-                tx,
-                sy - 4.0,
-                &f.i18n.tf("unit.hits", &[("n", &hits.to_string())]),
-                Font::NumBold,
-                10.0,
-                if warn { cv.tok("accent") } else { mute },
-                Align2::LEFT_TOP,
-            );
+        cv.rect(mk - 1.0, sy - 3.0, 2.0, bar_h + 6.0, text);
+        let hits = sh.hits_left();
+        let warn = hits < 10 && sh.level != SharpnessLevel::Red;
+        cv.text_ex(
+            seg_w + 10.0,
+            sy - 7.0,
+            &hits.to_string(),
+            Font::NumHeavy,
+            20.0,
+            if warn { cv.tok("accent") } else { SHARP_COLORS[sh.level.index().min(6)] },
+            Align2::LEFT_TOP,
+            0.0,
+            true,
+        );
+        bottom = sy + bar_h;
+        right = right.max(seg_w + 60.0);
+
+        // Frostcraft and similar: a gauge under the sharpness bar
+        for a in p.abnormalities.iter().filter(|a| GAUGES.contains(&a.key.as_str())) {
+            let gy = bottom + 4.0;
+            let ratio = if a.timer_max > 0.0 { a.timer / a.timer_max } else { 0.0 };
+            cv.bar("frostcraft", 0.0, gy, seg_w, 4.0, &[Layer::fill(ratio, cv.tok("frostcraft"))], false);
+            bottom = gy + 4.0;
         }
-        bottom = sy + 12.0;
-        right = right.max(seg_w + 80.0);
     }
     cv.crosshair(-18.0, 26.0);
     vec2(right.max(col_w), bottom)
@@ -263,7 +294,7 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
         let list: Vec<_> = p
             .abnormalities
             .iter()
-            .filter(|a| a.kind != AbnormalityKind::Debuff)
+            .filter(|a| a.kind != AbnormalityKind::Debuff && !GAUGES.contains(&a.key.as_str()))
             .filter(|a| tray.ids.is_empty() || tray.ids.contains(&a.id) || tray.ids.contains(&a.key))
             .collect();
         if list.is_empty() {
@@ -311,6 +342,7 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
                 y += module_header(cv, &f.t("module.buffs"), 260.0, "", Some(40.0));
                 any = true;
             }
+            let c = status_color(cv, &d.key).unwrap_or(accent);
             let tsz = cv.tag(
                 x,
                 y,
@@ -318,10 +350,10 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
                 Font::TextBold,
                 10.0,
                 (5.0, 2.0, 5.0, 1.0),
-                accent,
+                c,
                 Color32::from_rgb(0x11, 0x11, 0x11),
             );
-            let ts = cv.text(x + tsz.x + 5.0, y, &buff_time(d.timer, d.infinite), Font::Num, 12.0, accent, Align2::LEFT_TOP);
+            let ts = cv.text(x + tsz.x + 5.0, y, &buff_time(d.timer, d.infinite), Font::Num, 12.0, c, Align2::LEFT_TOP);
             x += tsz.x + 5.0 + ts.x + 10.0;
             row_h = row_h.max(tsz.y);
         }

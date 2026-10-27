@@ -103,6 +103,9 @@ impl State {
                 self.ghost.insert(m.uid, m.hp);
                 continue;
             };
+            if m.enraged && !p.enraged {
+                self.flash.insert(format!("{}:enrage", m.uid), now);
+            }
             for (i, part) in m.parts.iter().enumerate() {
                 let Some(old) = p.parts.get(i) else { continue };
                 if (part.flinch - old.flinch).abs() > 0.01 || (part.durability - old.durability).abs() > 0.01 || part.breaks != old.breaks {

@@ -263,7 +263,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     }
     if cfg.shows("m-state") {
         let (label, color) = if m.enraged {
-            (format!("{} {}", f.t("state.enraged"), mmss(m.enrage_timer)), Some(accent))
+            (format!("{} {}", f.t("state.enraged"), mmss(m.enrage_timer)), Some(cv.tok("enrage")))
         } else if m.tired {
             (f.t("state.tired"), Some(cv.tok("cool")))
         } else if m.capturable() && m.alive() {
@@ -276,9 +276,6 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
             cv.dot(x + 3.5, ty + 9.0, 3.5, c, true);
             let sz = cv.text(x + 13.0, ty, &label, Font::TextBold, 12.0, c, Align2::LEFT_TOP);
             x += 13.0 + sz.x + 10.0;
-            if m.enraged {
-                st.animating = true;
-            }
         }
     }
     if cfg.shows("m-weak") && !m.weaknesses.is_empty() && f.density != Density::Minimal {
@@ -343,7 +340,20 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     if cfg.shows("m-ghost") {
         layers.push(Layer::fill(ghost_ratio, cv.tok("ghost")));
     }
-    layers.push(Layer::fill(ratio, if capz { accent } else { text }));
+    let fill = if capz {
+        accent
+    } else if m.enraged {
+        cv.tok("enrage")
+    } else {
+        text
+    };
+    layers.push(Layer::fill(ratio, fill));
+    // One flash when the monster becomes enraged
+    let since = st.flash.get(&format!("{}:enrage", m.uid)).map_or(f64::MAX, |t| f.now - t) as f32;
+    if since < 0.6 {
+        layers.push(Layer::fill(ratio, fade(text, 1.0 - since / 0.6)));
+        st.animating = true;
+    }
     cv.bar_ex("monster-hp", 0.0, y, w, 7.0, &layers, true, true);
     if cfg.shows("m-cap") && m.capture_threshold > 0.0 && m.alive() {
         let mx = w * m.capture_threshold;
