@@ -38,6 +38,8 @@ pub struct Demo {
     next_enrage: f32,
     tired_left: f32,
     flinch: Vec<(f32, f32)>,
+    /// A fixed state instead of the random hunt, see `Demo::scene`
+    scene: Option<(Snapshot, Snapshot)>,
 }
 
 const TARGET: i32 = 96; // Raging Brachydios
@@ -60,6 +62,7 @@ impl Demo {
             next_enrage: 6.0,
             tired_left: 0.0,
             flinch: Vec::new(),
+            scene: None,
         };
         d.reset();
         d
@@ -249,6 +252,11 @@ impl Demo {
     /// Advances `dt` seconds and returns the new snapshot.
     pub fn step(&mut self, dt: f32) -> Snapshot {
         self.t += dt as f64;
+        if let Some((before, after)) = &self.scene {
+            let mut s = if self.t < SCENE_SWITCH { before.clone() } else { after.clone() };
+            s.time = self.t;
+            return s;
+        }
         let t = self.t as f32;
         let mut s = self.snap.clone();
         s.time = self.t;
@@ -408,6 +416,163 @@ impl Demo {
     }
 }
 
+/// Seconds into a scene when it switches from its first state to its second, so a screenshot taken
+/// a little later catches the change (a break, an ailment proc, enrage) while it is still animating.
+pub const SCENE_SWITCH: f64 = 2.4;
+
+/// Names accepted by `Demo::scene`.
+pub const SCENES: &[&str] = &[
+    "hunt",
+    "notarget",
+    "enraged",
+    "ailments",
+    "breaks",
+    "capture",
+    "multi",
+    "lowhp",
+    "frostcraft",
+    "debuff-poison",
+    "debuff-venom",
+    "debuff-fire",
+    "debuff-thunder",
+    "debuff-water",
+    "debuff-ice",
+    "debuff-dragon",
+    "debuff-bleed",
+    "debuff-effluvia",
+    "debuff-blast",
+];
+
+fn set_ailment(m: &mut Monster, key: &str, count: i32, buildup: f32, active: f32) {
+    if let Some(a) = m.ailments.iter_mut().find(|a| a.key == key) {
+        a.count = count;
+        a.buildup = buildup * a.buildup_max;
+        a.timer = active * a.timer_max;
+    }
+}
+
+impl Demo {
+    /// A fixed state for screenshots: the demo hunt run for a while, then edited to show one situation.
+    pub fn scene(name: &str) -> Option<Demo> {
+        let mut d = Demo::new();
+        let mut base = d.step(0.1);
+        for _ in 0..300 {
+            base = d.step(0.1);
+        }
+        let m = &mut base.monsters[0];
+        m.enraged = false;
+        m.tired = false;
+        m.stamina = m.stamina_max * 0.7;
+        m.hp = m.hp_max * 0.58;
+        for a in &mut m.ailments {
+            a.timer = 0.0;
+            a.count = 0;
+            a.buildup = a.buildup_max * 0.2;
+        }
+        base.player.hp = 118.0;
+        base.player.hp_recoverable = 132.0;
+        base.player.hp_healing_to = base.player.hp;
+        let mut before = base.clone();
+        let mut after = base;
+        let both = |before: &mut Snapshot, after: &mut Snapshot, f: &dyn Fn(&mut Snapshot)| {
+            f(before);
+            f(after);
+        };
+        match name {
+            "hunt" => {}
+            "notarget" => both(&mut before, &mut after, &|s| {
+                for m in &mut s.monsters {
+                    m.target = Target::None;
+                    m.manual_target = Target::None;
+                }
+            }),
+            "enraged" => {
+                let m = &mut after.monsters[0];
+                m.enraged = true;
+                m.enrage_timer = 24.0;
+                m.enrage_timer_max = 24.0;
+            }
+            "ailments" => {
+                both(&mut before, &mut after, &|s| {
+                    let m = &mut s.monsters[0];
+                    set_ailment(m, "AILMENT_POISON", 2, 0.0, 0.7);
+                    set_ailment(m, "AILMENT_PARALYSIS", 1, 0.45, 0.0);
+                    set_ailment(m, "AILMENT_BLAST", 3, 0.1, 0.0);
+                    set_ailment(m, "AILMENT_STUN", 1, 0.3, 0.0);
+                    set_ailment(m, "AILMENT_EXHAUST", 0, 0.55, 0.0);
+                    set_ailment(m, "AILMENT_MOUNT", 0, 0.0, 0.0);
+                    set_ailment(m, "AILMENT_SHOCKTRAP", 1, 0.0, 0.0);
+                });
+                set_ailment(&mut before.monsters[0], "AILMENT_SLEEP", 0, 0.92, 0.0);
+                set_ailment(&mut after.monsters[0], "AILMENT_SLEEP", 1, 0.0, 1.0);
+            }
+            "breaks" => {
+                both(&mut before, &mut after, &|s| {
+                    for p in &mut s.monsters[0].parts {
+                        p.breaks = 0;
+                        p.durability = p.durability_max * 0.6;
+                    }
+                    let parts = &mut s.monsters[0].parts;
+                    if let Some(p) = parts.iter_mut().find(|p| p.kind == PartKind::Severable) {
+                        p.breaks = p.breaks_max;
+                        p.durability = 0.0;
+                    }
+                    if let Some(p) = parts.iter_mut().filter(|p| p.kind == PartKind::Breakable).nth(1) {
+                        p.breaks = 1;
+                        p.durability = p.durability_max * 0.35;
+                    }
+                    if let Some(p) = parts.iter_mut().filter(|p| p.kind == PartKind::Breakable).nth(2) {
+                        p.durability = p.durability_max * 0.05;
+                    }
+                });
+                if let Some(i) = before.monsters[0].parts.iter().position(|p| p.kind == PartKind::Breakable) {
+                    before.monsters[0].parts[i].durability = before.monsters[0].parts[i].durability_max * 0.03;
+                    let p = &mut after.monsters[0].parts[i];
+                    p.breaks += 1;
+                    p.durability = if p.breaks < p.breaks_max { p.durability_max } else { 0.0 };
+                }
+            }
+            "capture" => {
+                before.monsters[0].hp = before.monsters[0].hp_max * 0.24;
+                let m = &mut after.monsters[0];
+                m.hp = m.hp_max * 0.14;
+                m.tired = true;
+                m.stamina = 0.0;
+            }
+            "multi" => both(&mut before, &mut after, &|s| {
+                for (i, m) in s.monsters.iter_mut().enumerate() {
+                    m.target = if i == 1 { Target::Own } else { Target::Other };
+                }
+                s.monsters[1].enraged = true;
+                s.monsters[1].enrage_timer = 15.0;
+                s.monsters[1].enrage_timer_max = 24.0;
+            }),
+            "lowhp" => both(&mut before, &mut after, &|s| {
+                s.player.hp = 31.0;
+                s.player.hp_recoverable = 58.0;
+                s.player.hp_healing_to = 31.0;
+            }),
+            "frostcraft" => both(&mut before, &mut after, &|s| {
+                let a = abn("Skills_788", "ABNORMALITY_FROSTCRAFT", AbnormalityKind::Skill, 42.0, 60.0, false);
+                s.player.abnormalities.push(a);
+            }),
+            other => {
+                let key = other.strip_prefix("debuff-")?.to_uppercase();
+                if !SCENES.contains(&other) {
+                    return None;
+                }
+                both(&mut before, &mut after, &|s| {
+                    let a = abn("Debuffs_0", &format!("ABNORMALITY_{key}"), AbnormalityKind::Debuff, 18.0, 30.0, false);
+                    s.player.abnormalities.push(a);
+                });
+            }
+        }
+        d.t = 0.0;
+        d.scene = Some((before, after));
+        Some(d)
+    }
+}
+
 fn abn(id: &str, key: &str, kind: AbnormalityKind, timer: f32, max: f32, infinite: bool) -> Abnormality {
     Abnormality {
         id: id.into(),
@@ -435,5 +600,20 @@ mod tests {
         assert_ne!(b.monsters[0].hp, a.monsters[0].hp);
         assert!(b.party.iter().map(|p| p.damage).sum::<f32>() > 0.0);
         assert!(!b.monsters[0].parts.is_empty());
+    }
+
+    #[test]
+    fn scenes_build() {
+        for name in SCENES {
+            let mut d = Demo::scene(name).unwrap_or_else(|| panic!("{name}"));
+            let a = d.step(0.1);
+            assert!(!a.monsters.is_empty(), "{name}");
+        }
+        assert!(Demo::scene("nope").is_none());
+        let mut d = Demo::scene("breaks").unwrap();
+        let a = d.step(0.1);
+        let b = d.step(SCENE_SWITCH as f32);
+        let broke = |s: &Snapshot| s.monsters[0].parts.iter().map(|p| p.breaks).sum::<i32>();
+        assert_eq!(broke(&b), broke(&a) + 1);
     }
 }

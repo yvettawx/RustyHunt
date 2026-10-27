@@ -143,7 +143,9 @@ impl Scanner {
             return;
         }
         let hz = self.shared.settings().perf.read_hz.clamp(5, 60) as f32;
-        let demo = self.demo.get_or_insert_with(game_world::demo::Demo::new);
+        let demo = self
+            .demo
+            .get_or_insert_with(|| DEMO_SCENE.get().and_then(|s| game_world::demo::Demo::scene(s)).unwrap_or_default());
         let snap = demo.step(1.0 / hz);
         self.publish(snap, Connection::Demo);
     }
@@ -404,6 +406,9 @@ impl Scanner {
         }
     }
 }
+
+/// For screenshots: run a fixed demo scene instead of the random hunt (`--screenshot overlay:<scene>`).
+pub static DEMO_SCENE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 /// Picks the target monster by target mode.
 pub fn select_target(snap: &Snapshot, mode: TargetMode, manual: Option<u64>, hits: &std::collections::HashMap<u64, f64>, _cursor: &mut usize) -> Option<u64> {

@@ -36,6 +36,11 @@ impl App {
         m.set_tab(tab);
     }
 
+    /// For screenshots: where each overlay module was drawn, in 1080-high reference coordinates
+    pub fn module_rects(&self) -> std::collections::BTreeMap<String, egui::Rect> {
+        self.overlay.state.rects.clone()
+    }
+
     pub fn new(cc: &eframe::CreationContext, shared: Arc<Shared>, start_in_tray: bool) -> App {
         let ctx = cc.egui_ctx.clone();
         let _ = shared.ctx.set(ctx.clone());

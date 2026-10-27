@@ -1,5 +1,6 @@
-//! For development: `--screenshot main[:page]|overlay|layout <file>` runs a few dozen frames of demo data
-//! and saves the picture as a PNG for checking the UI.
+//! For development: `--screenshot main[:page]|overlay[:scene]|layout <file>` runs a few dozen frames of demo data
+//! and saves the picture as a PNG for checking the UI. Overlay shots also write `<file>.json` with each
+//! module's rect in 1080-high reference coordinates, for cropping.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -67,8 +68,19 @@ impl eframe::App for Shot {
         if self.what == "layout" && self.frames == 5 {
             self.shared.act(crate::state::Action::SetLayout(true));
         }
-        if self.frames == 120 && !self.requested {
+        // Scenes switch state at a fixed time; capture shortly after, while the change still animates
+        let due = self.shared.now() >= game_world::demo::SCENE_SWITCH + 0.45;
+        if self.frames >= 120 && due && !self.requested {
             self.requested = true;
+            if !self.what.starts_with("main") {
+                let rects: std::collections::BTreeMap<String, [f32; 4]> = self
+                    .app
+                    .module_rects()
+                    .into_iter()
+                    .map(|(k, r)| (k, [r.min.x, r.min.y, r.width(), r.height()]))
+                    .collect();
+                let _ = std::fs::write(self.path.with_extension("json"), serde_json::to_string(&rects).unwrap_or_default());
+            }
             let path = self.path.clone();
             let done = self.done.clone();
             let shared = self.shared.clone();

@@ -82,8 +82,11 @@ fn main() {
     if args.demo {
         settings.demo = true;
     }
-    if args.screenshot.is_some() {
+    if let Some((what, _)) = &args.screenshot {
         settings.first_run_done = true;
+        if let Some(scene) = what.strip_prefix("overlay:") {
+            let _ = scanner::DEMO_SCENE.set(scene.to_string());
+        }
     }
     let i = i18n::load_bundled(&paths::bundled("locales"), settings.language, settings.term_language);
     i18n::install(i);
