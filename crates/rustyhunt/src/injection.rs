@@ -304,6 +304,11 @@ impl Sink for Injector {
                 });
                 return;
             }
+            // Wait until a character is loaded. Stracker's Loader plugins install their own hooks in the
+            // first seconds after launch; patching or hooking during that window can make theirs fail.
+            if snap.player.hp_max <= 0.0 {
+                return;
+            }
             let Some(pid) = shared.live().pid else { return };
             self.session = Session::new(shared, pid);
         }
