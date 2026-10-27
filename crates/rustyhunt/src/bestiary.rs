@@ -213,7 +213,10 @@ impl Row {
 pub struct Book {
     pub save: Option<SaveFile>,
     pub path: Option<PathBuf>,
-    pub read_at: Option<i64>,
+    /// When the game last wrote the save file (Unix seconds)
+    pub saved_at: Option<i64>,
+    /// When the file's write time was last checked
+    checked: Option<std::time::Instant>,
     pub error: Option<String>,
     pub hunter: usize,
     pub reading: bool,
@@ -295,6 +298,26 @@ pub fn rows(book: &Book) -> Vec<Row> {
         .collect()
 }
 
+fn modified(path: &std::path::Path) -> Option<i64> {
+    let t = std::fs::metadata(path).ok()?.modified().ok()?;
+    Some(t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64)
+}
+
+/// Rereads the save when the game has written it since the last read. Checks the file time at most every few seconds.
+pub fn reread_if_saved(shared: &std::sync::Arc<Shared>) {
+    let due = with(|b| {
+        if b.reading || b.checked.is_some_and(|t| t.elapsed().as_secs() < 5) {
+            return false;
+        }
+        b.checked = Some(std::time::Instant::now());
+        let Some(path) = &b.path else { return false };
+        modified(path).is_some_and(|t| b.saved_at.is_none_or(|s| t > s))
+    });
+    if due {
+        read(shared.clone());
+    }
+}
+
 /// Reads the save in the background, then compares how many crowns are lit before and after and sends a notification.
 pub fn read(shared: std::sync::Arc<Shared>) {
     let account = shared.settings().save_account;
@@ -312,6 +335,7 @@ pub fn read(shared: std::sync::Arc<Shared>) {
                 shared.repaint();
                 return;
             };
+            let saved_at = modified(&path);
             let result = SaveFile::read(&path, &rh_core::paths::cache());
             let ok = with(|b| {
                 b.reading = false;
@@ -327,7 +351,7 @@ pub fn read(shared: std::sync::Arc<Shared>) {
                             .unwrap_or(0);
                         log::info!("读取存档 {}：{} 个角色", path.display(), save.hunters.len());
                         b.save = Some(save);
-                        b.read_at = Some(chrono::Local::now().timestamp());
+                        b.saved_at = saved_at;
                         b.error = None;
                         true
                     }

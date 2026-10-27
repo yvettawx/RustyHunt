@@ -460,6 +460,7 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             crate::bestiary::read(shared.clone());
         }
     }
+    crate::bestiary::reread_if_saved(&shared);
     let tabs = [
         (i18n::t("game_short.world"), true),
         (i18n::t("game_short.rise"), false),
@@ -468,10 +469,10 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
     widgets::tabs(ui, pal, &tabs, 0, false);
     ui.add_space(20.0);
 
-    let (path, read_at, error, reading, hunters, hunter) = crate::bestiary::with(|b| {
+    let (path, saved_at, error, reading, hunters, hunter) = crate::bestiary::with(|b| {
         (
             b.path.clone(),
-            b.read_at,
+            b.saved_at,
             b.error.clone(),
             b.reading,
             b.save
@@ -499,16 +500,11 @@ fn bestiary(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             i18n::t("records.reading")
         } else if let Some(e) = &error {
             i18n::tf("records.read_failed", &[("e", e)])
-        } else if let Some(t) = read_at {
-            i18n::tf(
-                "records.read_at",
-                &[(
-                    "t",
-                    &chrono::DateTime::from_timestamp(t, 0)
-                        .map(|d| d.with_timezone(&chrono::Local).format("%H:%M").to_string())
-                        .unwrap_or_default(),
-                )],
-            )
+        } else if let Some(t) = saved_at {
+            let t = chrono::DateTime::from_timestamp(t, 0).map(|d| d.with_timezone(&chrono::Local));
+            let today = t.is_some_and(|d| d.date_naive() == chrono::Local::now().date_naive());
+            let fmt = if today { "%H:%M" } else { "%m-%d %H:%M" };
+            i18n::tf("records.saved_at", &[("t", &t.map(|d| d.format(fmt).to_string()).unwrap_or_default())])
         } else {
             String::new()
         };
