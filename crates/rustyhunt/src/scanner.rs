@@ -84,27 +84,32 @@ impl Scanner {
     fn run(&mut self) {
         log::info!("reader thread started");
         let mut timing_at = Instant::now();
+        // Slowest tick (read, compare, sinks) since the last timing line
+        let mut worst_tick = Duration::ZERO;
         while !self.shared.quit.load(std::sync::atomic::Ordering::Relaxed) {
             // Once a minute while attached: how fast reading and drawing really run, for lag reports
             if timing_at.elapsed() >= Duration::from_secs(60) {
                 let secs = timing_at.elapsed().as_secs_f32();
                 timing_at = Instant::now();
                 let frames = self.shared.overlay_frames.swap(0, std::sync::atomic::Ordering::Relaxed);
-                if matches!(self.phase, Phase::Attached { .. }) {
+                if matches!(self.phase, Phase::Attached { .. }) || self.demo.is_some() {
                     let live = self.shared.live();
                     log::info!(
-                        "timing: reading {:.0} Hz, {:.1} ms a read; overlay {:.0} fps, {:.1} ms a frame; game in front {}",
+                        "timing: reading {:.0} Hz, {:.1} ms a read, slowest tick {:.1} ms; overlay {:.0} fps, {:.1} ms a frame; game in front {}",
                         live.actual_hz,
                         live.read_ms,
+                        worst_tick.as_secs_f32() * 1000.0,
                         frames as f32 / secs,
                         self.shared.frame_us.load(std::sync::atomic::Ordering::Relaxed) as f32 / 1000.0,
                         live.game_foreground
                     );
                 }
+                worst_tick = Duration::ZERO;
             }
             let start = Instant::now();
             let hz = self.shared.settings().perf.read_hz.clamp(5, 60);
             self.tick();
+            worst_tick = worst_tick.max(start.elapsed());
             let period = Duration::from_secs_f64(1.0 / hz as f64);
             if let Some(rest) = period.checked_sub(start.elapsed()) {
                 std::thread::sleep(rest);
@@ -336,8 +341,7 @@ impl Scanner {
             switched
         };
         if switched {
-            // The overlay hides while the game is in the background, even if no data changed; the main
-            // window, held while the game was in front, catches up
+            // The overlay hides while the game is in the background, even if no data changed
             self.shared.repaint();
         }
         self.publish(snap, Connection::Connected);

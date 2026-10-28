@@ -134,6 +134,8 @@ pub struct Shared {
     pub frame_us: AtomicU32,
     /// Overlay frames drawn, for the timing line in the log
     pub overlay_frames: AtomicU32,
+    /// The main window has keyboard focus (see `main_window_live`)
+    pub main_focused: AtomicBool,
     pub ctx: OnceLock<egui::Context>,
     pub started: Instant,
     pub quit: AtomicBool,
@@ -153,6 +155,7 @@ impl Shared {
             show_all: AtomicBool::new(false),
             frame_us: AtomicU32::new(0),
             overlay_frames: AtomicU32::new(0),
+            main_focused: AtomicBool::new(false),
             ctx: OnceLock::new(),
             started: Instant::now(),
             quit: AtomicBool::new(false),
@@ -211,16 +214,19 @@ impl Shared {
     pub fn repaint(&self) {
         if let Some(ctx) = self.ctx.get() {
             ctx.request_repaint_of(egui::ViewportId::ROOT);
-            if !self.game_in_front() {
+            if self.main_window_live() {
                 ctx.request_repaint_of(crate::window::main_viewport());
             }
         }
     }
 
-    /// While the game is in front the system throttles our other windows, and drawing the main window
-    /// then holds up the overlay, which shares its thread. The main window waits until the game is left.
-    pub fn game_in_front(&self) -> bool {
-        self.live.try_read().is_ok_and(|l| l.game_foreground && l.connected())
+    /// Whether the main window should repaint on its own. All windows draw on one thread and each
+    /// frame waits until the previous one is on screen; a main window the system isn't showing (behind
+    /// the game, or with the game in front) makes that wait last up to a second and stalls the overlay.
+    /// So while the game is connected the main window only repaints when it has focus; input and
+    /// focus changes still repaint it.
+    pub fn main_window_live(&self) -> bool {
+        self.main_focused.load(Ordering::Relaxed) || self.live.try_read().is_ok_and(|l| !l.connected())
     }
 
     pub fn repaint_overlay(&self) {

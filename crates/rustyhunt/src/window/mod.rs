@@ -218,6 +218,8 @@ impl MainWindow {
             self.started = true;
             crate::update::confirm_started();
         }
+        let focused = ctx.input(|i| i.viewport().focused.unwrap_or(false));
+        self.shared.main_focused.store(focused, std::sync::atomic::Ordering::Relaxed);
         let theme = self.shared.theme();
         let pal = Pal::of(&theme);
         let full = ctx.content_rect();
@@ -273,8 +275,8 @@ impl MainWindow {
         self.modal(ui, &pal, Rect::from_min_max(pos2(full.min.x, title.max.y), full.max));
 
         // Connection status, logs and the like change; refreshing the main window twice a second is enough.
-        // Not while the game is in front (see Shared::game_in_front); the reader asks again when it's left.
-        if !self.shared.game_in_front() {
+        // While the game runs, only when the window has focus (see Shared::main_window_live).
+        if self.shared.main_window_live() {
             ctx.request_repaint_after(std::time::Duration::from_millis(500));
         }
     }
@@ -679,7 +681,7 @@ impl MainWindow {
         if dismiss {
             self.shared.notifications.lock().unwrap().toast = None;
         }
-        if !self.shared.game_in_front() {
+        if self.shared.main_window_live() {
             ui.ctx().request_repaint_after(std::time::Duration::from_millis(30));
         }
     }
