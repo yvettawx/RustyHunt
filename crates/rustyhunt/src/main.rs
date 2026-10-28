@@ -31,6 +31,8 @@ struct Args {
     tray: bool,
     demo: bool,
     screenshot: Option<(String, std::path::PathBuf)>,
+    /// `--bench <seconds>`: run on demo data next to a running copy, then quit (for measuring)
+    bench: Option<u64>,
     data_dir: Option<std::path::PathBuf>,
 }
 
@@ -39,6 +41,7 @@ fn args() -> Args {
         tray: false,
         demo: false,
         screenshot: None,
+        bench: None,
         data_dir: None,
     };
     let mut it = std::env::args().skip(1);
@@ -47,6 +50,7 @@ fn args() -> Args {
             "--tray" => a.tray = true,
             "--demo" => a.demo = true,
             "--data-dir" => a.data_dir = it.next().map(Into::into),
+            "--bench" => a.bench = it.next().and_then(|s| s.parse().ok()),
             "--screenshot" => {
                 if let (Some(what), Some(path)) = (it.next(), it.next()) {
                     a.screenshot = Some((what, path.into()));
@@ -67,7 +71,8 @@ fn main() {
     crash::install();
     log::info!("starting RustyHunt {}, data folder {}", rh_core::VERSION, paths::root().display());
 
-    if args.screenshot.is_none() && !win::single_instance() {
+    let dev_run = args.screenshot.is_some() || args.bench.is_some();
+    if !dev_run && !win::single_instance() {
         // One is already running: ask it to open its main window
         if let Some(h) = win::own_window_any(window::TITLE) {
             win::focus_window(h);
@@ -88,6 +93,12 @@ fn main() {
         settings.demo = true;
         let _ = scanner::DEMO_SCENE.set(what.strip_prefix("overlay:").unwrap_or_default().to_string());
     }
+    if args.bench.is_some() {
+        // Demo hunt only, like screenshots: never the game
+        settings.first_run_done = true;
+        settings.demo = true;
+        let _ = scanner::DEMO_SCENE.set(String::new());
+    }
     let i = i18n::load_bundled(&paths::bundled("locales"), settings.language, settings.term_language);
     i18n::install(i);
 
@@ -104,8 +115,16 @@ fn main() {
     let _scanner = scanner::Scanner::new(shared.clone(), sinks).spawn();
     hotkeys::spawn(shared.clone());
     themes::watch(shared.clone());
-    if args.screenshot.is_none() {
+    if !dev_run {
         update::check_on_start(shared.clone());
+    }
+    if let Some(secs) = args.bench {
+        let shared = shared.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(secs));
+            log::info!("bench finished after {secs} s");
+            shared.act(state::Action::Quit);
+        });
     }
 
     let viewport = egui::ViewportBuilder::default()
