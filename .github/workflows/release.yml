@@ -34,5 +34,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $v = $env:GITHUB_REF_NAME.TrimStart('v')
-          gh release create $env:GITHUB_REF_NAME --latest --verify-tag --title "RustyHunt $v" --generate-notes `
+          # Notes: this version's section of each changelog, Chinese first
+          $notes = foreach ($f in 'CHANGELOG.zh-CN.md', 'CHANGELOG.md') {
+            $section = (Get-Content $f -Raw -Encoding utf8) -split '(?m)^## ' | Where-Object { $_ -match "^$([regex]::Escape($v))\s" }
+            if (-not $section) { throw "$f has no section for $v" }
+            ($section -split "`n", 2)[1].Trim()
+          }
+          Set-Content notes.md ($notes -join "`n`n---`n`n") -Encoding utf8
+          gh release create $env:GITHUB_REF_NAME --latest --verify-tag --title "RustyHunt $v" --notes-file notes.md `
             "dist/RustyHunt-$v-portable.zip" "dist/RustyHunt-$v-setup.exe" dist/SHA256SUMS

@@ -51,6 +51,8 @@ impl Release {
             .as_deref()
             .unwrap_or("")
             .lines()
+            // GitHub's generated notes end with a link to the full diff
+            .filter(|l| !l.trim().starts_with("**Full Changelog**"))
             .map(|l| l.trim().trim_start_matches(['-', '*']).trim().to_string())
             .filter(|l| !l.is_empty() && !l.starts_with('#'))
             .collect()
@@ -559,7 +561,7 @@ mod tests {
     fn release_notes() {
         let r = Release {
             tag_name: "v1.1.0".into(),
-            body: Some("## 1.1.0\n- 新增 伤害拆分\n- 修复 部位名错位\n\n".into()),
+            body: Some("## 1.1.0\n- 新增 伤害拆分\n- 修复 部位名错位\n\n**Full Changelog**: https://example.com/compare\n".into()),
             published_at: Some("2026-11-02T10:00:00Z".into()),
             prerelease: false,
             assets: vec![],
