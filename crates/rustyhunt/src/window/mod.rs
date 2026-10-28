@@ -138,7 +138,6 @@ pub struct MainWindow {
     settings: settings::State,
     logs: logs::State,
     onboarding: Option<onboarding::State>,
-    started: bool,
     maximized: bool,
 }
 
@@ -168,7 +167,6 @@ impl MainWindow {
             settings: Default::default(),
             logs: Default::default(),
             onboarding: first.then(|| onboarding::State::new(&shared)),
-            started: false,
             maximized: false,
             shared,
         }
@@ -215,10 +213,6 @@ impl MainWindow {
 
     pub fn ui(&mut self, ui: &mut Ui) {
         let ctx = ui.ctx().clone();
-        if !self.started {
-            self.started = true;
-            crate::update::confirm_started();
-        }
         let focused = ctx.input(|i| i.viewport().focused.unwrap_or(false));
         self.shared.main_focused.store(focused, std::sync::atomic::Ordering::Relaxed);
         let theme = self.shared.theme();

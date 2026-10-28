@@ -211,6 +211,8 @@ impl ApplicationHandler<UserEvent> for Runner {
         }
         // After the event loop exists, so the process is already DPI aware
         self.overlay = Some(crate::overlay::host::spawn(self.shared.clone()));
+        // Started normally, whether or not the main window shows (autostart goes to the tray)
+        crate::update::confirm_started();
         self.sync_visibility();
     }
 
