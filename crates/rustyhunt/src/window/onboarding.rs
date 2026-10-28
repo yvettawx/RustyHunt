@@ -325,7 +325,7 @@ impl State {
                             let p = s.profile_mut(Game::World);
                             p.module_mut(modules::PLAYER).enabled = ours;
                             if ours {
-                                p.player.backing = Backing::Blur;
+                                p.player.backing = Backing::Solid;
                             }
                         });
                     }
@@ -638,7 +638,7 @@ fn draw_hud(p: &egui::Painter, r: Rect, u: f32, f: &Frame, side: f32, i: &I18n) 
     let at = |x: f32, y: f32| pos2(r.min.x + r.width() * x, r.min.y + r.height() * y);
     let fs = |s: f32| (s * u).max(6.0);
 
-    // Player: the backing first blurs out the native health bar, then the module appears
+    // Player: the backing first covers the native health bar, then the module appears
     if f.banner > 0.0 {
         let br = Rect::from_min_size(at(0.045, 0.025), vec2(r.width() * 0.36, r.height() * 0.11));
         p.rect_filled(br, CornerRadius::same(6), fade(Color32::from_black_alpha(110), f.banner * a));

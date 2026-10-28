@@ -1,4 +1,4 @@
-//! Odds and ends of dealing with Windows: window style and position, the blur backing window,
+//! Odds and ends of dealing with Windows: window style and position,
 //! single instance, start at login, opening folders, system light/dark mode.
 
 use std::ffi::OsStr;
@@ -6,17 +6,15 @@ use std::path::Path;
 
 use platform::wide;
 use windows_sys::Win32::Foundation::{HWND, LPARAM, RECT};
-use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleW, GetProcAddress};
 use windows_sys::Win32::System::Registry::{
     HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_SZ, RRF_RT_REG_DWORD, RegCloseKey, RegDeleteValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW,
 };
 use windows_sys::Win32::System::Threading::{CreateMutexW, GetCurrentProcessId};
 use windows_sys::Win32::UI::Shell::ShellExecuteW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, EnumWindows, GWL_EXSTYLE, GetSystemMetrics, GetWindowLongPtrW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId,
-    HWND_TOPMOST, MB_ICONERROR, MB_OK, MessageBoxW, RegisterClassW, SM_CXSCREEN, SM_CYSCREEN, SW_HIDE, SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW,
-    SetForegroundWindow, SetWindowLongPtrW, SetWindowPos, ShowWindow, WNDCLASSW, WS_EX_APPWINDOW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-    WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
+    EnumWindows, GWL_EXSTYLE, GetSystemMetrics, GetWindowLongPtrW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, HWND_TOPMOST, MB_ICONERROR, MB_OK,
+    MessageBoxW, SM_CXSCREEN, SM_CYSCREEN, SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetWindowLongPtrW, SetWindowPos, ShowWindow,
+    WS_EX_APPWINDOW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
 };
 
 /// Overlay window: not in the taskbar, doesn't take focus.
@@ -36,12 +34,6 @@ pub fn place_overlay(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32)) {
     }
 }
 
-pub fn window_origin(hwnd: Option<isize>) -> Option<(i32, i32)> {
-    let h = hwnd? as HWND;
-    let mut r: RECT = unsafe { std::mem::zeroed() };
-    (unsafe { GetWindowRect(h, &mut r) } != 0).then_some((r.left, r.top))
-}
-
 /// Window rect on screen in physical pixels: (x, y, w, h).
 pub fn window_rect(hwnd: isize) -> Option<(i32, i32, i32, i32)> {
     let mut r: RECT = unsafe { std::mem::zeroed() };
@@ -52,102 +44,10 @@ pub fn primary_screen() -> (i32, i32) {
     unsafe { (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) }
 }
 
-pub fn hide_window(hwnd: isize) {
-    unsafe { ShowWindow(hwnd as HWND, SW_HIDE) };
-}
-
 pub fn focus_window(hwnd: isize) {
     unsafe {
         ShowWindow(hwnd as HWND, SW_SHOWNORMAL);
         SetForegroundWindow(hwnd as HWND);
-    }
-}
-
-unsafe extern "system" fn blur_proc(h: HWND, msg: u32, w: usize, l: isize) -> isize {
-    unsafe { DefWindowProcW(h, msg, w, l) }
-}
-
-/// Window for the blur backing: click-through, doesn't take focus, not in the taskbar.
-pub fn create_blur_window() -> isize {
-    let class = wide(OsStr::new("RustyHuntBacking"));
-    unsafe {
-        let inst = GetModuleHandleW(std::ptr::null());
-        let wc = WNDCLASSW {
-            lpfnWndProc: Some(blur_proc),
-            hInstance: inst,
-            lpszClassName: class.as_ptr(),
-            ..std::mem::zeroed()
-        };
-        RegisterClassW(&wc);
-        let title = wide(OsStr::new("RustyHunt Backing"));
-        let h = CreateWindowExW(
-            WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
-            class.as_ptr(),
-            title.as_ptr(),
-            WS_POPUP,
-            0,
-            0,
-            1,
-            1,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            inst,
-            std::ptr::null(),
-        );
-        windows_sys::Win32::UI::WindowsAndMessaging::SetLayeredWindowAttributes(h, 0, 255, windows_sys::Win32::UI::WindowsAndMessaging::LWA_ALPHA);
-        h as isize
-    }
-}
-
-#[repr(C)]
-struct AccentPolicy {
-    state: u32,
-    flags: u32,
-    gradient: u32,
-    animation: u32,
-}
-
-#[repr(C)]
-struct CompositionData {
-    attribute: u32,
-    data: *mut std::ffi::c_void,
-    size: usize,
-}
-
-type SetWca = unsafe extern "system" fn(HWND, *mut CompositionData) -> i32;
-
-/// Gives the window the system acrylic blur with a faint dark-gray tint (AABBGGRR).
-fn set_blur(hwnd: HWND) {
-    unsafe {
-        let user32 = wide(OsStr::new("user32.dll"));
-        let m = GetModuleHandleW(user32.as_ptr());
-        let Some(f) = GetProcAddress(m, c"SetWindowCompositionAttribute".as_ptr() as *const u8) else {
-            return;
-        };
-        let f: SetWca = std::mem::transmute(f);
-        let mut accent = AccentPolicy {
-            state: 4,
-            flags: 2,
-            gradient: 0x2020_2020,
-            animation: 0,
-        };
-        let mut data = CompositionData {
-            attribute: 19,
-            data: &mut accent as *mut _ as *mut _,
-            size: size_of::<AccentPolicy>(),
-        };
-        f(hwnd, &mut data);
-    }
-}
-
-/// Shows a blur window at `(x, y, w, h)` with overall opacity `alpha`, directly below the overlay.
-pub fn place_blur_window(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32), alpha: u8, overlay: Option<isize>) {
-    let hw = hwnd as HWND;
-    set_blur(hw);
-    unsafe {
-        windows_sys::Win32::UI::WindowsAndMessaging::SetLayeredWindowAttributes(hw, 0, alpha, windows_sys::Win32::UI::WindowsAndMessaging::LWA_ALPHA);
-        let after = overlay.map(|o| o as HWND).unwrap_or(HWND_TOPMOST);
-        SetWindowPos(hw, after, x, y, w.max(1), h.max(1), SWP_NOACTIVATE | SWP_SHOWWINDOW);
     }
 }
 

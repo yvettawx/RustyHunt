@@ -211,7 +211,6 @@ pub struct Overlay {
     /// The layout window while layout mode is on, and where it was last placed
     layout_win: Option<(isize, (i32, i32, i32, i32))>,
     hwnd: Option<isize>,
-    backing: backing::Backing,
     preview_snap: Option<Arc<Snapshot>>,
 }
 
@@ -225,7 +224,6 @@ impl Overlay {
             settle_until: None,
             layout_win: None,
             hwnd: None,
-            backing: backing::Backing::default(),
             preview_snap: None,
         }
     }
@@ -281,7 +279,6 @@ impl Overlay {
         // The overlay is topmost: draw nothing over other programs while the game is in the background
         let in_front = live.game_foreground || layout_on || matches!(live.connection, Connection::Demo);
         if geometry.is_none() || (!settings.overlay_visible && !layout_on) || !in_front {
-            self.backing.hide();
             self.layout_win = None;
             return;
         }
@@ -394,9 +391,7 @@ impl Overlay {
                 .rects
                 .get(modules::PLAYER)
                 .map(|r| Rect::from_min_max(screen.min + r.min.to_vec2() * s, screen.min + r.max.to_vec2() * s));
-            self.backing.draw(&ctx, &f, module, screen, s, self.hwnd);
-        } else {
-            self.backing.hide();
+            backing::draw(&ctx, &f, module, screen, s);
         }
 
         let mut ids: Vec<String> = profile.modules.keys().cloned().collect();
@@ -493,7 +488,7 @@ pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Th
             modules::PERF => misc::perf(cv, f, cfg, st),
             other => crate::plugins::draw_module(other, cv, f, cfg, st, ctx),
         };
-        // The player module's backing is its own setting (none, solid or blur), drawn in separate windows
+        // The player module's backing is its own setting (none or solid), drawn under it with a wide soft edge
         if size != Vec2::ZERO && cfg.panel && id != modules::PLAYER {
             cv.panel_into(slot, 0.0, 0.0, size.x, size.y);
         }

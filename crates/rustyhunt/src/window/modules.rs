@@ -352,29 +352,12 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
             }
             ui.add_space(18.0);
             field_label(ui, pal, &i18n::t("label.backing"));
-            let kinds = [Backing::None, Backing::Solid, Backing::Blur];
-            let mut sel = kinds.iter().position(|k| *k == po.backing).unwrap_or(2);
-            if widgets::seg(
-                ui,
-                pal,
-                &[
-                    i18n::t("modules.backing_none"),
-                    i18n::t("modules.backing_solid"),
-                    i18n::t("modules.backing_blur"),
-                ],
-                &mut sel,
-            ) {
+            let kinds = [Backing::None, Backing::Solid];
+            let mut sel = kinds.iter().position(|k| *k == po.backing).unwrap_or(1);
+            if widgets::seg(ui, pal, &[i18n::t("modules.backing_none"), i18n::t("modules.backing_solid")], &mut sel) {
                 set(&|p| p.backing = kinds[sel]);
             }
             ui.add_space(18.0);
-            if po.backing == Backing::Blur {
-                field_label(ui, pal, &i18n::t("label.blur"));
-                let mut v = (po.blur_strength * 100.0).round();
-                if widgets::range(ui, pal, "blur", &mut v, 10.0, 100.0, 5.0, "%", rw) {
-                    set(&|p| p.blur_strength = v / 100.0);
-                }
-                ui.add_space(18.0);
-            }
             if po.backing == Backing::Solid {
                 field_label(ui, pal, &i18n::t("label.backing_op"));
                 let mut v = (po.backing_opacity * 100.0).round();

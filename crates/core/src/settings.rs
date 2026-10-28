@@ -57,9 +57,10 @@ pub enum TargetMode {
 #[serde(rename_all = "lowercase")]
 pub enum Backing {
     None,
-    Solid,
+    /// Saved settings from before blur was removed still say "blur"
     #[default]
-    Blur,
+    #[serde(alias = "blur")]
+    Solid,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -143,8 +144,6 @@ pub struct PlayerOptions {
     /// Low-HP threshold, percent
     pub low_hp: f32,
     pub backing: Backing,
-    /// How opaque the blur gets inside its soft edge, 0..1
-    pub blur_strength: f32,
     /// Solid backing opacity 0..1
     pub backing_opacity: f32,
     pub backing_w: f32,
@@ -155,8 +154,7 @@ impl Default for PlayerOptions {
     fn default() -> Self {
         PlayerOptions {
             low_hp: 30.0,
-            backing: Backing::Blur,
-            blur_strength: 0.6,
+            backing: Backing::Solid,
             backing_opacity: 0.55,
             backing_w: 1.0,
             backing_h: 1.0,
@@ -521,6 +519,13 @@ impl Settings {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn blur_backing_from_older_settings_loads_as_solid() {
+        let p: PlayerOptions = toml::from_str("backing = \"blur\"
+blur_strength = 0.6").unwrap();
+        assert_eq!(p.backing, Backing::Solid);
+    }
 
     #[test]
     fn defaults_round_trip_through_toml() {
