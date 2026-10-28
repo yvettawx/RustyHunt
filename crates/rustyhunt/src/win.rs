@@ -1,44 +1,19 @@
-//! Odds and ends of dealing with Windows: window style and position,
+//! Odds and ends of dealing with Windows: the screen size,
 //! single instance, start at login, opening folders, system light/dark mode.
 
 use std::ffi::OsStr;
 use std::path::Path;
 
 use platform::wide;
-use windows_sys::Win32::Foundation::{HWND, LPARAM, RECT};
+use windows_sys::Win32::Foundation::HWND;
 use windows_sys::Win32::System::Registry::{
     HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_SZ, RRF_RT_REG_DWORD, RegCloseKey, RegDeleteValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW,
 };
-use windows_sys::Win32::System::Threading::{CreateMutexW, GetCurrentProcessId};
+use windows_sys::Win32::System::Threading::CreateMutexW;
 use windows_sys::Win32::UI::Shell::ShellExecuteW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    EnumWindows, GWL_EXSTYLE, GetSystemMetrics, GetWindowLongPtrW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, HWND_TOPMOST, MB_ICONERROR, MB_OK,
-    MessageBoxW, SM_CXSCREEN, SM_CYSCREEN, SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetWindowLongPtrW, SetWindowPos, ShowWindow,
-    WS_EX_APPWINDOW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
+    GetSystemMetrics, MB_ICONERROR, MB_OK, MessageBoxW, SM_CXSCREEN, SM_CYSCREEN, SW_SHOWNORMAL, SetForegroundWindow, ShowWindow,
 };
-
-/// Overlay window: not in the taskbar, doesn't take focus.
-pub fn style_overlay(hwnd: isize) {
-    let h = hwnd as HWND;
-    unsafe {
-        let ex = GetWindowLongPtrW(h, GWL_EXSTYLE) as u32;
-        let ex = (ex | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST) & !WS_EX_APPWINDOW;
-        SetWindowLongPtrW(h, GWL_EXSTYLE, ex as isize);
-    }
-}
-
-/// Places the overlay over the game's client area (physical pixels).
-pub fn place_overlay(hwnd: isize, (x, y, w, h): (i32, i32, i32, i32)) {
-    unsafe {
-        SetWindowPos(hwnd as HWND, HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE | SWP_SHOWWINDOW);
-    }
-}
-
-/// Window rect on screen in physical pixels: (x, y, w, h).
-pub fn window_rect(hwnd: isize) -> Option<(i32, i32, i32, i32)> {
-    let mut r: RECT = unsafe { std::mem::zeroed() };
-    (unsafe { GetWindowRect(hwnd as HWND, &mut r) } != 0).then_some((r.left, r.top, r.right - r.left, r.bottom - r.top))
-}
 
 pub fn primary_screen() -> (i32, i32) {
     unsafe { (GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) }
@@ -49,37 +24,6 @@ pub fn focus_window(hwnd: isize) {
         ShowWindow(hwnd as HWND, SW_SHOWNORMAL);
         SetForegroundWindow(hwnd as HWND);
     }
-}
-
-/// Finds a window in this process by title (the main window's child viewport has no eframe Frame to get a handle from).
-pub fn own_window(title: &str) -> Option<isize> {
-    struct Ctx {
-        pid: u32,
-        title: String,
-        found: Option<isize>,
-    }
-    unsafe extern "system" fn cb(h: HWND, l: LPARAM) -> i32 {
-        let c = unsafe { &mut *(l as *mut Ctx) };
-        let mut pid = 0;
-        unsafe { GetWindowThreadProcessId(h, &mut pid) };
-        if pid != c.pid {
-            return 1;
-        }
-        let mut buf = [0u16; 256];
-        let n = unsafe { GetWindowTextW(h, buf.as_mut_ptr(), 256) };
-        if String::from_utf16_lossy(&buf[..n.max(0) as usize]) == c.title {
-            c.found = Some(h as isize);
-            return 0;
-        }
-        1
-    }
-    let mut c = Ctx {
-        pid: unsafe { GetCurrentProcessId() },
-        title: title.to_string(),
-        found: None,
-    };
-    unsafe { EnumWindows(Some(cb), &mut c as *mut Ctx as LPARAM) };
-    c.found
 }
 
 /// Single instance: returns false when one is already running.

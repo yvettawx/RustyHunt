@@ -1,8 +1,10 @@
-//! In-game overlay: a transparent, topmost, click-through window over the game's client area.
+//! In-game overlay: the modules, drawn over the game's client area. `host` runs it on its own thread,
+//! rasterizes it on the CPU and shows each module in its own small layered window.
 //! Designed on a 1080-high reference frame, scaled by the game window's height, and aligned by anchor on wide screens.
 //! Nothing is redrawn while the picture is still; only data changes or running animations draw the next frame.
 
 mod backing;
+pub mod host;
 mod hunter;
 pub mod layout;
 mod misc;
@@ -22,7 +24,7 @@ use ui_kit::fields::Activity;
 use ui_kit::render::Images;
 use ui_kit::{Canvas, Theme};
 
-use crate::state::{Connection, Live, Shared};
+use crate::state::{Live, Shared};
 
 pub use layout::LayoutState;
 pub use misc::SLOT_COLORS;
@@ -87,6 +89,8 @@ pub struct State {
     pub animating: bool,
     /// Each module's rect on screen (reference coordinates)
     pub rects: BTreeMap<String, Rect>,
+    /// Everything each module painted this frame, backing and overhangs included (screen points)
+    pub bounds: BTreeMap<String, Rect>,
     pub images: Images,
     /// Data for template modules, built once per frame
     pub context: Option<serde_json::Value>,
@@ -175,6 +179,16 @@ fn module_layer(id: &str) -> LayerId {
     LayerId::new(Order::Foreground, Id::unique((LAYER_ROOT, id)))
 }
 
+/// Where the shapes painted on a layer so far will land, before the layer's transform.
+fn layer_bounds(ctx: &egui::Context, layer: LayerId) -> Rect {
+    ctx.graphics(|g| {
+        g.get(layer).map_or(Rect::NOTHING, |list| {
+            list.all_entries()
+                .fold(Rect::NOTHING, |r, s| r.union(s.shape.visual_bounding_rect().intersect(s.clip_rect)))
+        })
+    })
+}
+
 /// Whether a module should be shown.
 fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
     if !cfg.enabled {
@@ -192,25 +206,10 @@ fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
     true
 }
 
-const LAYOUT_TITLE: &str = "RustyHunt Layout";
-
-/// For screenshots: draw layout mode into the overlay window itself, which can be captured.
-pub static LAYOUT_INLINE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-fn layout_viewport() -> egui::ViewportId {
-    egui::ViewportId::from_hash_of("rustyhunt-layout")
-}
-
 pub struct Overlay {
     pub shared: Arc<Shared>,
     pub state: State,
     pub layout: LayoutState,
-    geometry: Option<(i32, i32, i32, i32)>,
-    /// Keep repainting until then after a move: a resize drops a frame while the swapchain is reconfigured
-    settle_until: Option<std::time::Instant>,
-    /// The layout window while layout mode is on, and where it was last placed
-    layout_win: Option<(isize, (i32, i32, i32, i32))>,
-    hwnd: Option<isize>,
     preview_snap: Option<Arc<Snapshot>>,
 }
 
@@ -220,104 +219,12 @@ impl Overlay {
             shared,
             state: State::default(),
             layout: LayoutState::default(),
-            geometry: None,
-            settle_until: None,
-            layout_win: None,
-            hwnd: None,
             preview_snap: None,
         }
     }
 
-    pub fn set_hwnd(&mut self, hwnd: isize) {
-        if self.hwnd != Some(hwnd) {
-            self.hwnd = Some(hwnd);
-            crate::win::style_overlay(hwnd);
-        }
-    }
-
-    /// Which part of the screen the overlay should cover (physical pixels). None when there is nothing to show.
-    fn target_geometry(&self, live: &Live, layout: bool) -> Option<(i32, i32, i32, i32)> {
-        if let Some(r) = live.game_rect
-            && live.connected()
-            && !live.game_minimized
-            && r.w > 0
-            && r.h > 0
-        {
-            return Some((r.x, r.y, r.w, r.h));
-        }
-        if matches!(live.connection, Connection::Demo) || layout {
-            let (w, h) = crate::win::primary_screen();
-            return Some((0, 0, w, h));
-        }
-        None
-    }
-
-    pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let t0 = std::time::Instant::now();
-        let ctx = ui.ctx().clone();
-        let shared = self.shared.clone();
-        let layout_on = shared.layout_mode();
-        let live = shared.live().clone();
-        let settings = shared.settings().clone();
-
-        // Window position
-        let geometry = self.target_geometry(&live, layout_on);
-        let want = geometry.unwrap_or((-32000, -32000, 1, 1));
-        // Moving onto a monitor with a different scale makes winit resize the window
-        // to keep its logical size, so check the real rect, not just what was last asked for.
-        if let Some(h) = self.hwnd {
-            let real = crate::win::window_rect(h);
-            if self.geometry != Some(want) || (geometry.is_some() && real != Some(want)) {
-                crate::win::place_overlay(h, want);
-                self.geometry = Some(want);
-                self.settle_until = Some(std::time::Instant::now() + std::time::Duration::from_secs(1));
-            }
-        }
-        if self.settle_until.is_some_and(|t| std::time::Instant::now() < t) {
-            ctx.request_repaint();
-        }
-        // The overlay is topmost: draw nothing over other programs while the game is in the background
-        let in_front = live.game_foreground || layout_on || matches!(live.connection, Connection::Demo);
-        if geometry.is_none() || (!settings.overlay_visible && !layout_on) || !in_front {
-            self.layout_win = None;
-            return;
-        }
-
-        if !layout_on || LAYOUT_INLINE.load(std::sync::atomic::Ordering::Relaxed) {
-            self.layout_win = None;
-            self.paint(ui, t0);
-            return;
-        }
-        // Layout mode needs the mouse and keyboard, which the overlay can't take: it has to stay a
-        // layered click-through window, since changing that style breaks its DirectComposition
-        // output. A plain window on top takes over while layout mode is on, and the overlay stays empty.
-        let builder = egui::ViewportBuilder::default()
-            .with_title(LAYOUT_TITLE)
-            .with_decorations(false)
-            .with_transparent(true)
-            .with_always_on_top()
-            .with_taskbar(false)
-            .with_resizable(false)
-            .with_inner_size([1.0, 1.0])
-            .with_position([-32000.0, -32000.0]);
-        ctx.show_viewport_immediate(layout_viewport(), builder, |vui, _| {
-            let first = self.layout_win.is_none();
-            if let Some(h) = self.layout_win.map(|w| w.0).or_else(|| crate::win::own_window(LAYOUT_TITLE)) {
-                if self.layout_win.is_none_or(|(_, at)| at != want) || crate::win::window_rect(h) != Some(want) {
-                    crate::win::place_overlay(h, want);
-                    vui.ctx().request_repaint();
-                }
-                self.layout_win = Some((h, want));
-            }
-            if first {
-                vui.ctx().send_viewport_cmd(egui::ViewportCommand::Focus);
-            }
-            self.paint(vui, t0);
-        });
-    }
-
     /// Draws the modules (and in layout mode the layout tools) into `ui`'s window.
-    fn paint(&mut self, ui: &mut egui::Ui, t0: std::time::Instant) {
+    pub fn paint(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
         let shared = self.shared.clone();
         let layout_on = shared.layout_mode();
@@ -398,6 +305,7 @@ impl Overlay {
         // Monster modules go on top
         ids.sort_by_key(|id| id == modules::MONSTER);
         let mut rects = BTreeMap::new();
+        let mut bounds = BTreeMap::new();
         for id in ids {
             let cfg = &profile.modules[&id];
             if !visible(&f, cfg) {
@@ -425,19 +333,18 @@ impl Overlay {
             let offset = screen.min + vec2(x, y) * s;
             ctx.set_transform_layer(layer, TSTransform::from_translation(offset.to_vec2()));
             rects.insert(id.clone(), Rect::from_min_size(pos2(x, y), size_design));
+            bounds.insert(id.clone(), layer_bounds(&ctx, layer).translate(offset.to_vec2()));
+        }
+        // The player module's window also carries its backing
+        if let Some(b) = bounds.get_mut(modules::PLAYER) {
+            *b = b.union(layer_bounds(&ctx, backing::layer()));
         }
         self.state.rects = rects;
+        self.state.bounds = bounds;
 
         if layout_on {
             layout::interact(ui, &shared, &mut self.layout, &self.state.rects, screen, s, frame_w, game);
         }
-
-        shared.overlay_frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let us = t0.elapsed().as_micros() as u32;
-        let prev = shared.frame_us.load(std::sync::atomic::Ordering::Relaxed);
-        shared
-            .frame_us
-            .store(if prev == 0 { us } else { (prev * 7 + us) / 8 }, std::sync::atomic::Ordering::Relaxed);
 
         // While animating keep drawing up to the frame cap; when still, stop requesting repaints
         if self.state.animating || layout_on || !self.state.toasts.is_empty() {

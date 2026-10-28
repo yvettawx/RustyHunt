@@ -134,9 +134,19 @@ pub struct Shared {
     pub frame_us: AtomicU32,
     /// Overlay frames drawn, for the timing line in the log
     pub overlay_frames: AtomicU32,
+    /// Where overlay frame time goes, milliseconds (running averages): egui, rasterizing, window updates,
+    /// and the time from the reader publishing new data to the windows showing it
+    pub overlay_split: Mutex<[f32; 4]>,
+    /// When the reader last published new data
+    pub data_at: Mutex<Option<Instant>>,
     /// The main window has keyboard focus (see `main_window_live`)
     pub main_focused: AtomicBool,
+    /// The main window's egui context
     pub ctx: OnceLock<egui::Context>,
+    /// The overlay thread's egui context
+    pub overlay_ctx: OnceLock<egui::Context>,
+    /// Event the overlay thread waits on (a Win32 handle)
+    pub overlay_wake: OnceLock<isize>,
     pub started: Instant,
     pub quit: AtomicBool,
 }
@@ -155,8 +165,12 @@ impl Shared {
             show_all: AtomicBool::new(false),
             frame_us: AtomicU32::new(0),
             overlay_frames: AtomicU32::new(0),
+            overlay_split: Mutex::new([0.0; 4]),
+            data_at: Mutex::new(None),
             main_focused: AtomicBool::new(false),
             ctx: OnceLock::new(),
+            overlay_ctx: OnceLock::new(),
+            overlay_wake: OnceLock::new(),
             started: Instant::now(),
             quit: AtomicBool::new(false),
         })
@@ -201,9 +215,13 @@ impl Shared {
         self.repaint();
     }
 
+    /// Queues an action for the main thread, which handles it even while the main window is hidden.
     pub fn act(&self, a: Action) {
         self.actions.lock().unwrap().push_back(a);
-        self.repaint();
+        if let Some(ctx) = self.ctx.get() {
+            ctx.request_repaint();
+        }
+        self.repaint_overlay();
     }
 
     pub fn take_actions(&self) -> Vec<Action> {
@@ -212,26 +230,25 @@ impl Shared {
 
     /// Asks every window to repaint. Called by the reader thread when data changes.
     pub fn repaint(&self) {
-        if let Some(ctx) = self.ctx.get() {
-            ctx.request_repaint_of(egui::ViewportId::ROOT);
-            if self.main_window_live() {
-                ctx.request_repaint_of(crate::window::main_viewport());
-            }
+        self.repaint_overlay();
+        if self.main_window_live()
+            && let Some(ctx) = self.ctx.get()
+        {
+            ctx.request_repaint();
         }
     }
 
-    /// Whether the main window should repaint on its own. All windows draw on one thread and each
-    /// frame waits until the previous one is on screen; a main window the system isn't showing (behind
-    /// the game, or with the game in front) makes that wait last up to a second and stalls the overlay.
-    /// So while the game is connected the main window only repaints when it has focus; input and
-    /// focus changes still repaint it.
+    /// Whether the main window should repaint on its own. While the game is connected it only follows
+    /// the data when it has focus: behind the game nobody sees it, and drawing it would take CPU from
+    /// the game. Input and focus changes still repaint it.
     pub fn main_window_live(&self) -> bool {
         self.main_focused.load(Ordering::Relaxed) || self.live.try_read().is_ok_and(|l| !l.connected())
     }
 
+    /// Wakes the overlay thread for a new frame.
     pub fn repaint_overlay(&self) {
-        if let Some(ctx) = self.ctx.get() {
-            ctx.request_repaint_of(egui::ViewportId::ROOT);
+        if let Some(&h) = self.overlay_wake.get() {
+            unsafe { windows_sys::Win32::System::Threading::SetEvent(h as windows_sys::Win32::Foundation::HANDLE) };
         }
     }
 

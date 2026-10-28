@@ -144,7 +144,7 @@ pub fn apply(shared: &Shared, id: &str) {
 /// Reloads the current theme according to settings.
 pub fn reload(shared: &Shared) {
     let t = load_active(&shared.settings());
-    if let Some(ctx) = shared.ctx.get() {
+    for ctx in [shared.ctx.get(), shared.overlay_ctx.get()].into_iter().flatten() {
         install_fonts(ctx, &t);
         crate::window::style::apply(ctx, &t);
     }

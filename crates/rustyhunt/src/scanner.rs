@@ -94,8 +94,9 @@ impl Scanner {
                 let frames = self.shared.overlay_frames.swap(0, std::sync::atomic::Ordering::Relaxed);
                 if matches!(self.phase, Phase::Attached { .. }) || self.demo.is_some() {
                     let live = self.shared.live();
+                    let [ui, raster, windows, latency] = *self.shared.overlay_split.lock().unwrap();
                     log::info!(
-                        "timing: reading {:.0} Hz, {:.1} ms a read, slowest tick {:.1} ms; overlay {:.0} fps, {:.1} ms a frame; game in front {}",
+                        "timing: reading {:.0} Hz, {:.1} ms a read, slowest tick {:.1} ms; overlay {:.0} fps, {:.1} ms a frame (egui {ui:.1}, raster {raster:.1}, windows {windows:.1}), data on screen after {latency:.1} ms; game in front {}",
                         live.actual_hz,
                         live.read_ms,
                         worst_tick.as_secs_f32() * 1000.0,
@@ -450,6 +451,7 @@ impl Scanner {
             s.frame(&self.shared, &arc, &events);
         }
         if changed || !events.is_empty() {
+            *self.shared.data_at.lock().unwrap() = Some(Instant::now());
             self.shared.repaint_overlay();
             if !events.is_empty() || (now * 2.0).fract() < 0.1 {
                 self.shared.repaint();

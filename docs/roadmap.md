@@ -42,6 +42,10 @@ Released.
 
 Built, not yet checked in the game.
 
+**Rendering**
+
+- No GPU: the overlay and the main window are drawn on the CPU. The overlay is one click-through layered window per module, updated only where it changed.
+
 **Overlay**
 
 - The monster module shows only once you select a monster (lock-on, the in-game selection, a hit in last-hit mode, or a manual switch).

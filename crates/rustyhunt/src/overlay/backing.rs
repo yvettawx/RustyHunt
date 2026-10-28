@@ -50,6 +50,11 @@ fn feathered(rect: Rect, fx: f32, fy: f32, color: Color32) -> Shape {
     Shape::mesh(mesh)
 }
 
+/// The layer the backing is painted on.
+pub fn layer() -> LayerId {
+    LayerId::new(Order::Background, Id::unique("player-backing"))
+}
+
 /// `module` is where the player module was drawn last frame (screen points); None before it has been drawn.
 pub fn draw(ctx: &egui::Context, f: &Frame, module: Option<Rect>, screen: Rect, s: f32) {
     let o = &f.profile.player;
@@ -65,7 +70,7 @@ pub fn draw(ctx: &egui::Context, f: &Frame, module: Option<Rect>, screen: Rect, 
     let (sw, sh) = (o.backing_w.clamp(0.6, 1.4), o.backing_h.clamp(0.6, 1.8));
     let rect = Rect::from_center_size(base.center(), vec2(base.width() * sw, base.height() * sh));
     let op = o.backing_opacity.clamp(0.0, 1.0);
-    let painter = ctx.layer_painter(LayerId::new(Order::Background, Id::unique("player-backing")));
+    let painter = ctx.layer_painter(layer());
     painter.add(feathered(rect, fx, fy, Color32::from_rgba_unmultiplied(10, 10, 10, (op * 255.0) as u8)));
 }
 

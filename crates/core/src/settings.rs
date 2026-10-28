@@ -522,8 +522,11 @@ mod tests {
 
     #[test]
     fn blur_backing_from_older_settings_loads_as_solid() {
-        let p: PlayerOptions = toml::from_str("backing = \"blur\"
-blur_strength = 0.6").unwrap();
+        let p: PlayerOptions = toml::from_str(
+            "backing = \"blur\"
+blur_strength = 0.6",
+        )
+        .unwrap();
         assert_eq!(p.backing, Backing::Solid);
     }
 

@@ -24,8 +24,9 @@ use widgets::{Btn, button, link, switch, text_at};
 
 pub const TITLE: &str = "RustyHunt";
 
+/// The main window is the root viewport of its own egui context.
 pub fn main_viewport() -> ViewportId {
-    ViewportId::from_hash_of("rustyhunt-main")
+    ViewportId::ROOT
 }
 
 /// Icon for the tray and windows: an orange diamond in a black square.

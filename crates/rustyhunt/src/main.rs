@@ -7,11 +7,13 @@ mod bestiary;
 mod crash;
 mod hotkeys;
 mod injection;
+mod layered;
 mod logging;
 mod notify;
 mod overlay;
 mod plugins;
 mod records;
+mod runner;
 mod scanner;
 mod screenshot;
 mod state;
@@ -20,8 +22,6 @@ mod tray;
 mod update;
 mod win;
 mod window;
-
-use std::sync::Arc;
 
 use rh_core::i18n;
 use rh_core::paths;
@@ -127,55 +127,11 @@ fn main() {
         });
     }
 
-    let viewport = egui::ViewportBuilder::default()
-        .with_title(overlay_title())
-        .with_decorations(false)
-        .with_transparent(true)
-        .with_always_on_top()
-        .with_mouse_passthrough(true)
-        .with_taskbar(false)
-        .with_resizable(false)
-        .with_inner_size([1.0, 1.0])
-        .with_position([-32000.0, -32000.0])
-        .with_icon(Arc::new(crate::window::icon()));
-    // OpenGL into a layered (click-through) window shows nothing on some monitors, and DX12 presented
-    // straight to the window has no alpha. DX12 through DirectComposition is transparent everywhere.
-    let mut wgpu_setup = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
-    wgpu_setup.instance_descriptor.backends = eframe::wgpu::Backends::DX12;
-    wgpu_setup.instance_descriptor.backend_options.dx12.presentation_system = eframe::wgpu::Dx12SwapchainKind::DxgiFromVisual;
-    let options = eframe::NativeOptions {
-        viewport,
-        renderer: eframe::Renderer::Wgpu,
-        wgpu_options: eframe::egui_wgpu::WgpuConfiguration {
-            wgpu_setup: wgpu_setup.into(),
-            // One frame in flight: each overlay frame waits until the previous one is on screen, so it
-            // always shows the latest data. Without the wait, frames pile up behind the game's GPU work
-            // and the overlay falls seconds behind. A window the system holds back (the main window
-            // behind the game) would block that wait, which is why it doesn't repaint while the game is in front.
-            surface: eframe::egui_wgpu::SurfaceConfig::LOW_LATENCY,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
-    let shot = args.screenshot.clone();
-    let start_tray = args.tray;
-    let result = eframe::run_native(
-        "RustyHunt",
-        options,
-        Box::new(move |cc| {
-            let app = app::App::new(cc, shared.clone(), start_tray);
-            Ok(match shot {
-                Some((what, path)) => Box::new(screenshot::Shot::new(app, shared, what, path)) as Box<dyn eframe::App>,
-                None => Box::new(app),
-            })
-        }),
-    );
-    if let Err(e) = result {
-        log::error!("failed to create the window: {e}");
-        win::error_box("RustyHunt", &format!("{e}"));
+    if let Some((what, path)) = args.screenshot.clone() {
+        screenshot::init(what, path);
     }
-}
-
-pub fn overlay_title() -> &'static str {
-    "RustyHunt Overlay"
+    if let Err(e) = runner::run(shared, args.tray, args.screenshot) {
+        log::error!("failed to start: {e}");
+        win::error_box("RustyHunt", &e);
+    }
 }
