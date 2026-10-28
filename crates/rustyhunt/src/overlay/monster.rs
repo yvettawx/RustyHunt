@@ -66,7 +66,8 @@ fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cel
                     p.flinch_ratio()
                 },
                 segments: (p.breaks_max > 1).then_some((p.breaks, p.breaks_max)),
-                bar2: (cfg.shows("m-b2") && breakable).then(|| p.flinch_ratio()),
+                // The flinch bar only adds something when a break takes more than one flinch
+                bar2: (cfg.shows("m-b2") && breakable && p.durability_max > p.flinch_max + 0.5).then(|| p.flinch_ratio()),
                 done,
                 active: false,
                 flash: st.flash.get(&format!("{}:p{i}", m.uid)).is_some_and(|t| f.now - t < 0.8),

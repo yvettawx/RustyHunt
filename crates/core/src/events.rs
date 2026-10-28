@@ -176,7 +176,8 @@ pub fn diff(prev: &Snapshot, cur: &Snapshot) -> Vec<Event> {
                 continue;
             };
             if part.breaks > old.breaks && part.breaks_max > 0 {
-                if part.kind == crate::model::PartKind::Severable {
+                // Cutting a tail off; severable parts with several breaks (horns) break
+                if part.kind == crate::model::PartKind::Severable && part.breaks_max <= 1 {
                     out.push(Event::PartSever { uid, part: part.key.clone() });
                 } else {
                     out.push(Event::PartBreak {

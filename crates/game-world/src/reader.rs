@@ -1095,47 +1095,39 @@ fn part_from_raw(pd: &crate::data::PartDef, b: &[u8]) -> Part {
         breaks_max: pd.thresholds.len() as i32,
         ..Default::default()
     };
-    if pd.severable {
-        p.kind = PartKind::Severable;
-        p.durability = hp;
-        p.durability_max = max;
-        p.breaks = count.min(p.breaks_max);
+    p.kind = if pd.severable {
+        PartKind::Severable
     } else if !pd.thresholds.is_empty() {
-        p.kind = PartKind::Breakable;
-        p.flinch = hp;
-        p.flinch_max = max;
-        // In World a break means "N accumulated flinches": next threshold minus the current count, converted to durability
-        p.breaks = pd.thresholds.iter().filter(|&&t| count >= t).count() as i32;
-        match pd.thresholds.iter().find(|&&t| t > count) {
-            Some(&t) => {
-                p.durability_max = t as f32 * max;
-                p.durability = (t - count - 1).max(0) as f32 * max + hp;
-            }
-            None => {
-                p.durability_max = max;
-                p.durability = 0.0;
-            }
-        }
+        PartKind::Breakable
     } else {
-        p.kind = PartKind::Flinch;
-        p.flinch = hp;
-        p.flinch_max = max;
+        PartKind::Flinch
+    };
+    p.flinch = hp;
+    p.flinch_max = max;
+    if pd.thresholds.is_empty() {
+        // Plain flinch part, or a severable one the data has no breaks for
+        if pd.severable {
+            p.durability = hp;
+            p.durability_max = max;
+        }
+        return p;
     }
+    // A break means "N accumulated depletions" (the count), severable parts included: Nergigante's
+    // horns are severable and break at 2 and 3. Durability runs to the next threshold.
+    let breaks = pd.thresholds.iter().filter(|&&t| count >= t).count() as i32;
+    set_break_progress(&mut p, pd, breaks, count, hp, max);
     p
 }
 
-/// Raises a part's break count to `breaks`, with durability as it was just when that count was reached.
-fn hold_breaks(p: &mut Part, pd: &crate::data::PartDef, breaks: i32) {
+/// Sets `breaks` and the durability left until the next break: one bar segment per break, so the
+/// maximum covers only the depletions between the last threshold reached and the next one.
+fn set_break_progress(p: &mut Part, pd: &crate::data::PartDef, breaks: i32, count: i32, hp: f32, max: f32) {
     p.breaks = breaks.min(p.breaks_max);
-    if p.kind != PartKind::Breakable {
-        return;
-    }
-    let max = p.flinch_max;
     match pd.thresholds.get(p.breaks as usize) {
         Some(&t) => {
-            let count = if p.breaks > 0 { pd.thresholds[p.breaks as usize - 1] } else { 0 };
-            p.durability_max = t as f32 * max;
-            p.durability = (t - count - 1).max(0) as f32 * max + p.flinch;
+            let prev = if p.breaks > 0 { pd.thresholds[p.breaks as usize - 1] } else { 0 };
+            p.durability_max = (t - prev) as f32 * max;
+            p.durability = (t - count.max(prev) - 1).max(0) as f32 * max + hp;
         }
         None => {
             p.durability_max = max;
@@ -1144,7 +1136,20 @@ fn hold_breaks(p: &mut Part, pd: &crate::data::PartDef, breaks: i32) {
     }
 }
 
-/// Upstream `GetCurrentSharpness`: which color segment the current value falls in.
+/// Raises a part's break count to `breaks`, with durability as it was just when that count was reached.
+fn hold_breaks(p: &mut Part, pd: &crate::data::PartDef, breaks: i32) {
+    if pd.thresholds.is_empty() {
+        p.breaks = breaks.min(p.breaks_max);
+        return;
+    }
+    let count = if breaks > 0 {
+        pd.thresholds[(breaks as usize).min(pd.thresholds.len()) - 1]
+    } else {
+        0
+    };
+    set_break_progress(p, pd, breaks, count, p.flinch, p.flinch_max);
+}
+
 pub fn current_sharpness(thresholds: &[i32], current: i32) -> Option<SharpnessLevel> {
     for i in (1..thresholds.len()).rev() {
         let end = thresholds[i];
@@ -1299,7 +1304,8 @@ mod tests {
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
         h.hold((101, 7), &defs, &mut parts);
         assert_eq!(parts[0].breaks, 1);
-        assert_eq!(parts[0].durability_max, 500.0);
+        // The second break's own segment: three depletions from the first threshold
+        assert_eq!(parts[0].durability_max, 300.0);
         assert_eq!(parts[0].durability, 240.0);
 
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(5))];
@@ -1330,6 +1336,26 @@ mod tests {
         let mut parts = vec![part_from_raw(&defs[0], &raw_part(0))];
         h.hold((0, 9), &defs, &mut parts);
         assert_eq!(parts[0].breaks, 0);
+    }
+
+    #[test]
+    fn severable_horns_break_at_their_thresholds() {
+        let pd = crate::data::PartDef {
+            id: 0,
+            key: "PART_HORNS".into(),
+            severable: true,
+            thresholds: vec![2, 3],
+            tenderize_ids: vec![],
+        };
+        // One depletion isn't a break yet
+        let p = part_from_raw(&pd, &raw_part(1));
+        assert_eq!(p.breaks, 0);
+        assert_eq!(p.durability_max, 200.0);
+        assert_eq!(p.durability, 40.0);
+        let p = part_from_raw(&pd, &raw_part(2));
+        assert_eq!(p.breaks, 1);
+        assert_eq!(p.durability_max, 100.0);
+        assert!(part_from_raw(&pd, &raw_part(3)).broken());
     }
 
     #[test]
