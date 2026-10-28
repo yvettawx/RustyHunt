@@ -53,6 +53,8 @@ pub struct Scanner {
     warned: std::collections::HashMap<String, Instant>,
     mismatch_notified: Option<String>,
     hit_times: std::collections::HashMap<u64, f64>,
+    /// Last logged (count, maximum) of the claw ailments, whose levels aren't understood yet
+    claw_seen: std::collections::HashMap<(u64, String), (i32, i32)>,
 }
 
 impl Scanner {
@@ -68,6 +70,7 @@ impl Scanner {
             warned: Default::default(),
             mismatch_notified: None,
             hit_times: Default::default(),
+            claw_seen: Default::default(),
         }
     }
 
@@ -370,6 +373,27 @@ impl Scanner {
         let manual = self.shared.live().target;
         let target = select_target(&snap, mode, manual, &self.hit_times, &mut self.manual_target);
 
+        // The claw ailments build past their maximum; log their raw values when the count or the
+        // maximum changes, to work out their levels from real hunts
+        if connection == Connection::Connected {
+            for m in snap.large_monsters() {
+                for a in m.ailments.iter().filter(|a| a.key.contains("CLAW")) {
+                    let now_seen = (a.count, a.buildup_max.round() as i32);
+                    if self.claw_seen.insert((m.uid, a.key.clone()), now_seen) != Some(now_seen) {
+                        log::info!(
+                            "{} on {}: buildup {:.0}, max {:.0}, count {}, timer {:.1}/{:.1}",
+                            a.key,
+                            m.key,
+                            a.buildup,
+                            a.buildup_max,
+                            a.count,
+                            a.timer,
+                            a.timer_max
+                        );
+                    }
+                }
+            }
+        }
         let events = rh_core::events::diff(&prev, &snap);
         {
             let mut log = self.shared.events.lock().unwrap();
