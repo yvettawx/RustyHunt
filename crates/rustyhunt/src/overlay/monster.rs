@@ -89,20 +89,36 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
         })
         .map(|a| {
             let active = a.active();
+            // Some ailments keep building past their maximum instead of starting over (the claw ones):
+            // show each full bar as a level and start a new bar
+            let (buildup, level) = if a.buildup_max > 0.0 && a.buildup >= a.buildup_max {
+                (a.buildup.rem_euclid(a.buildup_max), (a.buildup / a.buildup_max).floor() as i32)
+            } else {
+                (a.buildup, 0)
+            };
             let numbers = cfg.shows("m-pval") && !active && a.buildup_max > 0.0;
             let value = if active && a.timer_max > 2.0 {
                 Some(mmss(a.timer))
             } else if numbers {
+                Some(format!("{}", buildup.round()))
+            } else if cfg.shows("m-pval") && !active && a.buildup > 0.0 {
+                // No maximum to show against
                 Some(format!("{}", a.buildup.round()))
             } else {
                 None
             };
             Cell {
                 name: f.i18n.game(&a.key),
-                count: a.count,
+                count: a.count.max(level),
                 value,
                 max: numbers.then(|| format!("/{}", a.buildup_max.round())),
-                bar: if active { a.timer_ratio() } else { a.buildup_ratio() },
+                bar: if active {
+                    a.timer_ratio()
+                } else if a.buildup_max > 0.0 {
+                    buildup / a.buildup_max
+                } else {
+                    0.0
+                },
                 segments: None,
                 bar2: None,
                 done: false,
@@ -115,20 +131,35 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
 
 const CELL_H: f32 = 28.0;
 const CELL_GAP_Y: f32 = 9.0;
+const CELL_GAP_X: f32 = 18.0;
 /// Text baseline inside a cell, from its top
 const CELL_BASE: f32 = 13.0;
 const CELL_BAR: f32 = 5.0;
 const CELL_BAR2: f32 = 3.0;
+
+/// Width a cell needs to show its whole name and numbers.
+fn cell_width(cv: &Canvas, c: &Cell) -> f32 {
+    let mut w = cv.measure(&c.name, Font::Text, 12.0, 0.0).x;
+    if let Some(v) = &c.value {
+        w += 6.0 + cv.measure(v, Font::NumBold, 12.0, 0.0).x;
+    }
+    if let Some(m) = &c.max {
+        w += 1.0 + cv.measure(m, Font::NumBold, 10.0, 0.0).x;
+    }
+    if c.count > 0 {
+        w += 6.0 + cv.tag_size(&c.count.to_string(), Font::NumBold, 10.0, (4.0, 1.0, 4.0, 0.0)).x;
+    }
+    w
+}
 
 /// Lays cells out in `cols` columns starting at `y0`; returns the height used.
 fn grid(cv: &Canvas, cells: &[Cell], y0: f32, w: f32, cols: usize) -> f32 {
     if cells.is_empty() {
         return 0.0;
     }
-    let gap = 18.0;
-    let cw = (w - gap * (cols as f32 - 1.0)) / cols as f32;
+    let cw = (w - CELL_GAP_X * (cols as f32 - 1.0)) / cols as f32;
     for (i, c) in cells.iter().enumerate() {
-        let x = (i % cols) as f32 * (cw + gap);
+        let x = (i % cols) as f32 * (cw + CELL_GAP_X);
         let y = y0 + (i / cols) as f32 * (CELL_H + CELL_GAP_Y);
         cell(cv, c, x, y, cw);
     }
@@ -240,8 +271,6 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     let Some(m) = f.target else { return Vec2::ZERO };
     let side = f.profile.monster.layout == MonsterLayout::Side;
     let w = rh_core::modules::width(rh_core::modules::MONSTER, side, cfg.width);
-    // Cells at least about 88 wide, at most eight to a row
-    let cols = (((w + 16.0) / 136.0).floor() as usize).clamp(1, 8);
     let text = cv.tok("text");
     let mute = cv.tok("text-mute");
     let accent = cv.tok("accent");
@@ -263,6 +292,9 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
     if parts.iter().chain(&ailments).any(|c| c.flash) {
         st.animating = true;
     }
+    // As many columns as fit the widest cell whole, at most eight; both grids share them so they line up
+    let need = parts.iter().chain(&ailments).map(|c| cell_width(cv, c)).fold(110.0, f32::max) + 8.0;
+    let cols = (((w + CELL_GAP_X) / (need + CELL_GAP_X)).floor() as usize).clamp(1, 8);
 
     // Bottom layout: parts above the name row, ailments under the HP bar
     let mut y = 0.0;
