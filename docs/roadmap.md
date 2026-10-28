@@ -69,7 +69,6 @@ Built, not yet checked in the game.
 
 **To check in game**
 
-- Frostcraft gauge: the value range is unknown, the gauge uses the largest value seen so far.
 - Health bar colours for each status effect; target selection without a lock-on; dragging corners and edges in the real layout window.
 
 ## 1.2.0: needs injection, disassembly or memory scanning
@@ -78,3 +77,7 @@ Built, not yet checked in the game.
 - Party members' current HP: the in-game party list shows it, but the address hasn't been found; needs scanning in a live multiplayer session.
 - Detect whether we are the quest host, and hide part durability bars as a guest.
 - Solo damage without the hook: currently estimated from the monster's HP loss, which also counts the Palico, turf wars and environmental damage.
+
+**Bug fixes**
+
+- Frostcraft gauge: the game splits it into five levels, but the gauge is one bar measured against the largest value seen so far, so it shows full while it charges. Log the raw value to find the real maximum and the level thresholds, then draw five segments.
