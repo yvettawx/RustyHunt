@@ -1,0 +1,2 @@
+# Keep the upstream formatting (rustfmt defaults) so this copy stays easy to diff against upstream
+edition = "2024"

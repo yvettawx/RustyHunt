@@ -1,0 +1,41 @@
+# Vendored copy of egui_software_backend 0.0.3 (https://github.com/DGriffin91/egui_software_backend),
+# brought up to egui 0.37. See README.md for the changes.
+[package]
+name = "egui_software_backend"
+version = "0.0.3"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "A CPU software render backend for egui."
+publish = false
+
+# The doc examples need egui_demo_lib, which is not a dependency here
+[lib]
+doctest = false
+
+[dependencies]
+ahash = { version = "0.8", default-features = false, features = ["std"] }
+egui = { version = "0.37", default-features = false }
+strength_reduce = "0.2.4"
+constify = "0.0.1"
+rayon = { version = "1.11.0", optional = true }
+log = { version = "0.4", optional = true }
+winit = { version = "0.30", optional = true }
+softbuffer = { version = "0.4", optional = true }
+egui-winit = { version = "0.37", default-features = false, optional = true }
+bytemuck = { version = "1.25", optional = true }
+
+[features]
+default = ["std"]
+std = []
+## Log some errors with the `log` crate.
+log = ["dep:log"]
+## Parallel rasterization and compositing with `rayon`.
+rayon = ["dep:rayon"]
+raster_stats = ["std"]
+## A winit + softbuffer window runner.
+winit = ["dep:winit", "softbuffer", "egui-winit", "bytemuck"]
+
+# Upstream code as it is; newer clippy flags these two patterns
+[lints.clippy]
+explicit_counter_loop = "allow"
+for_kv_map = "allow"

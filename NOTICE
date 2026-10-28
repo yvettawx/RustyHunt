@@ -57,6 +57,11 @@ the MIT License:
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
+The CPU renderer in crates/egui-software-backend is a modified copy of
+egui_software_backend (https://github.com/DGriffin91/egui_software_backend),
+licensed under the MIT License or the Apache License, Version 2.0
+(crates/egui-software-backend/LICENSE-MIT, LICENSE-APACHE).
+
 The Montserrat fonts in assets/fonts/ are embedded in the program and are
 licensed under the SIL Open Font License 1.1 (assets/fonts/OFL.txt):
 Copyright 2024 The Montserrat.Git Project Authors
