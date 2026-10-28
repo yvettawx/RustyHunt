@@ -437,6 +437,7 @@ impl Overlay {
             layout::interact(ui, &shared, &mut self.layout, &self.state.rects, screen, s, frame_w, game);
         }
 
+        shared.overlay_frames.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let us = t0.elapsed().as_micros() as u32;
         let prev = shared.frame_us.load(std::sync::atomic::Ordering::Relaxed);
         shared

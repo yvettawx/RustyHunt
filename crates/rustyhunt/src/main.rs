@@ -124,14 +124,16 @@ fn main() {
     let mut wgpu_setup = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
     wgpu_setup.instance_descriptor.backends = eframe::wgpu::Backends::DX12;
     wgpu_setup.instance_descriptor.backend_options.dx12.presentation_system = eframe::wgpu::Dx12SwapchainKind::DxgiFromVisual;
-    // All windows draw on one thread. Waiting for a frame slot blocks it for up to a second when the
-    // system throttles a background window (the game in front does that), and the overlay stalls with it
-    wgpu_setup.instance_descriptor.backend_options.dx12.latency_waitable_object = eframe::wgpu::Dx12UseFrameLatencyWaitableObject::DontWait;
     let options = eframe::NativeOptions {
         viewport,
         renderer: eframe::Renderer::Wgpu,
         wgpu_options: eframe::egui_wgpu::WgpuConfiguration {
             wgpu_setup: wgpu_setup.into(),
+            // One frame in flight: each overlay frame waits until the previous one is on screen, so it
+            // always shows the latest data. Without the wait, frames pile up behind the game's GPU work
+            // and the overlay falls seconds behind. A window the system holds back (the main window
+            // behind the game) would block that wait, which is why it doesn't repaint while the game is in front.
+            surface: eframe::egui_wgpu::SurfaceConfig::LOW_LATENCY,
             ..Default::default()
         },
         ..Default::default()

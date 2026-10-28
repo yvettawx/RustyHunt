@@ -132,6 +132,8 @@ pub struct Shared {
     pub show_all: AtomicBool,
     /// Overlay time spent on the last frame, microseconds
     pub frame_us: AtomicU32,
+    /// Overlay frames drawn, for the timing line in the log
+    pub overlay_frames: AtomicU32,
     pub ctx: OnceLock<egui::Context>,
     pub started: Instant,
     pub quit: AtomicBool,
@@ -150,6 +152,7 @@ impl Shared {
             layout_mode: AtomicBool::new(false),
             show_all: AtomicBool::new(false),
             frame_us: AtomicU32::new(0),
+            overlay_frames: AtomicU32::new(0),
             ctx: OnceLock::new(),
             started: Instant::now(),
             quit: AtomicBool::new(false),
