@@ -1,4 +1,4 @@
-# On a tag like v1.2.3, package the app and create a draft release; publish it on the web page after checking.
+# On a tag like v1.2.3, package the app and publish it as the latest release.
 
 name: Release
 
@@ -28,11 +28,11 @@ jobs:
       - name: Package
         shell: pwsh
         run: ./scripts/package.ps1
-      - name: Create draft release
+      - name: Publish release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $v = $env:GITHUB_REF_NAME.TrimStart('v')
-          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --title "RustyHunt $v" --generate-notes `
+          gh release create $env:GITHUB_REF_NAME --latest --verify-tag --title "RustyHunt $v" --generate-notes `
             "dist/RustyHunt-$v-portable.zip" "dist/RustyHunt-$v-setup.exe" dist/SHA256SUMS

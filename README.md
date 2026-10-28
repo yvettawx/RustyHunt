@@ -19,7 +19,7 @@ No telemetry. The network is only used to check GitHub for updates; plugins need
 
 ## Install
 
-Download from the [Releases](https://github.com/yvettawx/RustyHunt/releases) page:
+Download from the [Releases](https://github.com/yvettawx/RustyHunt/releases/latest) page:
 
 - `RustyHunt-<version>-setup.exe`: installer. Installs into the current user's folder (`%LOCALAPPDATA%\Programs\RustyHunt`) without admin rights; data goes to `%APPDATA%\RustyHunt\`. Uninstall from Settings > Apps.
 - `RustyHunt-<version>-portable.zip`: portable build. Unzip and run; data lives in `data\` next to the program.
