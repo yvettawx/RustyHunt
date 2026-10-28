@@ -55,6 +55,7 @@ Built, not yet checked in the game.
 - Thicker, shorter sharpness bar with the hits left as a number; Frostcraft is a gauge under it instead of a buff.
 - Default look close to the game's HUD (backings fading to the right, green health, yellow stamina); Plate and Label are built-in alternatives. Each module can turn its backing off; the player module keeps its own (off, solid, blur).
 - Layout mode: no toolbar and no native HUD outlines; drag corners to scale and side edges to change the width; the mouse wheel no longer scales.
+- Crowns take the game's shapes: the mini crown is low and wide, the large silver and gold crowns are tall.
 - Fixed: anything a module drew left of or above its origin was clipped, so the callouts above the bottom monster module never showed.
 
 **Main window**

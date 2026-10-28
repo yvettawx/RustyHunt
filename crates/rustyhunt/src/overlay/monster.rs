@@ -334,10 +334,7 @@ pub fn draw(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec2 
         }
     }
     if cfg.shows("m-crown") && matches!(m.crown, Crown::Gold | Crown::Silver | Crown::Mini) {
-        // As in the game: the mini crown is a small gold one, the large crowns gold or silver
-        let cw = if m.crown == Crown::Mini { 11.0 } else { 18.0 };
-        cv.crown(x, base - cw * 10.0 / 16.0, cw, m.crown != Crown::Silver);
-        x += cw + gap;
+        x += cv.crown(x, base, 22.0, m.crown) + gap;
     }
     let notes = f.notes.get(&m.key);
     // Beats the largest or smallest size in the Hunter's Notes

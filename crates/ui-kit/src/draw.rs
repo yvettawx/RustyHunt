@@ -1,11 +1,12 @@
 //! Basic pieces for drawing the overlay: shadowed text, name tags, bars, break pips, the crosshair marker, crowns.
 //! Coordinates are design units (on a 1080-high reference frame), converted to the screen by [`Canvas`].
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
-use egui::epaint::{PathShape, PathStroke};
 use egui::text::{LayoutJob, TextFormat};
-use egui::{Align2, Color32, CornerRadius, Galley, Painter, Pos2, Rect, Shape, Stroke, Vec2, pos2, vec2};
+use egui::{Align2, Color32, CornerRadius, Galley, Painter, Pos2, Rect, Shape, Stroke, TextureHandle, Vec2, pos2, vec2};
+use rh_core::model::Crown;
 
 use crate::color::fade;
 use crate::fonts::Font;
@@ -479,18 +480,23 @@ impl<'a> Canvas<'a> {
         self.line((x, y + 4.5), (x + 9.0, y + 4.5), 1.0, c);
     }
 
-    /// Crown icon, 16x12 design units.
-    pub fn crown(&self, x: f32, y: f32, w: f32, gold: bool) {
-        let s = w / 16.0;
-        let pts: Vec<(f32, f32)> = vec![(1.0, 10.0), (2.0, 3.0), (5.5, 6.5), (8.0, 1.0), (10.5, 6.5), (14.0, 3.0), (15.0, 10.0)];
-        let fill = if gold { self.tok("crown-gold") } else { self.tok("crown-silver") };
-        let poly: Vec<Pos2> = pts.iter().map(|(px, py)| self.p(x + px * s, y + py * s)).collect();
-        self.painter.add(Shape::Path(PathShape {
-            points: poly,
-            closed: true,
-            fill: self.c(fill),
-            stroke: PathStroke::new(self.scale.max(0.8), self.c(Color32::from_rgb(0x11, 0x11, 0x11))),
-        }));
+    /// Crown icon in the game's shapes, `h` design units tall, its band resting on `base`. Returns the width.
+    /// All three share one box, so the mini crown, low and wide, looks smaller as in the game.
+    pub fn crown(&self, x: f32, base: f32, h: f32, crown: Crown) -> f32 {
+        let w = h * CROWN_ASPECT;
+        let Some(svg) = crown_svg(crown) else { return 0.0 };
+        let ctx = self.painter.ctx();
+        let ppp = ctx.pixels_per_point();
+        let rect = self.r(x, base - h * CROWN_BASE, w, h);
+        // Whole pixels, so the texture is drawn 1:1 without resampling
+        let min = (rect.min.to_vec2() * ppp).round() / ppp;
+        let (pw, ph) = ((rect.width() * ppp).round() as u32, (rect.height() * ppp).round() as u32);
+        if let Some(tex) = crown_texture(ctx, crown, svg, pw, ph) {
+            let rect = Rect::from_min_size(min.to_pos2(), vec2(pw as f32, ph as f32) / ppp);
+            let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+            self.painter.image(tex.id(), rect, uv, self.c(Color32::WHITE));
+        }
+        w
     }
 
     pub fn polyline(&self, pts: &[(f32, f32)], width: f32, color: Color32) {
@@ -505,9 +511,64 @@ impl<'a> Canvas<'a> {
     }
 }
 
+/// Width over height of the crown icons' box (the SVG viewBox)
+const CROWN_ASPECT: f32 = 60.0 / 56.0;
+/// Where the crown's band ends, from the top of the box
+const CROWN_BASE: f32 = 54.0 / 56.0;
+
+fn crown_svg(crown: Crown) -> Option<&'static [u8]> {
+    match crown {
+        Crown::Mini => Some(include_bytes!("../assets/crown-mini.svg")),
+        Crown::Silver => Some(include_bytes!("../assets/crown-silver.svg")),
+        Crown::Gold => Some(include_bytes!("../assets/crown-gold.svg")),
+        Crown::None => None,
+    }
+}
+
+/// Crown textures by kind and pixel size, kept in each egui context.
+#[derive(Clone, Default)]
+struct CrownTextures(HashMap<(Crown, u32, u32), Option<TextureHandle>>);
+
+fn crown_texture(ctx: &egui::Context, crown: Crown, svg: &[u8], pw: u32, ph: u32) -> Option<TextureHandle> {
+    if pw == 0 || ph == 0 || pw > 512 || ph > 512 {
+        return None;
+    }
+    let id = egui::Id::unique("crown-textures");
+    let key = (crown, pw, ph);
+    if let Some(t) = ctx.data(|d| d.get_temp::<CrownTextures>(id).and_then(|c| c.0.get(&key).cloned())) {
+        return t;
+    }
+    let tex = rasterize_svg(svg, pw, ph).map(|img| ctx.load_texture(format!("crown-{crown:?}-{pw}x{ph}"), img, egui::TextureOptions::LINEAR));
+    ctx.data_mut(|d| d.get_temp_mut_or_default::<CrownTextures>(id).0.insert(key, tex.clone()));
+    tex
+}
+
+fn rasterize_svg(svg: &[u8], pw: u32, ph: u32) -> Option<egui::ColorImage> {
+    let tree = resvg::usvg::Tree::from_data(svg, &resvg::usvg::Options::default()).ok()?;
+    let s = tree.size();
+    let mut pix = resvg::tiny_skia::Pixmap::new(pw, ph)?;
+    let tf = resvg::tiny_skia::Transform::from_scale(pw as f32 / s.width(), ph as f32 / s.height());
+    resvg::render(&tree, tf, &mut pix.as_mut());
+    Some(egui::ColorImage::from_rgba_premultiplied([pw as usize, ph as usize], pix.data()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn crowns_rasterize_with_the_mini_one_lower() {
+        // Rows from the top that are fully transparent
+        let empty_top = |c: Crown| {
+            let img = rasterize_svg(crown_svg(c).unwrap(), 60, 56).unwrap();
+            assert!(img.pixels.iter().any(|p| p.a() > 0));
+            img.pixels.chunks(60).take_while(|row| row.iter().all(|p| p.a() == 0)).count()
+        };
+        let (mini, silver, gold) = (empty_top(Crown::Mini), empty_top(Crown::Silver), empty_top(Crown::Gold));
+        assert_eq!(silver, gold);
+        assert!(mini > silver + 15, "mini {mini}, large {silver}");
+        assert!(crown_svg(Crown::None).is_none());
+    }
 
     #[test]
     fn layer_fill_clamps() {
