@@ -2,6 +2,7 @@
 
 [nav]
 home = "概要"
+hunt = "狩猟"
 modules = "モジュール"
 records = "記録"
 themes = "テーマ"
@@ -224,6 +225,10 @@ weapon = "武器状態"
 base = "拠点施設"
 perf = "パフォーマンス"
 
+[hunt]
+follow = "バックグラウンド更新"
+empty = "狩猟中ではありません"
+
 [modules]
 bottom = "下"
 side = "右"
@@ -235,6 +240,7 @@ manual = "手動"
 hide_in_menu = "ゲームのメニュー中は隠す"
 quest_only = "クエスト中のみ"
 backing_none = "なし"
+backing_fade = "フェード"
 backing_solid = "単色"
 profile_name = "プロファイル名"
 default_profile = "標準"

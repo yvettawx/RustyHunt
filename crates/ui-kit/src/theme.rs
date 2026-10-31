@@ -111,6 +111,7 @@ pub fn overlay_defaults() -> BTreeMap<String, Color32> {
         ("monster-hp", Color32::from_rgb(0xed, 0xe3, 0xcf)),
         ("enrage", Color32::from_rgb(0xff, 0x4a, 0x3d)),
         ("frostcraft", Color32::from_rgb(0x7f, 0xd3, 0xff)),
+        ("part-sever", Color32::from_rgb(0x5a, 0xa7, 0xff)),
         // Hunter status effects, tinting the health bar like the game does
         ("status-poison", Color32::from_rgb(0xa0, 0x66, 0xd3)),
         ("status-venom", Color32::from_rgb(0x7b, 0x3f, 0xb8)),
@@ -311,6 +312,30 @@ pub struct PanelStyle {
     pub fade: f32,
     /// A 2px line along the top
     pub edge: Color32,
+}
+
+impl PanelStyle {
+    /// Black, fading out to the right.
+    pub fn fade() -> PanelStyle {
+        PanelStyle {
+            shape: PanelShape::Rect,
+            fill: rgba(0, 0, 0, 0.69),
+            padding: 14.0,
+            fade: 1.0,
+            ..Default::default()
+        }
+    }
+
+    /// A black rectangle with a thin line along the top.
+    pub fn solid() -> PanelStyle {
+        PanelStyle {
+            shape: PanelShape::Rect,
+            fill: Color32::from_rgba_unmultiplied(0x0b, 0x0b, 0x0b, 0xc4),
+            padding: 12.0,
+            edge: Color32::from_rgba_unmultiplied(0xf2, 0xf0, 0xe9, 0x26),
+            ..Default::default()
+        }
+    }
 }
 
 impl Default for PanelStyle {

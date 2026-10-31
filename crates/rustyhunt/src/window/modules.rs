@@ -4,7 +4,7 @@ use egui::{Align2, Color32, CornerRadius, Rect, Sense, Stroke, Ui, pos2, vec2};
 use rh_core::i18n;
 use rh_core::model::Game;
 use rh_core::modules::{self, ModuleInfo};
-use rh_core::settings::{Backing, ModuleConfig, MonsterLayout, TargetMode, Tray};
+use rh_core::settings::{Backing, ModuleBacking, ModuleConfig, MonsterLayout, TargetMode, Tray};
 use ui_kit::Font;
 
 use super::MainWindow;
@@ -202,9 +202,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
             let cfg = shared.settings().profile(game).module(&info.id).cloned().unwrap_or_default();
             let (pr, _) = ui.allocate_exact_size(vec2(width, 190.0), Sense::hover());
             preview_backdrop(ui, pal, pr);
-            if cfg.enabled {
-                w.modules.preview.draw(ui, pr, &shared, &info.id);
-            }
+            w.modules.preview.draw(ui, pr, &shared, &info.id, true);
             ui.add_space(28.0);
             let col_w = (width - 48.0) / 2.0;
             ui.add_enabled_ui(cfg.enabled, |ui| {
@@ -252,7 +250,7 @@ pub fn ui(w: &mut MainWindow, ui: &mut Ui, pal: &Pal) {
 }
 
 /// Background of the preview box: dark with a slight vertical gradient, no game screenshot.
-fn preview_backdrop(ui: &Ui, pal: &Pal, r: Rect) {
+pub(super) fn preview_backdrop(ui: &Ui, pal: &Pal, r: Rect) {
     let p = ui.painter();
     let mut mesh = egui::epaint::Mesh::default();
     // The theme's window.desk as the base, lightened a little
@@ -296,9 +294,15 @@ fn options(w: &mut MainWindow, ui: &mut Ui, pal: &Pal, info: &ModuleInfo, cfg: &
     ui.add_space(18.0);
     if info.id != modules::PLAYER {
         field_label(ui, pal, &i18n::t("label.backing"));
-        let mut on = cfg.panel;
-        if widgets::switch(ui, pal, &mut on).changed() {
-            edit(&|c| c.panel = on);
+        let kinds = [ModuleBacking::Off, ModuleBacking::Fade, ModuleBacking::Solid];
+        let mut sel = kinds.iter().position(|k| *k == cfg.backing).unwrap_or(1);
+        let names = [
+            i18n::t("modules.backing_none"),
+            i18n::t("modules.backing_fade"),
+            i18n::t("modules.backing_solid"),
+        ];
+        if widgets::seg(ui, pal, &names, &mut sel) {
+            edit(&|c| c.backing = kinds[sel]);
         }
         ui.add_space(18.0);
     }

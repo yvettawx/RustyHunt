@@ -141,6 +141,8 @@ pub struct Shared {
     pub data_at: Mutex<Option<Instant>>,
     /// The main window has keyboard focus (see `main_window_live`)
     pub main_focused: AtomicBool,
+    /// The hunt view is open with background updates on
+    pub main_follow: AtomicBool,
     /// The main window's egui context
     pub ctx: OnceLock<egui::Context>,
     /// The overlay thread's egui context
@@ -168,6 +170,7 @@ impl Shared {
             overlay_split: Mutex::new([0.0; 4]),
             data_at: Mutex::new(None),
             main_focused: AtomicBool::new(false),
+            main_follow: AtomicBool::new(false),
             ctx: OnceLock::new(),
             overlay_ctx: OnceLock::new(),
             overlay_wake: OnceLock::new(),
@@ -234,7 +237,12 @@ impl Shared {
         if self.main_window_live()
             && let Some(ctx) = self.ctx.get()
         {
-            ctx.request_repaint();
+            if self.main_focused.load(Ordering::Relaxed) {
+                ctx.request_repaint();
+            } else {
+                // On another monitor ten frames a second is plenty, and takes less CPU from the game
+                ctx.request_repaint_after(std::time::Duration::from_millis(100));
+            }
         }
     }
 
@@ -242,7 +250,7 @@ impl Shared {
     /// the data when it has focus: behind the game nobody sees it, and drawing it would take CPU from
     /// the game. Input and focus changes still repaint it.
     pub fn main_window_live(&self) -> bool {
-        self.main_focused.load(Ordering::Relaxed) || self.live.try_read().is_ok_and(|l| !l.connected())
+        self.main_focused.load(Ordering::Relaxed) || self.main_follow.load(Ordering::Relaxed) || self.live.try_read().is_ok_and(|l| !l.connected())
     }
 
     /// Wakes the overlay thread for a new frame.

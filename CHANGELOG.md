@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1
+
+- New Hunt page: the hunt status on the main window, for a second monitor; turn on "Update in background" to keep it live behind the game
+- Part bars by kind: breakable white, severable blue, flinch-only dimmed, each kind together
+- Each module chooses its own backing (off, fade or solid), whatever the theme
+- The module preview always shows, with demo data when there's no live data for it
+
 ## 1.2.0
 
 - Fixed: DPS jumped to several hundred when a quest ended

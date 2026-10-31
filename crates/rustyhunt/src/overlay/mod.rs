@@ -19,9 +19,10 @@ use rh_core::Event;
 use rh_core::i18n::{self, I18n};
 use rh_core::model::{Game, Monster, Snapshot};
 use rh_core::modules;
-use rh_core::settings::{Density, ModuleConfig, Profile, Settings};
+use rh_core::settings::{Density, ModuleBacking, ModuleConfig, Profile, Settings};
 use ui_kit::fields::Activity;
 use ui_kit::render::Images;
+use ui_kit::theme::PanelStyle;
 use ui_kit::{Canvas, Theme};
 
 use crate::state::{Live, Shared};
@@ -396,8 +397,15 @@ pub fn draw_any(id: &str, cv: &Canvas, f: &Frame, cfg: &ModuleConfig, theme: &Th
             other => crate::plugins::draw_module(other, cv, f, cfg, st, ctx),
         };
         // The player module's backing is its own setting (none or solid), drawn under it with a wide soft edge
-        if size != Vec2::ZERO && cfg.panel && id != modules::PLAYER {
-            cv.panel_into(slot, 0.0, 0.0, size.x, size.y);
+        if size != Vec2::ZERO && id != modules::PLAYER {
+            let style = match cfg.backing {
+                ModuleBacking::Off => None,
+                ModuleBacking::Fade => Some(PanelStyle::fade()),
+                ModuleBacking::Solid => Some(PanelStyle::solid()),
+            };
+            if let Some(style) = style {
+                cv.panel_into(slot, &style, 0.0, 0.0, size.x, size.y);
+            }
         }
         size
     }
@@ -429,31 +437,39 @@ impl Default for Preview {
 }
 
 impl Preview {
-    pub fn draw(&mut self, ui: &egui::Ui, rect: Rect, shared: &Shared, id: &str) {
+    /// With `demo`, demo data stands in when the live data has nothing for this module.
+    pub fn draw(&mut self, ui: &egui::Ui, rect: Rect, shared: &Shared, id: &str, demo: bool) {
         let live = shared.live().clone();
-        let now = shared.now();
-        let snap = if live.has_data() {
-            live.snapshot.clone()
-        } else {
+        if live.has_data() && self.draw_snapshot(ui, rect, shared, id, &live, live.snapshot.clone()) {
+            return;
+        }
+        if demo {
+            let now = shared.now();
             if now - self.last > 0.1 || self.snap.is_none() {
                 let d = self.demo.get_or_insert_with(game_world::demo::Demo::new);
                 self.snap = Some(Arc::new(d.step(((now - self.last) as f32).clamp(0.05, 0.5))));
                 self.last = now;
             }
-            self.snap.clone().unwrap()
-        };
+            let snap = self.snap.clone().unwrap();
+            self.draw_snapshot(ui, rect, shared, id, &live, snap);
+        }
+    }
+
+    /// Whether the module had anything to draw from `snap`.
+    fn draw_snapshot(&mut self, ui: &egui::Ui, rect: Rect, shared: &Shared, id: &str, live: &Live, snap: Arc<Snapshot>) -> bool {
+        let now = shared.now();
         let settings = shared.settings().clone();
         let theme = shared.theme();
         let i18n = i18n::current();
         let game = Game::World;
         let profile = settings.profile(game).clone();
-        let Some(cfg) = profile.module(id).cloned() else { return };
+        let Some(cfg) = profile.module(id).cloned() else { return false };
         let target = live.target.and_then(|t| snap.monster(t)).or_else(|| snap.large_monsters().next());
         self.state.dt = 0.05;
         self.state.track(&snap, now);
         let f = Frame {
             snap: &snap,
-            live: &live,
+            live,
             settings: &settings,
             profile: &profile,
             i18n: &i18n,
@@ -476,7 +492,7 @@ impl Preview {
         let size = draw_any(id, &probe, &f, &cfg, &theme, ui.ctx(), &mut self.state);
         self.state.context = None;
         if size.x <= 0.0 || size.y <= 0.0 {
-            return;
+            return false;
         }
         let s = (rect.width() * 0.86 / size.x).min(rect.height() * 0.8 / size.y).min(1.4);
         let origin = rect.center() - size * s / 2.0;
@@ -484,6 +500,7 @@ impl Preview {
         let cv = Canvas::new(painter, origin, s, &theme);
         draw_any(id, &cv, &f, &cfg, &theme, ui.ctx(), &mut self.state);
         self.state.context = None;
+        true
     }
 }
 

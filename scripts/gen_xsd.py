@@ -83,7 +83,7 @@ STYLES = {
 }
 TOKENS_DOC = (
     "Tokens: colors, fonts, durations, sizes. Overlay colors: text, text-mute, text-faint, ink, accent, danger, cool, ok, "
-    "ghost, heal, track, edge, shadow, hatch, crown-gold, crown-silver, qurio, hp, stamina, monster-hp, enrage, frostcraft, "
+    "ghost, heal, track, edge, shadow, hatch, part-sever, crown-gold, crown-silver, qurio, hp, stamina, monster-hp, enrage, frostcraft, "
     "status-poison, status-venom, status-fire, status-thunder, status-water, status-ice, status-dragon, status-bleed, "
     "status-effluvia, status-blast; main window colors start with window.: "
     "paper, ink, mute, faint, line, block, onblock, accent, desk, hue, onhue, nav, ok"

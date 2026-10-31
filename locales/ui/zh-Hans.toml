@@ -2,6 +2,7 @@
 
 [nav]
 home = "总览"
+hunt = "狩猎"
 modules = "模块"
 records = "记录"
 themes = "主题"
@@ -224,6 +225,10 @@ weapon = "武器状态"
 base = "据点设施"
 perf = "性能数据"
 
+[hunt]
+follow = "后台刷新"
+empty = "未在狩猎"
+
 [modules]
 bottom = "底部"
 side = "右侧"
@@ -235,6 +240,7 @@ manual = "手动切换"
 hide_in_menu = "打开游戏菜单时隐藏"
 quest_only = "只在任务中显示"
 backing_none = "关"
+backing_fade = "渐隐"
 backing_solid = "实底"
 profile_name = "方案名"
 default_profile = "默认"

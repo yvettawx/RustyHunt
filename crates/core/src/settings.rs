@@ -85,8 +85,20 @@ pub struct ModuleConfig {
     pub off: BTreeSet<String>,
     /// Width set in layout mode, before scaling; None for the module's own width
     pub width: Option<f32>,
-    /// Draw the theme's backing behind it (the player module has its own backing setting instead)
-    pub panel: bool,
+    /// Backing behind it, whatever the theme (the player module has its own backing setting instead)
+    pub backing: ModuleBacking,
+    /// The on/off switch of older settings; turned into `backing` on load
+    #[serde(skip_serializing)]
+    pub panel: Option<bool>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModuleBacking {
+    Off,
+    #[default]
+    Fade,
+    Solid,
 }
 
 impl Default for ModuleConfig {
@@ -100,7 +112,8 @@ impl Default for ModuleConfig {
             quest_only: true,
             off: BTreeSet::new(),
             width: None,
-            panel: true,
+            backing: ModuleBacking::default(),
+            panel: None,
         }
     }
 }
@@ -414,6 +427,8 @@ pub struct Settings {
     pub injection: Injection,
     pub theme: String,
     pub theme_follow_system: bool,
+    /// The hunt view keeps following the data while the window doesn't have focus
+    pub main_window_follow: bool,
     pub save_account: Option<u32>,
     pub games: BTreeMap<String, GameLayouts>,
     pub game_paths: BTreeMap<String, String>,
@@ -445,6 +460,7 @@ impl Default for Settings {
             injection: Injection::default(),
             theme: "light".into(),
             theme_follow_system: false,
+            main_window_follow: false,
             save_account: None,
             games,
             game_paths: BTreeMap::new(),
@@ -484,6 +500,22 @@ impl Settings {
     }
 
     pub fn normalize(&mut self) {
+        // The backing used to come from the theme: keep what each module looked like
+        let themed = match self.theme.as_str() {
+            "plate" => ModuleBacking::Solid,
+            "label" => ModuleBacking::Off,
+            _ => ModuleBacking::Fade,
+        };
+        for module in self
+            .games
+            .values_mut()
+            .flat_map(|g| g.profiles.values_mut())
+            .flat_map(|p| p.modules.values_mut())
+        {
+            if let Some(on) = module.panel.take() {
+                module.backing = if on { themed } else { ModuleBacking::Off };
+            }
+        }
         for game in Game::ALL {
             let layouts = self.games.entry(game.key().to_string()).or_insert_with(|| GameLayouts::new(game));
             if layouts.profiles.is_empty() {

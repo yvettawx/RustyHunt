@@ -2,6 +2,7 @@
 
 [nav]
 home = "Overview"
+hunt = "Hunt"
 modules = "Modules"
 records = "Records"
 themes = "Themes"
@@ -224,6 +225,10 @@ weapon = "Weapon status"
 base = "Base facilities"
 perf = "Performance"
 
+[hunt]
+follow = "Update in background"
+empty = "Not hunting"
+
 [modules]
 bottom = "Bottom"
 side = "Right"
@@ -235,6 +240,7 @@ manual = "Manual"
 hide_in_menu = "Hide in game menus"
 quest_only = "Quests only"
 backing_none = "Off"
+backing_fade = "Fade"
 backing_solid = "Solid"
 profile_name = "Profile name"
 default_profile = "Default"

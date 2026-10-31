@@ -82,10 +82,10 @@ Built, not yet checked in the game.
 
 ## 1.2.1
 
-- Second-monitor hunt view: the main window shows the hunt status (monsters, player, damage, quest), so the game runs on one monitor and the details on another.
-- Part bars: breakable parts white, flinch-only parts dimmed, severable parts (tails and the like) blue, each kind grouped together; all are drawn the same today.
-- Module backing: a setting per module (off, fade or solid), separate from the theme.
-- Module preview: blank for a disabled module, and with the game connected blank when the live data has nothing for that module. Always show it, with demo data where live data is empty.
+- Hunt page: the overlay's modules on the main window for a second monitor, with a switch to keep updating behind the game at ten frames a second.
+- Part bars: breakable parts white, severable parts blue, flinch-only parts dimmed, each kind grouped together.
+- Module backing: a setting per module (off, fade or solid), separate from the theme; a theme's `<panel>` now only applies to its preview card. Older settings keep what each module looked like.
+- Module preview: always shown, with demo data where live data has nothing for that module.
 
 ## 1.3.0
 

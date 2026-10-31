@@ -10,7 +10,7 @@ use rh_core::model::Crown;
 
 use crate::color::fade;
 use crate::fonts::Font;
-use crate::theme::{BarShape, BarStyle, PanelShape, Pattern, PipShape, TagShape, Theme};
+use crate::theme::{BarShape, BarStyle, PanelShape, PanelStyle, Pattern, PipShape, TagShape, Theme};
 
 #[derive(Clone)]
 pub struct Canvas<'a> {
@@ -211,17 +211,16 @@ impl<'a> Canvas<'a> {
 
     /// Module backing: not drawn by default (unobtrusive); themes can add one.
     pub fn panel(&self, x: f32, y: f32, w: f32, h: f32) {
-        self.painter.add(self.panel_shape(x, y, w, h));
+        self.painter.add(self.panel_shape(&self.theme.styles.panel, x, y, w, h));
     }
 
     /// Puts the backing into a slot reserved with `painter.add(Shape::Noop)` before the module was drawn,
     /// so it ends up under the module although its size is only known afterwards.
-    pub fn panel_into(&self, slot: egui::layers::ShapeIdx, x: f32, y: f32, w: f32, h: f32) {
-        self.painter.set(slot, self.panel_shape(x, y, w, h));
+    pub fn panel_into(&self, slot: egui::layers::ShapeIdx, style: &PanelStyle, x: f32, y: f32, w: f32, h: f32) {
+        self.painter.set(slot, self.panel_shape(style, x, y, w, h));
     }
 
-    fn panel_shape(&self, x: f32, y: f32, w: f32, h: f32) -> Shape {
-        let p = &self.theme.styles.panel;
+    fn panel_shape(&self, p: &PanelStyle, x: f32, y: f32, w: f32, h: f32) -> Shape {
         let (x, y, w, h) = (x - p.padding, y - p.padding, w + p.padding * 2.0, h + p.padding * 2.0);
         let stroke = Stroke::new(1.0, self.c(p.stroke));
         let mut shapes = Vec::new();

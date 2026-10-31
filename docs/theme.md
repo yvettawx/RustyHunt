@@ -77,6 +77,7 @@ Colors used by the overlay:
 | `monster-hp` | The target's HP bar |
 | `enrage` | An enraged monster's HP bar |
 | `frostcraft` | The Frostcraft gauge under the sharpness bar |
+| `part-sever` | Bars of parts that can be cut off |
 | `status-poison`, `status-venom`, `status-fire`, `status-thunder`, `status-water`, `status-ice`, `status-dragon`, `status-bleed`, `status-effluvia`, `status-blast` | The hunter's health bar and status tags while that effect is on |
 
 The main window uses colors starting with `window.`: `paper` (background), `ink` (text), `mute`, `faint`, `line` (dividers), `block`, `onblock` (name tags), `accent` (warnings), `desk` (the dark area around previews), `hue` and `onhue` (the current page, primary buttons, switches, sliders, tabs, and text on them), `nav` (sidebar background), `ok` (connected, running). It also uses the overlay's `enrage` and `cool` for monster states.
@@ -104,7 +105,7 @@ Font tokens: `number`, `number-heavy`, `number-bold`, `text`, `text-bold`. Durat
 | `tag` | `shape` (rect, cut, round), `cut`, `radius` |
 | `pip` | `shape` (square, diamond, circle) |
 | `switch` | `shape` (square, round) |
-| `panel` | Backing behind each module: `shape` (none, rect, cut, round), `fill`, `stroke`, `padding`, `cut`, `radius`, `fade` (0 to 1, fades out towards the right), `edge` (color of a line along the top) |
+| `panel` | Backing of the theme's preview card (each module's backing is its own setting): `shape` (none, rect, cut, round), `fill`, `stroke`, `padding`, `cut`, `radius`, `fade` (0 to 1, fades out towards the right), `edge` (color of a line along the top) |
 | `header` | Module titles: `shape` (line: a word and a thin line; block: a dark block), `notch` (color of a mark left of a block title) |
 | `text` | `shadow`: text shadow strength, 0 to 3 |
 

@@ -1,6 +1,7 @@
 //! Main window: 1280x800, custom title bar, seven pages in the sidebar.
 
 mod home;
+mod hunt;
 mod logs;
 mod modules;
 mod onboarding;
@@ -76,6 +77,7 @@ pub fn builder(shared: &Shared) -> ViewportBuilder {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
     Home,
+    Hunt,
     Modules,
     Records,
     Themes,
@@ -89,8 +91,9 @@ impl Page {
         Page::ALL.into_iter().find(|p| p.key().ends_with(k))
     }
 
-    const ALL: [Page; 7] = [
+    const ALL: [Page; 8] = [
         Page::Home,
+        Page::Hunt,
         Page::Modules,
         Page::Records,
         Page::Themes,
@@ -102,6 +105,7 @@ impl Page {
     fn key(self) -> &'static str {
         match self {
             Page::Home => "nav.home",
+            Page::Hunt => "nav.hunt",
             Page::Modules => "nav.modules",
             Page::Records => "nav.records",
             Page::Themes => "nav.themes",
@@ -131,6 +135,7 @@ pub struct MainWindow {
     notif_open: bool,
     update_open: bool,
     home: home::State,
+    hunt: hunt::State,
     modules: modules::State,
     records: records::State,
     themes: pages_themes::State,
@@ -160,6 +165,7 @@ impl MainWindow {
             notif_open: false,
             update_open: false,
             home: Default::default(),
+            hunt: Default::default(),
             modules: Default::default(),
             records: Default::default(),
             themes: Default::default(),
@@ -246,6 +252,7 @@ impl MainWindow {
                         ui.set_width(content.width() - 108.0 - 8.0);
                         match page {
                             Page::Home => home::ui(self, ui, &pal),
+                            Page::Hunt => hunt::ui(self, ui, &pal),
                             Page::Modules => modules::ui(self, ui, &pal),
                             Page::Records => records::ui(self, ui, &pal),
                             Page::Themes => pages_themes::ui(self, ui, &pal),
@@ -269,6 +276,8 @@ impl MainWindow {
         }
         self.modal(ui, &pal, Rect::from_min_max(pos2(full.min.x, title.max.y), full.max));
 
+        let follow = self.page == Page::Hunt && self.shared.settings().main_window_follow;
+        self.shared.main_follow.store(follow, std::sync::atomic::Ordering::Relaxed);
         // Connection status, logs and the like change; refreshing the main window twice a second is enough.
         // While the game runs, only when the window has focus (see Shared::main_window_live).
         if self.shared.main_window_live() {

@@ -2,7 +2,7 @@
 //! Placed at the bottom by default; can also go on the right.
 
 use egui::{Align2, Color32, Vec2, vec2};
-use rh_core::model::{Crown, Monster};
+use rh_core::model::{Crown, Monster, Part, PartKind};
 use rh_core::settings::{Density, ModuleConfig, MonsterLayout};
 use ui_kit::color::fade;
 use ui_kit::{Canvas, Font, Layer};
@@ -29,14 +29,26 @@ struct Cell {
     active: bool,
     /// Just broke or just triggered
     flash: bool,
-    /// As a guest the game doesn't sync the value: drawn dimmed
-    unsynced: bool,
+    /// Drawn dimmed: as a guest the game doesn't sync the value, and flinch-only parts matter less
+    dim: bool,
+    /// Severable part: its own bar colour
+    sever: bool,
+}
+
+/// Parts are grouped by kind: what can break, what can be cut off, then the rest.
+fn part_rank(p: &Part) -> u8 {
+    match (p.kind, p.breaks_max > 0) {
+        (PartKind::Severable, _) => 1,
+        (_, true) => 0,
+        (_, false) => 2,
+    }
 }
 
 fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cell> {
-    m.parts
-        .iter()
-        .enumerate()
+    let mut parts: Vec<(usize, &Part)> = m.parts.iter().enumerate().collect();
+    parts.sort_by_key(|(_, p)| part_rank(p));
+    parts
+        .into_iter()
         .filter(|(i, _)| {
             let hot = st.activity.age(&format!("{}:p{i}", m.uid), f.now) < f.idle_secs();
             match f.density {
@@ -73,7 +85,8 @@ fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cel
                 done,
                 active: false,
                 flash: st.flash.get(&format!("{}:p{i}", m.uid)).is_some_and(|t| f.now - t < 0.8),
-                unsynced: f.snap.guest,
+                dim: f.snap.guest || !breakable,
+                sever: p.kind == PartKind::Severable,
             }
         })
         .collect()
@@ -128,7 +141,8 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
                 done: false,
                 active,
                 flash: st.flash.get(&format!("{}:a{}", m.uid, a.key)).is_some_and(|t| f.now - t < 0.8),
-                unsynced: f.snap.guest && !active,
+                dim: f.snap.guest && !active,
+                sever: false,
             }
         })
         .collect()
@@ -199,7 +213,7 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
         let vs = cv.measure(v, Font::NumBold, 12.0, 0.0);
         let color = if c.active {
             accent
-        } else if c.unsynced {
+        } else if c.dim {
             mute
         } else {
             text
@@ -225,7 +239,7 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     }
     let name_color = if hot {
         accent
-    } else if c.done || c.unsynced {
+    } else if c.done || c.dim {
         mute
     } else {
         text
@@ -234,8 +248,10 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     cv.text(x, top_for_bottom(base, 12.0, Font::Text), &name, Font::Text, 12.0, name_color, Align2::LEFT_TOP);
     let bar_color = if hot {
         accent
-    } else if c.unsynced {
+    } else if c.dim {
         mute
+    } else if c.sever {
+        cv.tok("part-sever")
     } else {
         text
     };
