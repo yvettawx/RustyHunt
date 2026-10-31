@@ -1,7 +1,7 @@
 //! The hunter's own modules: player (HP, stamina, sharpness, status effects), buffs, weapon gauge.
 
 use egui::{Align2, Color32, Vec2, vec2};
-use rh_core::model::{AbnormalityKind, SharpnessLevel, WeaponState};
+use rh_core::model::{AbnormalityKind, SharpnessLevel, WeaponState, gauge};
 use rh_core::modules;
 use rh_core::settings::ModuleConfig;
 use ui_kit::color::{fade, rgba};
@@ -33,8 +33,10 @@ const STATUS_TINTS: [(&str, &str); 10] = [
     ("ABNORMALITY_WATER", "status-water"),
 ];
 
-/// Effects the game shows as a gauge rather than an icon; drawn in the player module, not with buffs.
-pub const GAUGES: [&str; 1] = ["ABNORMALITY_FROSTCRAFT"];
+/// How full level `k` of a gauge is, when `ratio` of the whole gauge is filled.
+fn level_fill(ratio: f32, levels: usize, k: usize) -> f32 {
+    (ratio.clamp(0.0, 1.0) * levels as f32 - k as f32).clamp(0.0, 1.0)
+}
 
 fn status_color(cv: &Canvas, key: &str) -> Option<Color32> {
     STATUS_TINTS.iter().find(|(k, _)| *k == key).map(|(_, t)| cv.tok(t))
@@ -263,10 +265,22 @@ pub fn player(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, st: &mut State) -> Vec
         right = right.max(seg_w + 60.0);
 
         // Frostcraft and similar: a gauge under the sharpness bar
-        for a in p.abnormalities.iter().filter(|a| GAUGES.contains(&a.key.as_str())) {
+        for (a, g) in p.abnormalities.iter().filter_map(|a| Some((a, gauge(&a.key)?))) {
             let gy = bottom + 4.0;
-            let ratio = if a.timer_max > 0.0 { a.timer / a.timer_max } else { 0.0 };
-            cv.bar("frostcraft", 0.0, gy, seg_w, 4.0, &[Layer::fill(ratio, cv.tok("frostcraft"))], false);
+            let gap = 2.0;
+            let lw = (seg_w - gap * (g.levels - 1) as f32) / g.levels as f32;
+            for k in 0..g.levels {
+                let fill = level_fill(a.timer / g.max, g.levels, k);
+                cv.bar(
+                    "frostcraft",
+                    k as f32 * (lw + gap),
+                    gy,
+                    lw,
+                    4.0,
+                    &[Layer::fill(fill, cv.tok("frostcraft"))],
+                    false,
+                );
+            }
             bottom = gy + 4.0;
         }
     }
@@ -293,7 +307,7 @@ pub fn buffs(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Vec
         let list: Vec<_> = p
             .abnormalities
             .iter()
-            .filter(|a| a.kind != AbnormalityKind::Debuff && !GAUGES.contains(&a.key.as_str()))
+            .filter(|a| a.kind != AbnormalityKind::Debuff && gauge(&a.key).is_none())
             .filter(|a| tray.ids.is_empty() || tray.ids.contains(&a.id) || tray.ids.contains(&a.key))
             .collect();
         if list.is_empty() {
@@ -502,4 +516,21 @@ pub fn weapon(cv: &Canvas, f: &Frame, cfg: &ModuleConfig, _st: &mut State) -> Ve
         WeaponState::None => {}
     }
     vec2(w, y - 4.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gauge_levels_fill_in_order() {
+        let fills = |value: f32| (0..5).map(|k| level_fill(value / 100.0, 5, k)).collect::<Vec<_>>();
+        assert_eq!(fills(0.0), [0.0; 5]);
+        assert_eq!(fills(40.0), [1.0, 1.0, 0.0, 0.0, 0.0]);
+        assert_eq!(fills(100.0), [1.0; 5]);
+        let partial = fills(30.0);
+        assert_eq!(partial[0], 1.0);
+        assert!((partial[1] - 0.5).abs() < 1e-5);
+        assert_eq!(partial[2], 0.0);
+    }
 }

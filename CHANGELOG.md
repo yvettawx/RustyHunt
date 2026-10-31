@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0
+
+- Fixed: DPS jumped to several hundred when a quest ended
+- Fixed: the HP bar and timer showed during the loading screen
+- Fixed: the Frostcraft gauge was always full; it now shows the game's five levels
+- Fixed: damage didn't show for the first minutes of an expedition
+- Fixed: the damage hook took about two minutes to install and could fail when reinstalling
+- As a guest, part durability and ailment buildup are dimmed: the game doesn't send them to guests
+
 ## 1.1.2
 
 - Fixed: started in the tray after an update, RustyHunt went back to the old version

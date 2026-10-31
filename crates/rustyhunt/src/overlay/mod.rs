@@ -197,7 +197,7 @@ fn visible(f: &Frame, cfg: &ModuleConfig) -> bool {
     if f.preview {
         return true;
     }
-    if cfg.quest_only && !(f.snap.in_quest() || f.snap.in_hunt_zone) {
+    if cfg.quest_only && (f.snap.loading || !(f.snap.in_quest() || f.snap.in_hunt_zone)) {
         return false;
     }
     if cfg.hide_in_menu && f.snap.hud_open {

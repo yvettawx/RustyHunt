@@ -29,6 +29,8 @@ struct Cell {
     active: bool,
     /// Just broke or just triggered
     flash: bool,
+    /// As a guest the game doesn't sync the value: drawn dimmed
+    unsynced: bool,
 }
 
 fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cell> {
@@ -71,6 +73,7 @@ fn part_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<Cel
                 done,
                 active: false,
                 flash: st.flash.get(&format!("{}:p{i}", m.uid)).is_some_and(|t| f.now - t < 0.8),
+                unsynced: f.snap.guest,
             }
         })
         .collect()
@@ -125,6 +128,7 @@ fn ailment_cells(f: &Frame, cfg: &ModuleConfig, st: &State, m: &Monster) -> Vec<
                 done: false,
                 active,
                 flash: st.flash.get(&format!("{}:a{}", m.uid, a.key)).is_some_and(|t| f.now - t < 0.8),
+                unsynced: f.snap.guest && !active,
             }
         })
         .collect()
@@ -193,7 +197,13 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     }
     if let Some(v) = &c.value {
         let vs = cv.measure(v, Font::NumBold, 12.0, 0.0);
-        let color = if c.active { accent } else { text };
+        let color = if c.active {
+            accent
+        } else if c.unsynced {
+            mute
+        } else {
+            text
+        };
         cv.text(
             right - vs.x,
             top_for_bottom(base, 12.0, Font::NumBold),
@@ -215,14 +225,20 @@ fn cell(cv: &Canvas, c: &Cell, x: f32, y: f32, w: f32) {
     }
     let name_color = if hot {
         accent
-    } else if c.done {
+    } else if c.done || c.unsynced {
         mute
     } else {
         text
     };
     let name = cv.fit(&c.name, Font::Text, 12.0, (right - x).max(12.0));
     cv.text(x, top_for_bottom(base, 12.0, Font::Text), &name, Font::Text, 12.0, name_color, Align2::LEFT_TOP);
-    let bar_color = if hot { accent } else { text };
+    let bar_color = if hot {
+        accent
+    } else if c.unsynced {
+        mute
+    } else {
+        text
+    };
     let by = base + 5.0;
     match c.segments {
         // One segment per break, used up from the right: broken ones hatched, the current one filling

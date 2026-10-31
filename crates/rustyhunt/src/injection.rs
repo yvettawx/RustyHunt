@@ -83,26 +83,51 @@ fn jump(a: u64, b: u64) -> [u8; 6] {
     [0xE9, r[0], r[1], r[2], r[3], 0x90]
 }
 
+/// How long the DLL may take to install the hook: it searches the game's memory near the function.
+const HOOK_TIMEOUT: f64 = 120.0;
+const ASK_TIMEOUT: Duration = Duration::from_secs(2);
+
 struct Conn {
     out: TcpStream,
     reader: BufReader<TcpStream>,
+    /// The part of a reply that has arrived so far, while polling
+    partial: String,
 }
 
 impl Conn {
     fn open() -> std::io::Result<Conn> {
         let addr = SocketAddr::from(([127, 0, 0, 1], PORT));
-        let s = TcpStream::connect_timeout(&addr, Duration::from_millis(300))?;
-        s.set_read_timeout(Some(Duration::from_secs(2)))?;
+        Conn::over(TcpStream::connect_timeout(&addr, Duration::from_millis(300))?)
+    }
+
+    fn over(s: TcpStream) -> std::io::Result<Conn> {
         s.set_nodelay(true)?;
         Ok(Conn {
             out: s.try_clone()?,
             reader: BufReader::new(s),
+            partial: String::new(),
         })
     }
 
-    fn ask(&mut self, req: &str) -> std::io::Result<String> {
+    fn send(&mut self, req: &str) -> std::io::Result<()> {
         self.out.write_all(req.as_bytes())?;
-        self.out.write_all(b"\n")?;
+        self.out.write_all(b"\n")
+    }
+
+    /// The reply to the last `send`, if it has arrived.
+    fn poll(&mut self) -> std::io::Result<Option<String>> {
+        self.reader.get_ref().set_read_timeout(Some(Duration::from_millis(1)))?;
+        match self.reader.read_line(&mut self.partial) {
+            Ok(0) => Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "connection closed")),
+            Ok(_) => Ok(Some(std::mem::take(&mut self.partial).trim().to_string())),
+            Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn ask(&mut self, req: &str) -> std::io::Result<String> {
+        self.reader.get_ref().set_read_timeout(Some(ASK_TIMEOUT))?;
+        self.send(req)?;
         let mut line = String::new();
         if self.reader.read_line(&mut line)? == 0 {
             return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "connection closed"));
@@ -124,6 +149,8 @@ struct Session {
     conn: Option<Conn>,
     injected: bool,
     hooked: bool,
+    /// When the install request went out, while its reply is awaited
+    hook_sent: Option<f64>,
     last_poll: f64,
     retry_at: f64,
 }
@@ -154,6 +181,7 @@ impl Session {
             conn: None,
             injected: false,
             hooked: false,
+            hook_sent: None,
             last_poll: -100.0,
             retry_at: 0.0,
         })
@@ -246,16 +274,42 @@ impl Session {
         Err(i18n::t("inj.ipc_none"))
     }
 
-    fn hook(&mut self) -> Result<(), String> {
+    /// Asks for the hook without waiting: installing it can take many seconds, and this runs on the reader thread.
+    fn send_hook(&mut self, now: f64) -> Result<(), String> {
         self.connect()?;
         let addr = self.abs("FUN_DEAL_DAMAGE")?;
-        let reply = self.conn.as_mut().unwrap().ask(&format!("HOOK {addr:X}")).map_err(|e| e.to_string())?;
-        if reply != "OK" {
-            return Err(reply.trim_start_matches("ERR ").to_string());
+        if let Err(e) = self.conn.as_mut().unwrap().send(&format!("HOOK {addr:X}")) {
+            self.conn = None;
+            return Err(e.to_string());
         }
-        log::info!("damage hook installed at 0x{addr:X}");
-        self.hooked = true;
+        self.hook_sent = Some(now);
         Ok(())
+    }
+
+    /// The result of the install request once there is one: how long it took, or why it failed.
+    /// No other request goes out meanwhile, and a failed connection is dropped, so replies can't get out of step.
+    fn poll_hook(&mut self, now: f64) -> Option<Result<f64, String>> {
+        let sent = self.hook_sent?;
+        let polled = self.conn.as_mut().map(Conn::poll);
+        let reply = match polled {
+            Some(Ok(None)) if now - sent < HOOK_TIMEOUT => return None,
+            Some(Ok(None)) => Err(format!("no reply in {HOOK_TIMEOUT} s")),
+            Some(Ok(Some(r))) => Ok(r),
+            Some(Err(e)) => Err(e.to_string()),
+            None => Err(i18n::t("inj.ipc_none")),
+        };
+        self.hook_sent = None;
+        match reply {
+            Ok(r) if r == "OK" => {
+                self.hooked = true;
+                Some(Ok(now - sent))
+            }
+            Ok(r) => Some(Err(r.trim_start_matches("ERR ").to_string())),
+            Err(e) => {
+                self.conn = None;
+                Some(Err(e))
+            }
+        }
     }
 
     fn ask(&mut self, req: &str) -> Option<String> {
@@ -343,18 +397,30 @@ impl Sink for Injector {
         let crc_ok = !s.patched.is_empty() || s.loader_patched;
 
         // Damage hook
-        let want = inj.damage_hook && crc_ok && !(inj.solo_only && snap.online);
-        if want && !s.hooked && now >= s.retry_at {
-            match s.hook() {
-                Ok(()) => set_status(|st| {
+        let want = inj.damage_hook && crc_ok && !(inj.solo_only && snap.online && !snap.solo_estimate);
+        let failed = |s: &mut Session, e: String| {
+            fail(&i18n::t("inj.hook"), &e);
+            set_status(|st| st.hook = ItemStatus::Failed(e));
+            s.retry_at = now + 30.0;
+        };
+        match s.poll_hook(now) {
+            Some(Ok(took)) => {
+                log::info!("damage hook installed in {took:.1} s");
+                set_status(|st| {
                     st.hook = ItemStatus::Active(i18n::t("inj.injected"));
                     st.ipc = i18n::t("inj.ipc_ok");
-                }),
-                Err(e) => {
-                    fail(&i18n::t("inj.hook"), &e);
-                    set_status(|st| st.hook = ItemStatus::Failed(e));
-                    s.retry_at = now + 30.0;
-                }
+                });
+            }
+            Some(Err(e)) => failed(s, e),
+            None => {}
+        }
+        if s.hook_sent.is_some() {
+            // Waiting for the reply
+        } else if want && !s.hooked {
+            if now >= s.retry_at
+                && let Err(e) = s.send_hook(now)
+            {
+                failed(s, e);
             }
         } else if !want && s.hooked {
             s.ask("UNHOOK");
@@ -368,7 +434,9 @@ impl Sink for Injector {
         }
 
         if s.hooked {
-            if events.iter().any(|e| matches!(e, Event::QuestStart { .. })) {
+            // Back in town the next expedition starts from nothing
+            let new_hunt = |e: &Event| matches!(e, Event::QuestStart { .. }) || (matches!(e, Event::StageChange { .. }) && snap.in_town);
+            if events.iter().any(new_hunt) {
                 s.ask("CLEAR");
             }
             if now - s.last_poll >= 0.5 {
@@ -398,6 +466,24 @@ impl Sink for Injector {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_slow_reply_is_polled_and_stays_in_step() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let addr = listener.local_addr().unwrap();
+        let mut c = Conn::over(TcpStream::connect(addr).unwrap()).unwrap();
+        let (mut server, _) = listener.accept().unwrap();
+
+        c.send("HOOK 1").unwrap();
+        assert_eq!(c.poll().unwrap(), None, "nothing yet");
+        server.write_all(b"O").unwrap();
+        std::thread::sleep(Duration::from_millis(50));
+        assert_eq!(c.poll().unwrap(), None, "half a reply");
+        server.write_all(b"K\nSTATS 1 0 1 0\n").unwrap();
+        std::thread::sleep(Duration::from_millis(50));
+        assert_eq!(c.poll().unwrap().as_deref(), Some("OK"));
+        assert_eq!(c.ask("STATS").unwrap(), "STATS 1 0 1 0");
+    }
 
     #[test]
     fn jump_is_relative_to_next_instruction() {

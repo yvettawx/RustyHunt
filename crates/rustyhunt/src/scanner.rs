@@ -355,8 +355,8 @@ impl Scanner {
         let mode = self.shared.settings().profile(Game::World).monster.target_mode;
 
         if let Some(split) = crate::injection::damage_split() {
-            // Solo, our damage is estimated from monster HP loss; with the hook use the exact value
-            if !snap.online
+            // Where our damage is estimated from monster HP loss, the hook has the exact value
+            if snap.solo_estimate
                 && split.total > 0.0
                 && let Some(me) = snap.party.iter_mut().find(|p| p.is_self)
             {

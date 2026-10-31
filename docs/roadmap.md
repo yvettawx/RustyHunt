@@ -71,13 +71,30 @@ Built, not yet checked in the game.
 
 - Health bar colours for each status effect; target selection without a lock-on; dragging corners and edges in the real layout window.
 
-## 1.2.0: needs injection, disassembly or memory scanning
+## 1.2.0
+
+- DPS after a quest: the quest timer restarted from 0 when the quest ended, which reset the fight clock.
+- Loading screen: modules wait for the first monster or the quest start instead of the stage change, with a 30 second limit for maps without monsters.
+- Frostcraft gauge: five levels of 20 against a fixed maximum of 100, measured in game; an empty gauge stays until leaving the hunting area.
+- Solo damage: the game records it in quests but not on expeditions, where the hook gives the exact value. With the hook off, expeditions fall back on the monsters' HP loss, which also counts the Palico, turf wars and environmental damage.
+- Damage hook: installs without blocking the reader thread, and replies can no longer get out of step with requests.
+- Guests: the first party slot is the quest's host. Part durability and ailment buildup are dimmed for guests, since the game doesn't sync them. Not checked with the host leaving or with more than two players.
+
+## 1.2.1
+
+- Second-monitor hunt view: the main window shows the hunt status (monsters, player, damage, quest), so the game runs on one monitor and the details on another.
+- Part bars: breakable parts white, flinch-only parts dimmed, severable parts (tails and the like) blue, each kind grouped together; all are drawn the same today.
+- Module backing: a setting per module (off, fade or solid), separate from the theme.
+- Module preview: blank for a disabled module, and with the game connected blank when the live data has nothing for that module. Always show it, with demo data where live data is empty.
+
+## 1.3.0
+
+- Monster Hunter Rise and Monster Hunter Wilds support.
+
+## 1.3.5
 
 - Split damage into raw and elemental: the hooked damage function only sees the total, so the function that computes damage has to be found.
-- Party members' current HP: the in-game party list shows it, but the address hasn't been found; needs scanning in a live multiplayer session.
-- Detect whether we are the quest host, and hide part durability bars as a guest.
-- Solo damage without the hook: currently estimated from the monster's HP loss, which also counts the Palico, turf wars and environmental damage.
 
-**Bug fixes**
+## 1.4.0
 
-- Frostcraft gauge: the game splits it into five levels, but the gauge is one bar measured against the largest value seen so far, so it shows full while it charges. Log the raw value to find the real maximum and the level thresholds, then draw five segments.
+- Multiplayer data sharing: the game doesn't send part durability and ailment buildup to guests, so the host's RustyHunt sends them to the guests' copies. Works only when the host runs RustyHunt too.

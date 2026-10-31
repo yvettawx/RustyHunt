@@ -19,6 +19,8 @@ pub struct MissingKey(pub String);
 const MAX_QUEST_TIMERS: [u32; 5] = [54000, 72000, 108000, 126000, 180000];
 const PEACE_ZONES: [i32; 9] = [301, 302, 303, 305, 306, 501, 502, 503, 506];
 const SAVE_SLOT_SIZE: u64 = 0x26CC00;
+/// Seconds after which a map without monsters (the training area) counts as loaded
+const LOAD_TIMEOUT: f64 = 30.0;
 const PART_STRUCT_SIZE: usize = 0x70;
 const AILMENT_STRUCT_SIZE: usize = 0x88;
 
@@ -44,6 +46,27 @@ fn read_buf<M: Memory>(mem: &M, address: u64, len: usize) -> ReadResult<Vec<u8>>
     Ok(b)
 }
 
+/// Where the party's damage comes from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PartySource {
+    /// A quest ended on this map: keep its final numbers
+    Hold,
+    /// The game keeps no damage: no session at all, or alone on an expedition
+    Solo,
+    /// The game's party list; it only holds damage during a quest
+    Game,
+}
+
+fn party_source(quest_seen: bool, in_quest: bool, size: i32) -> PartySource {
+    if quest_seen && !in_quest {
+        PartySource::Hold
+    } else if size == 0 || (size == 1 && !in_quest) {
+        PartySource::Solo
+    } else {
+        PartySource::Game
+    }
+}
+
 /// Upstream `ApproximateHigh`: the first candidate not less than `v`.
 fn approximate_high(v: u32, values: &[u32]) -> u32 {
     values.iter().copied().find(|&c| c >= v).unwrap_or(v)
@@ -58,6 +81,54 @@ struct MonsterCache {
     ailments: Option<Vec<(u64, String)>>,
     list_index: i32,
     breaks: BreakHistory,
+}
+
+/// What the hunt timer does outside a running quest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FieldTime {
+    /// A quest ended on this map: keep its time, restarting it would look like a new hunt
+    Hold,
+    /// Still loading
+    Zero,
+    /// Roaming: count from the end of loading
+    Roam,
+}
+
+/// Follows stage changes. The stage ID changes when the loading screen starts; the monster list
+/// stays empty until it ends.
+#[derive(Default)]
+struct StageWatch {
+    stage: i32,
+    loading_since: Option<f64>,
+    quest_seen: bool,
+}
+
+impl StageWatch {
+    fn enter(&mut self, stage: i32, hunt_zone: bool, time: f64) {
+        if stage != self.stage {
+            self.stage = stage;
+            self.quest_seen = false;
+            self.loading_since = hunt_zone.then_some(time);
+        }
+    }
+
+    /// Only the first monster ends loading: later on the list can be empty again in a loaded map.
+    fn settle(&mut self, ready: bool, time: f64) -> bool {
+        if ready || self.loading_since.is_some_and(|t| time - t >= LOAD_TIMEOUT) {
+            self.loading_since = None;
+        }
+        self.loading_since.is_some()
+    }
+
+    fn field_time(&self) -> FieldTime {
+        if self.quest_seen {
+            FieldTime::Hold
+        } else if self.loading_since.is_some() {
+            FieldTime::Zero
+        } else {
+            FieldTime::Roam
+        }
+    }
 }
 
 /// Highest break count seen for each part in one hunt.
@@ -110,6 +181,7 @@ pub struct WorldReader<M: Memory> {
     skills: Vec<u8>,
     save_address: u64,
     roam_start: Option<Instant>,
+    stage_watch: StageWatch,
     sa_charge_max: f32,
     sa_awake_max: f32,
     /// Solo offline: estimate own damage from the monsters' HP loss
@@ -132,6 +204,7 @@ impl<M: Memory> WorldReader<M> {
             skills: vec![0; 226],
             save_address: 0,
             roam_start: None,
+            stage_watch: StageWatch::default(),
             sa_charge_max: 0.0,
             sa_awake_max: 0.0,
             hp_seen: HashMap::new(),
@@ -201,6 +274,7 @@ impl<M: Memory> WorldReader<M> {
                 s.in_town = PEACE_ZONES.contains(&id);
                 s.in_hunt_zone = id != 0 && !s.in_town;
                 s.stage_key = stage_key(id).to_string();
+                self.stage_watch.enter(id, s.in_hunt_zone, time);
             }
             Err(e) => self.warn("stage", e),
         }
@@ -229,6 +303,7 @@ impl<M: Memory> WorldReader<M> {
             Ok(m) => s.monsters = m,
             Err(e) => self.warn("monsters", e),
         }
+        s.loading = self.stage_watch.settle(!s.monsters.is_empty() || s.in_quest(), time);
         match self.read_party(&mut s) {
             Ok(()) => {}
             Err(e) => self.warn("party", e),
@@ -561,10 +636,18 @@ impl<M: Memory> WorldReader<M> {
         // In a quest use the quest timer; when roaming, time from entering the hunting area
         if s.in_quest() {
             self.roam_start = None;
+            self.stage_watch.quest_seen = true;
             s.elapsed = (time_max - time_left).max(0.0);
         } else if s.in_hunt_zone {
-            let start = *self.roam_start.get_or_insert_with(Instant::now);
-            s.elapsed = start.elapsed().as_secs_f32();
+            match self.stage_watch.field_time() {
+                FieldTime::Hold => {}
+                // Moving between hunting maps keeps counting, the damage carries over too
+                FieldTime::Zero if self.roam_start.is_none() => s.elapsed = 0.0,
+                FieldTime::Zero | FieldTime::Roam => {
+                    let start = *self.roam_start.get_or_insert_with(Instant::now);
+                    s.elapsed = start.elapsed().as_secs_f32();
+                }
+            }
         } else {
             self.roam_start = None;
             if s.quest.is_none() {
@@ -867,10 +950,17 @@ impl<M: Memory> WorldReader<M> {
     fn read_party(&mut self, s: &mut Snapshot) -> ReadResult<()> {
         let size = self.mem.deref::<i32>(self.abs("SESSION_OFFSET"), self.offs("SESSION_PARTY_OFFSETS"))?;
         s.online = size > 0;
+        s.solo_estimate = false;
 
-        // Solo offline: the game doesn't record damage, so estimate it from large monsters' HP loss
-        if size == 0 {
+        let source = party_source(self.stage_watch.quest_seen, s.in_quest(), size);
+        if source == PartySource::Hold {
+            return Ok(());
+        }
+        s.guest = false;
+        // The game doesn't record damage here, so estimate it from large monsters' HP loss
+        if source == PartySource::Solo {
             if s.in_quest() || s.in_hunt_zone {
+                s.solo_estimate = true;
                 for m in &s.monsters {
                     if let Some(&last) = self.hp_seen.get(&m.uid)
                         && last > m.hp
@@ -938,6 +1028,8 @@ impl<M: Memory> WorldReader<M> {
                 palico: false,
             });
         }
+        // The quest's host is always in the first slot
+        s.guest = party.iter().any(|p| p.is_self && p.slot != 0);
         s.party = party;
         Ok(())
     }
@@ -990,7 +1082,10 @@ impl<M: Memory> WorldReader<M> {
                     }
                 }
             };
-            if timer <= 0.0 || !timer.is_finite() {
+            let gauge = gauge(&def.key);
+            // A gauge seen in this hunt stays when it runs empty, as it does in the game
+            let empty_gauge = timer == 0.0 && gauge.is_some() && self.abnormality_max.contains_key(&def.id);
+            if (timer <= 0.0 || !timer.is_finite()) && !empty_gauge {
                 self.abnormality_max.remove(&def.id);
                 continue;
             }
@@ -1001,7 +1096,7 @@ impl<M: Memory> WorldReader<M> {
                 key: def.key.clone(),
                 kind: def.kind,
                 timer,
-                timer_max: *max,
+                timer_max: gauge.map_or(*max, |g| g.max),
                 infinite: def.infinite,
             });
         }
@@ -1232,6 +1327,62 @@ pub fn stage_key(id: i32) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn party_damage_source() {
+        // A quest with a session: the game's list, even alone
+        assert_eq!(party_source(false, true, 1), PartySource::Game);
+        assert_eq!(party_source(true, true, 2), PartySource::Game);
+        // No session at all
+        assert_eq!(party_source(false, true, 0), PartySource::Solo);
+        // Expeditions: alone is estimated, with others the HP loss isn't ours alone
+        assert_eq!(party_source(false, false, 0), PartySource::Solo);
+        assert_eq!(party_source(false, false, 1), PartySource::Solo);
+        assert_eq!(party_source(false, false, 2), PartySource::Game);
+        // After a quest the numbers stay, whatever the session does
+        assert_eq!(party_source(true, false, 0), PartySource::Hold);
+        assert_eq!(party_source(true, false, 2), PartySource::Hold);
+    }
+
+    #[test]
+    fn loading_lasts_until_the_first_monster() {
+        let mut w = StageWatch::default();
+        w.enter(305, false, 0.0);
+        assert!(!w.settle(false, 0.0), "towns don't count");
+        w.enter(101, true, 10.0);
+        assert!(w.settle(false, 12.0));
+        assert_eq!(w.field_time(), FieldTime::Zero);
+        assert!(!w.settle(true, 17.0));
+        assert_eq!(w.field_time(), FieldTime::Roam);
+        // The monsters leave or die: still loaded
+        w.enter(101, true, 20.0);
+        assert!(!w.settle(false, 20.0));
+        // Changing area loads again
+        w.enter(104, true, 30.0);
+        assert!(w.settle(false, 31.0));
+    }
+
+    #[test]
+    fn a_map_without_monsters_loads_by_timeout() {
+        let mut w = StageWatch::default();
+        w.enter(101, true, 0.0);
+        assert!(w.settle(false, LOAD_TIMEOUT - 1.0));
+        assert!(!w.settle(false, LOAD_TIMEOUT));
+    }
+
+    #[test]
+    fn the_timer_holds_after_a_quest_until_the_stage_changes() {
+        let mut w = StageWatch::default();
+        w.enter(102, true, 0.0);
+        w.settle(true, 5.0);
+        w.quest_seen = true;
+        assert_eq!(w.field_time(), FieldTime::Hold);
+        w.enter(102, true, 300.0);
+        assert_eq!(w.field_time(), FieldTime::Hold);
+        w.enter(305, false, 310.0);
+        w.enter(101, true, 320.0);
+        assert_eq!(w.field_time(), FieldTime::Zero);
+    }
 
     #[test]
     fn sharpness_level_lookup() {

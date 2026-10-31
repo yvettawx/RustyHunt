@@ -347,6 +347,24 @@ pub struct Abnormality {
     pub infinite: bool,
 }
 
+/// An effect the game shows as a levelled gauge rather than an icon with a timer.
+pub struct Gauge {
+    pub key: &'static str,
+    pub max: f32,
+    pub levels: usize,
+}
+
+/// Scales measured in game: Frostcraft fills up to 100, 20 per level.
+const GAUGES: [Gauge; 1] = [Gauge {
+    key: "ABNORMALITY_FROSTCRAFT",
+    max: 100.0,
+    levels: 5,
+}];
+
+pub fn gauge(key: &str) -> Option<&'static Gauge> {
+    GAUGES.iter().find(|g| g.key == key)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Tool {
     /// Localization key, e.g. `TOOL_GHILLIE_MANTLE`; empty means nothing equipped
@@ -522,6 +540,8 @@ pub struct Snapshot {
     pub stage_key: String,
     pub in_hunt_zone: bool,
     pub in_town: bool,
+    /// The stage already says a hunting map, but its loading screen is still up
+    pub loading: bool,
     /// The game menu or map is open
     pub hud_open: bool,
     /// In-game time (hour, minute)
@@ -536,6 +556,10 @@ pub struct Snapshot {
     pub damage_split: Option<DamageSplit>,
     /// Multiplayer quest
     pub online: bool,
+    /// Solo where the game keeps no damage: our party entry is estimated from the monsters' HP loss
+    pub solo_estimate: bool,
+    /// In someone else's quest: the game doesn't sync part durability and ailment buildup to us
+    pub guest: bool,
 }
 
 impl Snapshot {

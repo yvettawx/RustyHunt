@@ -431,6 +431,7 @@ pub const SCENES: &[&str] = &[
     "multi",
     "lowhp",
     "frostcraft",
+    "guest",
     "debuff-poison",
     "debuff-venom",
     "debuff-fire",
@@ -557,8 +558,9 @@ impl Demo {
                 s.player.hp_recoverable = 58.0;
                 s.player.hp_healing_to = 31.0;
             }),
+            "guest" => both(&mut before, &mut after, &|s| s.guest = true),
             "frostcraft" => both(&mut before, &mut after, &|s| {
-                let a = abn("Skills_788", "ABNORMALITY_FROSTCRAFT", AbnormalityKind::Skill, 42.0, 60.0, false);
+                let a = abn("Skills_788", "ABNORMALITY_FROSTCRAFT", AbnormalityKind::Skill, 47.0, 100.0, false);
                 s.player.abnormalities.push(a);
             }),
             other => {
